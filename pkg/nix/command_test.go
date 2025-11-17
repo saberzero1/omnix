@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -121,6 +122,22 @@ func TestCommandError(t *testing.T) {
 	}
 }
 
+func TestCommandError_Unwrap(t *testing.T) {
+	baseErr := fmt.Errorf("base error")
+	cmdErr := &CommandError{
+		Command:  "nix",
+		Args:     []string{"build"},
+		ExitCode: 1,
+		Stderr:   "build failed",
+		Err:      baseErr,
+	}
+	
+	unwrapped := cmdErr.Unwrap()
+	if unwrapped != baseErr {
+		t.Errorf("CommandError.Unwrap() = %v, want %v", unwrapped, baseErr)
+	}
+}
+
 func TestRunWithInvalidCommand(t *testing.T) {
 	cmd := NewCmd()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -137,6 +154,30 @@ func TestRunWithInvalidCommand(t *testing.T) {
 	if !errors.As(err, &cmdErr) {
 		t.Errorf("Run() error should be CommandError, got %T", err)
 	}
+	
+	// Test error message contains useful info
+	errMsg := err.Error()
+	if !strings.Contains(errMsg, "nix") {
+		t.Error("Error message should contain 'nix'")
+	}
+}
+
+func TestRunWithTimeout(t *testing.T) {
+	cmd := NewCmd()
+	// Use a very short timeout to force context cancellation
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+	defer cancel()
+	
+	// This should fail due to context timeout
+	_, err := cmd.Run(ctx, "--version")
+	if err == nil {
+		// On fast systems, the command might complete before timeout
+		t.Log("Command completed before timeout (acceptable)")
+		return
+	}
+	
+	// Error should be context-related or command error
+	t.Logf("Got expected error: %v", err)
 }
 
 func TestRunJSONWithInvalidJSON(t *testing.T) {

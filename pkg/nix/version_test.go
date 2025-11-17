@@ -85,6 +85,24 @@ func TestParseVersion(t *testing.T) {
 			want:    Version{},
 			wantErr: true,
 		},
+		{
+			name:    "invalid format - letters in version",
+			input:   "nix (Nix) 2.x.0",
+			want:    Version{},
+			wantErr: true,
+		},
+		{
+			name:    "invalid format - non-numeric",
+			input:   "nix (Nix) a.b.c",
+			want:    Version{},
+			wantErr: true,
+		},
+		{
+			name:    "invalid format - only text",
+			input:   "version info",
+			want:    Version{},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
