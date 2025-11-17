@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/juspay/omnix/pkg/cli"
 )
 
 var (
@@ -13,6 +15,8 @@ var (
 )
 
 func main() {
-	fmt.Printf("omnix version %s (commit: %s)\n", Version, Commit)
-	os.Exit(0)
+	if err := cli.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 }
