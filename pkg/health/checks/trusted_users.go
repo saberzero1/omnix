@@ -21,6 +21,7 @@ func (tu *TrustedUsers) Check(ctx context.Context, nixInfo *nix.Info) []NamedChe
 		return []NamedCheck{}
 	}
 	
+	// Use the new User field directly (preferred over deprecated CurrentUser() method)
 	currentUser := nixInfo.Env.User
 	userGroups := make(map[string]bool)
 	for _, group := range nixInfo.Env.Groups {

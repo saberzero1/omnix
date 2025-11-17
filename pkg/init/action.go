@@ -135,7 +135,8 @@ func (r RetainAction) Apply(ctx context.Context, outDir string) error {
 	
 	if len(filesToDelete) == 0 {
 		// No files matched the glob patterns; nothing to delete.
-		// This is not an error, as patterns may be optional.
+		// This is not an error: RetainAction is designed to work for template features that may not exist in all cases,
+		// regardless of whether the patterns are marked as optional.
 		return nil
 	}
 	
