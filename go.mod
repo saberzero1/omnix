@@ -1,6 +1,8 @@
 module github.com/juspay/omnix
 
-go 1.24.10
+go 1.23.0
+
+toolchain go1.24.10
 
 require (
 	github.com/charmbracelet/glamour v0.10.0

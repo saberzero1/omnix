@@ -15,18 +15,41 @@ See <https://omnix.page/>
 
 ## Developing
 
+**Note:** This project is currently being migrated from Rust to Go (see `DESIGN_DOCUMENT.md`). Phase 1 is complete with both Rust and Go code coexisting during the transition.
+
+### Rust Development (Production)
+
 1. [Install Nix](https://nixos.asia/en/install)
 1. [Setup `direnv`](https://nixos.asia/en/direnv)
 1. Clone this repo, `cd` to it, and run `direnv allow`.
 
 This will automatically activate the nix develop shell. Open VSCode and install recommended extensions, ensuring that direnv activates in VSCode as well.
 
+### Go Development (Migration in Progress)
+
+For working on the Go implementation:
+
+1. Install Go 1.22 or later (or use Nix devShell)
+2. Run `go mod download` to fetch dependencies
+3. See `GO_QUICKSTART.md` for detailed Go development guide
+
+Quick Go commands:
+```sh
+just go-build   # Build Go version
+just go-test    # Run Go tests
+just go-ci      # Full Go CI (format, lint, test, build)
+```
+
 ### Running locally
 
-To run `omnix-cli`,
-
+**Rust version:**
 ```sh
 just watch # Or `just w`; you can also pass args, e.g.: `just w show`
+```
+
+**Go version (in development):**
+```sh
+just go-run [args]  # Run Go version
 ```
 
 ### Nix workflows
