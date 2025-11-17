@@ -11,6 +11,8 @@ type Info struct {
 	Version Version
 	// Env is the environment in which Nix operates
 	Env *Env
+	// Config is the Nix configuration
+	Config Config
 }
 
 // GetInfo gathers all Nix installation information.
@@ -28,9 +30,16 @@ func GetInfo(ctx context.Context) (*Info, error) {
 		return nil, fmt.Errorf("failed to detect environment: %w", err)
 	}
 	
+	// Get Nix configuration
+	config, err := GetConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Nix config: %w", err)
+	}
+	
 	return &Info{
 		Version: version,
 		Env:     env,
+		Config:  *config,
 	}, nil
 }
 

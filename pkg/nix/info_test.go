@@ -47,8 +47,8 @@ func TestGetInfo(t *testing.T) {
 	t.Logf("Nix Info: %s", info.String())
 	t.Logf("Version: %s", info.Version)
 	t.Logf("OS: %s", info.Env.OS)
-	t.Logf("User: %s", info.Env.CurrentUser)
-	t.Logf("Groups: %v", info.Env.CurrentUserGroups)
+	t.Logf("User: %s", info.Env.User)
+	t.Logf("Groups: %v", info.Env.Groups)
 }
 
 func TestInfoString(t *testing.T) {

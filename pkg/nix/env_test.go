@@ -245,8 +245,8 @@ func TestDetectEnv(t *testing.T) {
 	}
 	
 	// CurrentUser might be empty in some environments, so we just log it
-	t.Logf("Current user: %s", env.CurrentUser)
-	t.Logf("User groups: %v", env.CurrentUserGroups)
+	t.Logf("Current user: %s", env.User)
+	t.Logf("User groups: %v", env.Groups)
 	t.Logf("OS: %s", env.OS.String())
 	t.Logf("OS Type: %s, Arch: %s", env.OS.Type, env.OS.Arch)
 }
