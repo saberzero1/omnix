@@ -9,3 +9,10 @@ dist
 /.vscode/spellright.dict
 
 /.pre-commit-config.yaml
+
+# Go build artifacts
+/bin
+*.test
+*.out
+coverage.out
+coverage.html
