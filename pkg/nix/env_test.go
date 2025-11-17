@@ -2,12 +2,74 @@ package nix
 
 import (
 	"context"
+	"os"
 	"runtime"
 	"testing"
 	"time"
 )
 
 func TestGetCurrentUser(t *testing.T) {
+	// Save original env vars
+	origUser := os.Getenv("USER")
+	origUsername := os.Getenv("USERNAME")
+	defer func() {
+		os.Setenv("USER", origUser)
+		os.Setenv("USERNAME", origUsername)
+	}()
+	
+	tests := []struct {
+		name         string
+		userEnv      string
+		usernameEnv  string
+		wantNonEmpty bool
+	}{
+		{
+			name:         "USER env var set",
+			userEnv:      "testuser",
+			usernameEnv:  "",
+			wantNonEmpty: true,
+		},
+		{
+			name:         "USERNAME env var set",
+			userEnv:      "",
+			usernameEnv:  "testuser",
+			wantNonEmpty: true,
+		},
+		{
+			name:         "both env vars set, USER takes precedence",
+			userEnv:      "user1",
+			usernameEnv:  "user2",
+			wantNonEmpty: true,
+		},
+		{
+			name:         "no env vars set",
+			userEnv:      "",
+			usernameEnv:  "",
+			wantNonEmpty: false,
+		},
+	}
+	
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Setenv("USER", tt.userEnv)
+			os.Setenv("USERNAME", tt.usernameEnv)
+			
+			user := getCurrentUser()
+			if tt.wantNonEmpty && user == "" {
+				t.Error("getCurrentUser() returned empty string, want non-empty")
+			}
+			if !tt.wantNonEmpty && user != "" {
+				t.Errorf("getCurrentUser() = %v, want empty string", user)
+			}
+			
+			// If userEnv is set, it should be returned
+			if tt.userEnv != "" && user != tt.userEnv {
+				t.Errorf("getCurrentUser() = %v, want %v", user, tt.userEnv)
+			}
+		})
+	}
+	
+	// Test actual behavior
 	user := getCurrentUser()
 	// Should return something on most systems
 	// Can be empty in some edge cases, so we just check it doesn't panic
@@ -56,6 +118,19 @@ func TestDetectOS(t *testing.T) {
 	
 	t.Logf("Detected OS: %s", osType.String())
 	t.Logf("IsNixOS: %v, IsNixDarwin: %v", osType.IsNixOS, osType.IsNixDarwin)
+	
+	// Additional checks based on detected OS
+	if osType.IsNixOS {
+		if osType.Type != "linux" {
+			t.Error("NixOS should have Type=linux")
+		}
+	}
+	
+	if osType.IsNixDarwin {
+		if osType.Type != "darwin" {
+			t.Error("nix-darwin should have Type=darwin")
+		}
+	}
 }
 
 func TestOSTypeString(t *testing.T) {
