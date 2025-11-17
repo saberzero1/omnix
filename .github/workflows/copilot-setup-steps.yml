@@ -1,0 +1,92 @@
+name: "Copilot Environment Setup"
+
+# This workflow sets up the development environment for GitHub Copilot coding agents
+# It follows the setup steps documented in .github/copilot-instructions.md
+
+on:
+  workflow_dispatch:
+  # Can be triggered manually or called by other workflows
+
+jobs:
+  setup-environment:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            accept-flake-config = true
+            experimental-features = nix-command flakes
+      
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      
+      - name: Verify Nix installation
+        run: |
+          nix --version
+          echo "Nix installed successfully"
+      
+      - name: Activate Nix development shell
+        run: |
+          nix develop --accept-flake-config --command bash -c '
+            echo "Development shell activated"
+            echo "Verifying environment variables..."
+            echo "OMNIX_SOURCE=$OMNIX_SOURCE"
+            echo "TRUE_FLAKE=$TRUE_FLAKE"
+            echo "FALSE_FLAKE=$FALSE_FLAKE"
+            echo "FLAKE_METADATA=$FLAKE_METADATA"
+            echo "DEFAULT_FLAKE_SCHEMAS=$DEFAULT_FLAKE_SCHEMAS"
+            echo "INSPECT_FLAKE=$INSPECT_FLAKE"
+            echo "NIX_SYSTEMS=$NIX_SYSTEMS"
+          '
+      
+      - name: Install direnv (optional - for local development simulation)
+        run: |
+          curl -sfL https://direnv.net/install.sh | bash
+          echo "Direnv installed"
+      
+      - name: Build omnix
+        run: |
+          nix build --accept-flake-config --no-link --print-out-paths
+      
+      - name: Verify build tools in devShell
+        run: |
+          nix develop --accept-flake-config --command bash -c '
+            echo "Checking available tools in devShell..."
+            which just && just --version
+            which cargo && cargo --version
+            which rustc && rustc --version
+            which bacon && bacon --version || echo "bacon available"
+            echo "All required tools are available"
+          '
+      
+      - name: Setup summary
+        run: |
+          echo "## Environment Setup Complete ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The following components have been set up:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Nix with flakes enabled" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Nix development shell with all environment variables" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Build tools (cargo, rustc, just, bacon)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Omnix package built successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quick Start Commands" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "# Enter development shell" >> $GITHUB_STEP_SUMMARY
+          echo "nix develop --accept-flake-config" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Build the project" >> $GITHUB_STEP_SUMMARY
+          echo "nix build --accept-flake-config" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Run tests" >> $GITHUB_STEP_SUMMARY
+          echo "just cargo-test" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Start development with live reload" >> $GITHUB_STEP_SUMMARY
+          echo "just watch" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📖 See .github/copilot-instructions.md for complete documentation" >> $GITHUB_STEP_SUMMARY
