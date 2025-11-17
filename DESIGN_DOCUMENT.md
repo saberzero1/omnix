@@ -1353,7 +1353,7 @@ func TestParseFlakeUrl(t *testing.T) {
 
 **Go:**
 ```go
-// +build integration
+//go:build integration
 
 package nix_test
 
