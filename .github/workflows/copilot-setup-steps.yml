@@ -8,7 +8,7 @@ on:
   # Can be triggered manually or called by other workflows
 
 jobs:
-  setup-environment:
+  copilot-setup-steps:
     runs-on: ubuntu-latest
     
     steps:
