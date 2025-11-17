@@ -25,13 +25,7 @@ func DefaultCaches() Caches {
 // Check verifies that all required caches are configured
 func (c *Caches) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
 	// Get configured substituters from nix config
-	// Note: nixInfo.Config doesn't have substituters yet, so we'll need to add it
-	// For now, we'll assume it's available as a slice of strings
-	var configuredCaches []string
-	
-	// TODO: Extract substituters from nixInfo.Config
-	// This will need to be added to the nix.Config type
-	// For now, we'll just use an empty slice as a placeholder
+	configuredCaches := nixInfo.Config.Substituters.Value
 	
 	missingCaches := c.getMissingCaches(configuredCaches)
 	

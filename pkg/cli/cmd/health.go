@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	
@@ -81,7 +80,9 @@ func runHealth(cmd *cobra.Command, args []string) error {
 		fmt.Println(status.SummaryMessage())
 	}
 	
-	// Exit with appropriate code
-	os.Exit(status.ExitCode())
+	// Return error if exit code is non-zero; let main handle process exit.
+	if status.ExitCode() != 0 {
+		return fmt.Errorf("%s", status.SummaryMessage())
+	}
 	return nil
 }

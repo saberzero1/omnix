@@ -134,7 +134,9 @@ func (r RetainAction) Apply(ctx context.Context, outDir string) error {
 	}
 	
 	if len(filesToDelete) == 0 {
-		return fmt.Errorf("no paths matched glob patterns")
+		// No files matched the glob patterns; nothing to delete.
+		// This is not an error, as patterns may be optional.
+		return nil
 	}
 	
 	// Sort in reverse to delete children before parents
