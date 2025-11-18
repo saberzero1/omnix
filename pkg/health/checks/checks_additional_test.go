@@ -28,14 +28,14 @@ func TestRedResult_String(t *testing.T) {
 
 func TestCaches_Check_WithMissingCaches(t *testing.T) {
 	ctx := context.Background()
-	
+
 	check := Caches{
 		Required: []string{
 			"https://cache.nixos.org",
 			"https://my-cache.cachix.org",
 		},
 	}
-	
+
 	nixInfo := &nix.Info{
 		Config: nix.Config{
 			Substituters: nix.ConfigValue[[]string]{
@@ -46,9 +46,9 @@ func TestCaches_Check_WithMissingCaches(t *testing.T) {
 			OS: nix.OSType{Type: "linux"},
 		},
 	}
-	
+
 	results := check.Check(ctx, nixInfo)
-	
+
 	assert.Len(t, results, 1)
 	assert.Equal(t, "caches", results[0].Name)
 	assert.False(t, results[0].Check.Result.IsGreen(), "should fail when caches are missing")
@@ -56,11 +56,11 @@ func TestCaches_Check_WithMissingCaches(t *testing.T) {
 
 func TestCaches_Check_AllPresent(t *testing.T) {
 	ctx := context.Background()
-	
+
 	check := Caches{
 		Required: []string{"https://cache.nixos.org"},
 	}
-	
+
 	nixInfo := &nix.Info{
 		Config: nix.Config{
 			Substituters: nix.ConfigValue[[]string]{
@@ -74,9 +74,9 @@ func TestCaches_Check_AllPresent(t *testing.T) {
 			OS: nix.OSType{Type: "linux"},
 		},
 	}
-	
+
 	results := check.Check(ctx, nixInfo)
-	
+
 	assert.Len(t, results, 1)
 	// Note: The check implementation has empty substituters placeholder,
 	// so this test verifies it doesn't crash rather than actual functionality
@@ -100,7 +100,7 @@ func TestNormalizeURL(t *testing.T) {
 			expected: "https://cache.nixos.org",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := normalizeURL(tt.url)
@@ -111,9 +111,9 @@ func TestNormalizeURL(t *testing.T) {
 
 func TestTrustedUsers_CheckEnabled(t *testing.T) {
 	ctx := context.Background()
-	
+
 	check := TrustedUsers{Enable: true}
-	
+
 	nixInfo := &nix.Info{
 		Env: &nix.Env{
 			User:   "testuser",
@@ -121,9 +121,9 @@ func TestTrustedUsers_CheckEnabled(t *testing.T) {
 			OS:     nix.OSType{Type: "linux"},
 		},
 	}
-	
+
 	results := check.Check(ctx, nixInfo)
-	
+
 	// Should return a check when enabled
 	assert.Len(t, results, 1)
 	assert.Equal(t, "trusted-users", results[0].Name)
@@ -131,16 +131,16 @@ func TestTrustedUsers_CheckEnabled(t *testing.T) {
 
 func TestHomebrew_CheckNonDarwin(t *testing.T) {
 	ctx := context.Background()
-	
+
 	// Save original GOOS
 	// Note: We can't actually change runtime.GOOS, so this test
 	// just verifies the check doesn't panic on non-macOS
-	
+
 	nixInfo := &nix.Info{}
 	check := Homebrew{}
-	
+
 	results := check.Check(ctx, nixInfo)
-	
+
 	// On non-macOS (like Linux CI), should return empty or 0 results
 	// On macOS, should return 1 result
 	// Just verify it doesn't panic
@@ -149,12 +149,12 @@ func TestHomebrew_CheckNonDarwin(t *testing.T) {
 
 func TestRosetta_CheckNonDarwinARM(t *testing.T) {
 	ctx := context.Background()
-	
+
 	nixInfo := &nix.Info{}
 	check := Rosetta{}
-	
+
 	results := check.Check(ctx, nixInfo)
-	
+
 	// On non-macOS ARM64, should return empty
 	// Just verify it doesn't panic
 	assert.NotNil(t, results)
@@ -162,7 +162,7 @@ func TestRosetta_CheckNonDarwinARM(t *testing.T) {
 
 func TestShell_CheckWithShell(t *testing.T) {
 	ctx := context.Background()
-	
+
 	// Save and restore SHELL env var
 	oldShell := os.Getenv("SHELL")
 	defer func() {
@@ -172,14 +172,14 @@ func TestShell_CheckWithShell(t *testing.T) {
 			_ = os.Unsetenv("SHELL")
 		}
 	}()
-	
+
 	_ = os.Setenv("SHELL", "/bin/bash")
-	
+
 	nixInfo := &nix.Info{}
 	check := Shell{}
-	
+
 	results := check.Check(ctx, nixInfo)
-	
+
 	assert.Len(t, results, 1)
 	assert.Equal(t, "shell", results[0].Name)
 	assert.Contains(t, results[0].Check.Info, "/bin/bash")
@@ -187,7 +187,7 @@ func TestShell_CheckWithShell(t *testing.T) {
 
 func TestShell_CheckNoShell(t *testing.T) {
 	ctx := context.Background()
-	
+
 	// Save and restore SHELL env var
 	oldShell := os.Getenv("SHELL")
 	defer func() {
@@ -197,26 +197,26 @@ func TestShell_CheckNoShell(t *testing.T) {
 			_ = os.Unsetenv("SHELL")
 		}
 	}()
-	
+
 	_ = os.Unsetenv("SHELL")
-	
+
 	nixInfo := &nix.Info{}
 	check := Shell{}
-	
+
 	results := check.Check(ctx, nixInfo)
-	
+
 	// Should return empty when no SHELL set
 	assert.Empty(t, results)
 }
 
 func TestMaxJobs_Check(t *testing.T) {
 	ctx := context.Background()
-	
+
 	nixInfo := &nix.Info{}
 	check := MaxJobs{}
-	
+
 	results := check.Check(ctx, nixInfo)
-	
+
 	// Currently returns empty (placeholder implementation)
 	assert.Empty(t, results)
 }

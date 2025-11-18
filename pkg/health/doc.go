@@ -16,10 +16,10 @@
 //
 //	ctx := context.Background()
 //	nixInfo, _ := nix.GetInfo(ctx)
-//	
+//
 //	healthChecks := health.Default()
 //	results := healthChecks.RunAllChecks(ctx, nixInfo)
-//	
+//
 //	exitCode := health.EvaluateResults(results)
 //	fmt.Println(exitCode.SummaryMessage())
 //

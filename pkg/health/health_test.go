@@ -33,10 +33,10 @@ func TestDefault(t *testing.T) {
 
 func TestAllChecksResult_RegisterFailure(t *testing.T) {
 	tests := []struct {
-		name             string
-		initialState     AllChecksResult
-		failureRequired  bool
-		expectedState    AllChecksResult
+		name            string
+		initialState    AllChecksResult
+		failureRequired bool
+		expectedState   AllChecksResult
 	}{
 		{
 			name:            "Pass to Fail on required failure",
@@ -69,7 +69,7 @@ func TestAllChecksResult_RegisterFailure(t *testing.T) {
 			expectedState:   Fail,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.initialState
@@ -89,7 +89,7 @@ func TestAllChecksResult_ExitCode(t *testing.T) {
 		{"PassSomeFail returns 0", PassSomeFail, 0},
 		{"Fail returns 1", Fail, 1},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.expected, tt.result.ExitCode())
@@ -162,7 +162,7 @@ func TestEvaluateResults(t *testing.T) {
 			expected: Fail,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := EvaluateResults(tt.checks)
@@ -175,21 +175,21 @@ func TestRunAllChecks(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	
+
 	ctx := context.Background()
-	
+
 	// Get real nix info
 	nixInfo, err := nix.GetInfo(ctx)
 	if err != nil {
 		t.Skipf("Nix not available: %v", err)
 	}
-	
+
 	health := Default()
 	checkResults := health.RunAllChecks(ctx, nixInfo)
-	
+
 	// Should have at least some checks
 	assert.NotEmpty(t, checkResults)
-	
+
 	// Each check should have a name and check
 	for _, nc := range checkResults {
 		assert.NotEmpty(t, nc.Name)

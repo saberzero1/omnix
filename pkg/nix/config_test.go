@@ -14,21 +14,21 @@ func TestConfigValue_UnmarshalJSON(t *testing.T) {
 		"defaultValue": [],
 		"description": "Experimental features to enable"
 	}`
-	
+
 	var cv ConfigValue[[]string]
 	err := json.Unmarshal([]byte(jsonData), &cv)
 	if err != nil {
 		t.Fatalf("UnmarshalJSON() error = %v", err)
 	}
-	
+
 	if len(cv.Value) != 2 {
 		t.Errorf("ConfigValue.Value length = %d, want 2", len(cv.Value))
 	}
-	
+
 	if cv.Value[0] != "flakes" {
 		t.Errorf("ConfigValue.Value[0] = %s, want flakes", cv.Value[0])
 	}
-	
+
 	if cv.Description == "" {
 		t.Error("ConfigValue.Description is empty")
 	}
@@ -40,17 +40,17 @@ func TestConfigValue_Int(t *testing.T) {
 		"defaultValue": 0,
 		"description": "Number of CPU cores"
 	}`
-	
+
 	var cv ConfigValue[int]
 	err := json.Unmarshal([]byte(jsonData), &cv)
 	if err != nil {
 		t.Fatalf("UnmarshalJSON() error = %v", err)
 	}
-	
+
 	if cv.Value != 4 {
 		t.Errorf("ConfigValue.Value = %d, want 4", cv.Value)
 	}
-	
+
 	if cv.DefaultValue != 0 {
 		t.Errorf("ConfigValue.DefaultValue = %d, want 0", cv.DefaultValue)
 	}
@@ -83,7 +83,7 @@ func TestConfig_IsFlakesEnabled(t *testing.T) {
 			want:     false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &Config{
@@ -91,7 +91,7 @@ func TestConfig_IsFlakesEnabled(t *testing.T) {
 					Value: tt.features,
 				},
 			}
-			
+
 			if got := config.IsFlakesEnabled(); got != tt.want {
 				t.Errorf("Config.IsFlakesEnabled() = %v, want %v", got, tt.want)
 			}
@@ -105,7 +105,7 @@ func TestConfig_HasFeature(t *testing.T) {
 			Value: []string{"flakes", "nix-command", "repl-flake"},
 		},
 	}
-	
+
 	tests := []struct {
 		feature string
 		want    bool
@@ -116,7 +116,7 @@ func TestConfig_HasFeature(t *testing.T) {
 		{"non-existent", false},
 		{"", false},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.feature, func(t *testing.T) {
 			if got := config.HasFeature(tt.feature); got != tt.want {
@@ -131,10 +131,10 @@ func TestGetConfig(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	config, err := GetConfig(ctx)
 	if err != nil {
 		// If nix is not installed, skip
@@ -143,17 +143,17 @@ func TestGetConfig(t *testing.T) {
 		}
 		t.Fatalf("GetConfig() error = %v", err)
 	}
-	
+
 	// Verify config is populated
 	if config == nil {
 		t.Fatal("GetConfig() returned nil")
 	}
-	
+
 	// System should be set
 	if config.System.Value == "" {
 		t.Error("GetConfig() System.Value is empty")
 	}
-	
+
 	t.Logf("System: %s", config.System.Value)
 	t.Logf("Experimental features: %v", config.ExperimentalFeatures.Value)
 	t.Logf("Flakes enabled: %v", config.IsFlakesEnabled())
@@ -187,26 +187,26 @@ func TestConfig_UnmarshalJSON(t *testing.T) {
 			"description": "CPU cores per job"
 		}
 	}`
-	
+
 	var config Config
 	err := json.Unmarshal([]byte(jsonData), &config)
 	if err != nil {
 		t.Fatalf("UnmarshalJSON() error = %v", err)
 	}
-	
+
 	// Verify parsed values
 	if config.System.Value != "x86_64-linux" {
 		t.Errorf("Config.System.Value = %s, want x86_64-linux", config.System.Value)
 	}
-	
+
 	if len(config.ExperimentalFeatures.Value) != 1 || config.ExperimentalFeatures.Value[0] != "flakes" {
 		t.Errorf("Config.ExperimentalFeatures.Value = %v, want [flakes]", config.ExperimentalFeatures.Value)
 	}
-	
+
 	if config.MaxJobs.Value != 4 {
 		t.Errorf("Config.MaxJobs.Value = %d, want 4", config.MaxJobs.Value)
 	}
-	
+
 	if len(config.Substituters.Value) != 1 {
 		t.Errorf("Config.Substituters.Value length = %d, want 1", len(config.Substituters.Value))
 	}

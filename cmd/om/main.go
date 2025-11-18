@@ -19,7 +19,7 @@ var (
 func main() {
 	// Setup version information
 	cli.SetVersion(Version, Commit)
-	
+
 	// Execute the CLI
 	if err := cli.Execute(); err != nil {
 		// Error is already printed by cobra, just exit
@@ -27,7 +27,7 @@ func main() {
 		_ = common.Sync()
 		os.Exit(1)
 	}
-	
+
 	// Flush logs on clean exit
 	_ = common.Sync()
 }

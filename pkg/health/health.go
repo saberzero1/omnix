@@ -10,15 +10,15 @@ import (
 
 // NixHealth contains all health checks for a Nix installation
 type NixHealth struct {
-	FlakeEnabled  checks.FlakeEnabled  `yaml:"flake-enabled" json:"flake-enabled"`
-	NixVersion    checks.NixVersion    `yaml:"nix-version" json:"nix-version"`
-	TrustedUsers  checks.TrustedUsers  `yaml:"trusted-users" json:"trusted-users"`
-	Caches        checks.Caches        `yaml:"caches" json:"caches"`
-	MaxJobs       checks.MaxJobs       `yaml:"max-jobs" json:"max-jobs"`
-	Rosetta       checks.Rosetta       `yaml:"rosetta" json:"rosetta"`
-	Direnv        checks.Direnv        `yaml:"direnv" json:"direnv"`
-	Homebrew      checks.Homebrew      `yaml:"homebrew" json:"homebrew"`
-	Shell         checks.Shell         `yaml:"shell" json:"shell"`
+	FlakeEnabled checks.FlakeEnabled `yaml:"flake-enabled" json:"flake-enabled"`
+	NixVersion   checks.NixVersion   `yaml:"nix-version" json:"nix-version"`
+	TrustedUsers checks.TrustedUsers `yaml:"trusted-users" json:"trusted-users"`
+	Caches       checks.Caches       `yaml:"caches" json:"caches"`
+	MaxJobs      checks.MaxJobs      `yaml:"max-jobs" json:"max-jobs"`
+	Rosetta      checks.Rosetta      `yaml:"rosetta" json:"rosetta"`
+	Direnv       checks.Direnv       `yaml:"direnv" json:"direnv"`
+	Homebrew     checks.Homebrew     `yaml:"homebrew" json:"homebrew"`
+	Shell        checks.Shell        `yaml:"shell" json:"shell"`
 }
 
 // Default returns a NixHealth with default check configurations
@@ -39,7 +39,7 @@ func Default() *NixHealth {
 // RunAllChecks executes all health checks and returns the results
 func (h *NixHealth) RunAllChecks(ctx context.Context, nixInfo *nix.Info) []checks.NamedCheck {
 	var results []checks.NamedCheck
-	
+
 	// Collect all checks in order
 	checkables := []checks.Checkable{
 		&h.FlakeEnabled,
@@ -52,13 +52,13 @@ func (h *NixHealth) RunAllChecks(ctx context.Context, nixInfo *nix.Info) []check
 		&h.Homebrew,
 		&h.Shell,
 	}
-	
+
 	// Run each check and collect results
 	for _, checkable := range checkables {
 		checkResults := checkable.Check(ctx, nixInfo)
 		results = append(results, checkResults...)
 	}
-	
+
 	return results
 }
 
@@ -66,9 +66,9 @@ func (h *NixHealth) RunAllChecks(ctx context.Context, nixInfo *nix.Info) []check
 type AllChecksResult int
 
 const (
-	Pass           AllChecksResult = iota // All checks passed
-	PassSomeFail                          // Required checks passed, some non-required failed
-	Fail                                  // Some required checks failed
+	Pass         AllChecksResult = iota // All checks passed
+	PassSomeFail                        // Required checks passed, some non-required failed
+	Fail                                // Some required checks failed
 )
 
 // RegisterFailure updates the result based on a failed check

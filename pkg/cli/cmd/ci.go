@@ -26,11 +26,11 @@ The ci command provides comprehensive CI/CD automation including:
 - Running flake checks
 - Generating GitHub Actions matrices`,
 	}
-	
+
 	// Add subcommands
 	ciCmd.AddCommand(newCIRunCmd())
 	ciCmd.AddCommand(newCIGHMatrixCmd())
-	
+
 	return ciCmd
 }
 
@@ -47,7 +47,7 @@ func newCIRunCmd() *cobra.Command {
 		ciParallel       bool
 		ciMaxConcurrency int
 	)
-	
+
 	cmd := &cobra.Command{
 		Use:   "run [flake-url]",
 		Short: "Run CI steps for a flake",
@@ -67,25 +67,25 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 			logger := common.Logger()
-			
+
 			// Get flake URL (default to current directory)
 			flakeURL := "."
 			if len(args) > 0 {
 				flakeURL = args[0]
 			}
-			
+
 			// Parse flake URL
 			flake, err := nix.ParseFlakeURL(flakeURL)
 			if err != nil {
 				return fmt.Errorf("failed to parse flake URL: %w", err)
 			}
-			
+
 			// Load configuration
 			config, err := ci.LoadConfig(ciConfigPath)
 			if err != nil {
 				return fmt.Errorf("failed to load config: %w", err)
 			}
-			
+
 			// Determine systems to build for
 			systems := ciSystems
 			if len(systems) == 0 {
@@ -96,43 +96,43 @@ Example:
 				}
 				systems = []string{info.Config.System.Value}
 			}
-			
+
 			logger.Info("Running CI", zap.String("flake", flake.String()), zap.Strings("systems", systems))
-			
+
 			// Run CI
 			opts := ci.RunOptions{
 				Systems:                systems,
-				GitHubOutput:          ciGitHubOutput,
+				GitHubOutput:           ciGitHubOutput,
 				IncludeAllDependencies: ciIncludeAllDeps,
-				RemoteHost:            ciRemoteHost,
-				Parallel:              ciParallel,
-				MaxConcurrency:        ciMaxConcurrency,
+				RemoteHost:             ciRemoteHost,
+				Parallel:               ciParallel,
+				MaxConcurrency:         ciMaxConcurrency,
 			}
-			
+
 			results, err := ci.Run(ctx, flake, config, opts)
 			if err != nil {
 				return fmt.Errorf("CI run failed: %w", err)
 			}
-			
+
 			// Log results
 			for _, result := range results {
 				ci.LogResult(result, logger)
 			}
-			
+
 			// Write results to file if requested
 			if !ciNoLink && ciOutputPath != "" {
 				data, err := json.MarshalIndent(results, "", "  ")
 				if err != nil {
 					return fmt.Errorf("failed to marshal results: %w", err)
 				}
-				
+
 				if err := os.WriteFile(ciOutputPath, data, 0644); err != nil {
 					return fmt.Errorf("failed to write results: %w", err)
 				}
-				
+
 				logger.Info("Results written", zap.String("path", ciOutputPath))
 			}
-			
+
 			// Check if any results failed
 			hasFailures := false
 			for _, result := range results {
@@ -141,16 +141,16 @@ Example:
 					break
 				}
 			}
-			
+
 			if hasFailures {
 				return fmt.Errorf("some CI steps failed")
 			}
-			
+
 			logger.Info("✅ All CI steps passed")
 			return nil
 		},
 	}
-	
+
 	cmd.Flags().StringSliceVar(&ciSystems, "systems", nil, "Systems to build for (e.g., x86_64-linux,aarch64-darwin)")
 	cmd.Flags().BoolVar(&ciGitHubOutput, "github-output", false, "Print GitHub Actions log groups")
 	cmd.Flags().BoolVar(&ciIncludeAllDeps, "include-all-dependencies", false, "Include all dependencies in results")
@@ -160,7 +160,7 @@ Example:
 	cmd.Flags().StringVar(&ciRemoteHost, "remote", "", "Remote host for SSH-based builds (e.g., user@host)")
 	cmd.Flags().BoolVar(&ciParallel, "parallel", false, "Run subflakes in parallel")
 	cmd.Flags().IntVar(&ciMaxConcurrency, "max-concurrency", 0, "Maximum number of parallel builds (0 = unlimited)")
-	
+
 	return cmd
 }
 
@@ -170,7 +170,7 @@ func newCIGHMatrixCmd() *cobra.Command {
 		ciSystems    []string
 		ciConfigPath string
 	)
-	
+
 	cmd := &cobra.Command{
 		Use:   "gh-matrix",
 		Short: "Generate GitHub Actions matrix",
@@ -188,31 +188,31 @@ Example:
 			if err != nil {
 				return fmt.Errorf("failed to load config: %w", err)
 			}
-			
+
 			// Generate matrix
 			matrix := ci.GenerateMatrix(ciSystems, config)
-			
+
 			// Convert to JSON
 			jsonOutput, err := matrix.ToJSON()
 			if err != nil {
 				return fmt.Errorf("failed to generate JSON: %w", err)
 			}
-			
+
 			// Print to stdout
 			fmt.Println(jsonOutput)
-			
+
 			// Log summary
 			logger := common.Logger()
 			logger.Info("Generated matrix",
 				zap.Int("rows", matrix.Count()),
 				zap.Strings("systems", ciSystems))
-			
+
 			return nil
 		},
 	}
-	
+
 	cmd.Flags().StringSliceVar(&ciSystems, "systems", []string{"x86_64-linux"}, "Systems to include in matrix")
 	cmd.Flags().StringVarP(&ciConfigPath, "config", "c", "om.yaml", "Path to om.yaml configuration file")
-	
+
 	return cmd
 }

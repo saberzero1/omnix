@@ -27,15 +27,15 @@ func (f FlakeURL) String() string {
 // Returns empty string if not a local path.
 func (f FlakeURL) AsLocalPath() string {
 	s := f.url
-	
+
 	// Strip "path:" prefix if present
 	s = strings.TrimPrefix(s, "path:")
-	
+
 	// Check if it's a local path (starts with . or /)
 	if !strings.HasPrefix(s, ".") && !strings.HasPrefix(s, "/") {
 		return ""
 	}
-	
+
 	// Strip query parameters (?...) and attributes (#...)
 	if idx := strings.IndexByte(s, '?'); idx != -1 {
 		s = s[:idx]
@@ -43,7 +43,7 @@ func (f FlakeURL) AsLocalPath() string {
 	if idx := strings.IndexByte(s, '#'); idx != -1 {
 		s = s[:idx]
 	}
-	
+
 	return s
 }
 
@@ -60,12 +60,12 @@ func (f FlakeURL) WithAttr(attr string) FlakeURL {
 	if idx := strings.IndexByte(url, '#'); idx != -1 {
 		url = url[:idx]
 	}
-	
+
 	// Append new attribute
 	if attr != "" {
 		url = url + "#" + attr
 	}
-	
+
 	return FlakeURL{url: url}
 }
 
@@ -84,13 +84,13 @@ func (f FlakeURL) Clean() FlakeURL {
 	if localPath := f.AsLocalPath(); localPath != "" {
 		// Clean the local path
 		cleaned := filepath.Clean(localPath)
-		
+
 		// Preserve the attribute if it exists
 		_, attr := f.SplitAttr()
 		if attr != "" {
 			cleaned = cleaned + "#" + attr
 		}
-		
+
 		return FlakeURL{url: cleaned}
 	}
 	return f

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-	
+
 	"github.com/juspay/omnix/pkg/common"
 	"go.uber.org/zap"
 )
@@ -49,7 +49,7 @@ func (c *Cmd) RunVersion(ctx context.Context) (Version, error) {
 	if err != nil {
 		return Version{}, err
 	}
-	
+
 	return ParseVersion(strings.TrimSpace(string(output)))
 }
 
@@ -59,11 +59,11 @@ func (c *Cmd) RunJSON(ctx context.Context, result interface{}, args ...string) e
 	if err != nil {
 		return err
 	}
-	
+
 	if err := json.Unmarshal(output, result); err != nil {
 		return fmt.Errorf("failed to parse nix command JSON output: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -73,7 +73,7 @@ func (c *Cmd) Run(ctx context.Context, args ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	return strings.TrimSpace(string(output)), nil
 }
 
@@ -81,21 +81,21 @@ func (c *Cmd) Run(ctx context.Context, args ...string) (string, error) {
 func (c *Cmd) runReturningStdout(ctx context.Context, args []string) ([]byte, error) {
 	// Combine extra args with command args
 	allArgs := append(c.ExtraArgs, args...)
-	
+
 	// Log the command
 	logger := common.Logger()
 	logger.Debug("executing nix command",
 		zap.String("command", "nix"),
 		zap.Strings("args", allArgs))
-	
+
 	// Create the command
 	cmd := exec.CommandContext(ctx, "nix", allArgs...)
-	
+
 	// Capture stdout and stderr
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	
+
 	// Run the command
 	err := cmd.Run()
 	if err != nil {
@@ -103,7 +103,7 @@ func (c *Cmd) runReturningStdout(ctx context.Context, args []string) ([]byte, er
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			exitCode = exitErr.ExitCode()
 		}
-		
+
 		return nil, &CommandError{
 			Command:  "nix",
 			Args:     allArgs,
@@ -112,6 +112,6 @@ func (c *Cmd) runReturningStdout(ctx context.Context, args []string) ([]byte, er
 			Err:      err,
 		}
 	}
-	
+
 	return stdout.Bytes(), nil
 }

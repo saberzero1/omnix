@@ -6,6 +6,53 @@ order: 100
 
 ## Unreleased
 
+### Phase 5 Migration: CLI Integration (2025-11-18)
+
+Completed CLI integration with all remaining commands and features:
+
+- **om show**: Flake output inspection
+  - Display packages, devShells, apps, checks, and configurations
+  - Colorful table output with usage hints
+  - System-specific output filtering
+  - Support for templates, schemas, overlays, and NixOS/Darwin configurations
+  
+- **om completion**: Shell completion generation
+  - Support for bash, zsh, fish, and PowerShell
+  - Detailed installation instructions per shell
+  - Native Cobra completion integration
+
+- **Enhanced CLI features**:
+  - Version information with git commit display
+  - Logging verbosity control (`--verbose` / `-v` flag with 5 levels)
+  - Proper error handling and log flushing
+  - Global logging setup via PersistentPreRunE hook
+
+- **pkg/nix enhancements**:
+  - FlakeOutputs type for representing flake outputs
+  - FlakeMetadata type for flake information
+  - FlakeShow method for retrieving flake data
+  - Custom JSON unmarshaling for flake structures
+  - Path-based output lookup (GetByPath)
+  - Terminal value extraction (GetAttrsetOfVal)
+
+**Code Metrics:**
+- New implementation: ~300 LOC (show + completion commands)
+- Nix package additions: ~160 LOC (FlakeOutputs support)
+- Tests: ~170 LOC
+- All tests passing ✅
+- Zero regressions from previous phases
+
+**Migration Status:**
+- Phase 1 (Foundation): ✅ Complete
+- Phase 2 (Nix Integration): ✅ Complete  
+- Phase 3 (Health & Init): ✅ Complete
+- Phase 4 (CI & Develop): ✅ Complete
+- Phase 5 (CLI Integration): ✅ Complete
+- Phase 6 (GUI & Testing): 🔄 Next
+- Phase 7 (Release): Planned
+
+See [PHASE5_SUMMARY.md](../PHASE5_SUMMARY.md) for detailed implementation notes.
+
 ### Phase 3 Migration: Health & Init Packages (2025-11-18)
 
 Added Go implementations of health checks, project initialization, and CLI framework:

@@ -33,13 +33,13 @@ type ConfigValue[T any] struct {
 // GetConfig retrieves Nix configuration using `nix show-config --json`.
 func GetConfig(ctx context.Context) (*Config, error) {
 	cmd := NewCmd()
-	
+
 	var config Config
 	err := cmd.RunJSON(ctx, &config, "show-config", "--json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get nix config: %w", err)
 	}
-	
+
 	return &config, nil
 }
 
@@ -69,10 +69,10 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 	// Define a type alias to avoid infinite recursion
 	type Alias Config
 	aux := (*Alias)(c)
-	
+
 	if err := json.Unmarshal(data, aux); err != nil {
 		return err
 	}
-	
+
 	return nil
 }

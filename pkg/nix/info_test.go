@@ -12,10 +12,10 @@ func TestGetInfo(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	info, err := GetInfo(ctx)
 	if err != nil {
 		// If nix is not installed, skip
@@ -24,26 +24,26 @@ func TestGetInfo(t *testing.T) {
 		}
 		t.Fatalf("GetInfo() error = %v", err)
 	}
-	
+
 	// Verify info is populated
 	if info == nil {
 		t.Fatal("GetInfo() returned nil")
 	}
-	
+
 	// Check version
 	if info.Version.Major == 0 && info.Version.Minor == 0 && info.Version.Patch == 0 {
 		t.Error("GetInfo() returned zero version")
 	}
-	
+
 	// Check env
 	if info.Env == nil {
 		t.Fatal("GetInfo() Env is nil")
 	}
-	
+
 	if info.Env.OS.Type == "" {
 		t.Error("GetInfo() Env.OS.Type is empty")
 	}
-	
+
 	t.Logf("Nix Info: %s", info.String())
 	t.Logf("Version: %s", info.Version)
 	t.Logf("OS: %s", info.Env.OS)
@@ -99,7 +99,7 @@ func TestInfoString(t *testing.T) {
 			wantOS:  "macOS",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.info.String()
@@ -117,14 +117,14 @@ func TestGetInfoWithCanceledContext(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
-	
+
 	_, err := GetInfo(ctx)
 	if err == nil {
 		t.Error("GetInfo() with canceled context should return error")
 	}
-	
+
 	t.Logf("GetInfo() with canceled context error = %v (expected)", err)
 }

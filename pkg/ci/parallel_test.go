@@ -175,11 +175,11 @@ func TestRunParallelWithFailure(t *testing.T) {
 	}
 
 	results, err := Run(ctx, flake, config, opts)
-	
+
 	// No error returned - errors are in the result
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
-	
+
 	// One should have failed
 	successCount := 0
 	for _, result := range results {

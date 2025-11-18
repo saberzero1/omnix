@@ -16,7 +16,7 @@ func TestRootCommand(t *testing.T) {
 func TestCommandsRegistered(t *testing.T) {
 	// Test that health and init commands are registered
 	commands := rootCmd.Commands()
-	
+
 	var healthFound, initFound bool
 	for _, cmd := range commands {
 		if cmd.Name() == "health" {
@@ -26,7 +26,7 @@ func TestCommandsRegistered(t *testing.T) {
 			initFound = true
 		}
 	}
-	
+
 	assert.True(t, healthFound, "health command should be registered")
 	assert.True(t, initFound, "init command should be registered")
 }

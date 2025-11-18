@@ -23,7 +23,7 @@ func DefaultNixVersion() NixVersion {
 // Check verifies that the installed Nix version is supported
 func (nv *NixVersion) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
 	currentVersion := nixInfo.Version
-	
+
 	var result CheckResult
 	if currentVersion.GreaterThan(nv.MinVersion) || currentVersion.Equal(nv.MinVersion) {
 		result = GreenResult{}
@@ -37,14 +37,14 @@ func (nv *NixVersion) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck
 			Suggestion: "To use a specific version of Nix, see <https://nixos.asia/en/howto/nix-package>",
 		}
 	}
-	
+
 	check := Check{
 		Title:    "Nix Version is supported",
 		Info:     fmt.Sprintf("nix version = %s", currentVersion.String()),
 		Result:   result,
 		Required: true,
 	}
-	
+
 	return []NamedCheck{
 		{Name: "supported-nix-versions", Check: check},
 	}

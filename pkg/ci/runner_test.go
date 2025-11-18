@@ -73,11 +73,11 @@ func TestRunCustomStep(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name           string
-		step           CustomStep
-		expectedName   string
-		expectedError  bool
-		errorContains  string
+		name          string
+		step          CustomStep
+		expectedName  string
+		expectedError bool
+		errorContains string
 	}{
 		{
 			name: "empty command",
@@ -86,9 +86,9 @@ func TestRunCustomStep(t *testing.T) {
 				Command: []string{},
 				Enable:  true,
 			},
-			expectedName:   "custom:test",
-			expectedError:  true,
-			errorContains:  "no command",
+			expectedName:  "custom:test",
+			expectedError: true,
+			errorContains: "no command",
 		},
 		{
 			name: "echo command",

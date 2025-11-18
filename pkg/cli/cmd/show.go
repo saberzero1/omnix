@@ -95,7 +95,7 @@ func printFlakeOutputTable(w io.Writer, title string, outputs *nix.FlakeOutputs,
 	// Print title
 	blue := color.New(color.FgBlue, color.Bold)
 	green := color.New(color.FgGreen, color.Bold)
-	
+
 	blue.Fprint(w, title)
 	if command != "" {
 		fmt.Fprint(w, " (")

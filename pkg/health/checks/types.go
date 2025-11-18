@@ -19,7 +19,7 @@ type CheckResult interface {
 // GreenResult indicates a passed check
 type GreenResult struct{}
 
-func (g GreenResult) IsGreen() bool { return true }
+func (g GreenResult) IsGreen() bool  { return true }
 func (g GreenResult) String() string { return "✅ Passed" }
 
 // RedResult indicates a failed check
@@ -37,13 +37,13 @@ func (r RedResult) String() string {
 type Check struct {
 	// Title is a user-facing title of this check
 	Title string `json:"title"`
-	
+
 	// Info contains user-facing information used to conduct this check
 	Info string `json:"info"`
-	
+
 	// Result is the result of running this check
 	Result CheckResult `json:"result"`
-	
+
 	// Required indicates whether this check is mandatory
 	// Failures are considered non-critical if this is false
 	Required bool `json:"required"`

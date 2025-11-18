@@ -26,9 +26,9 @@ func DefaultCaches() Caches {
 func (c *Caches) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
 	// Get configured substituters from nix config
 	configuredCaches := nixInfo.Config.Substituters.Value
-	
+
 	missingCaches := c.getMissingCaches(configuredCaches)
-	
+
 	var result CheckResult
 	if len(missingCaches) == 0 {
 		result = GreenResult{}
@@ -45,14 +45,14 @@ func (c *Caches) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
 			),
 		}
 	}
-	
+
 	check := Check{
 		Title:    "Nix Caches in use",
 		Info:     fmt.Sprintf("substituters = %s", strings.Join(configuredCaches, " ")),
 		Result:   result,
 		Required: true,
 	}
-	
+
 	return []NamedCheck{
 		{Name: "caches", Check: check},
 	}
@@ -61,14 +61,14 @@ func (c *Caches) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
 // getMissingCaches returns the subset of required caches not in the configured list
 func (c *Caches) getMissingCaches(configured []string) []string {
 	var missing []string
-	
+
 	// Normalize configured caches
 	configuredSet := make(map[string]bool)
 	for _, cache := range configured {
 		normalized := normalizeURL(cache)
 		configuredSet[normalized] = true
 	}
-	
+
 	// Check which required caches are missing
 	for _, required := range c.Required {
 		normalized := normalizeURL(required)
@@ -76,7 +76,7 @@ func (c *Caches) getMissingCaches(configured []string) []string {
 			missing = append(missing, required)
 		}
 	}
-	
+
 	return missing
 }
 
@@ -102,17 +102,17 @@ func ParseCachixURL(urlStr string) *CachixCache {
 	if err != nil {
 		return nil
 	}
-	
+
 	host := parsed.Hostname()
 	if !strings.HasSuffix(host, ".cachix.org") {
 		return nil
 	}
-	
+
 	// Extract cache name (e.g., "foo" from "foo.cachix.org")
 	parts := strings.Split(host, ".")
 	if len(parts) < 3 {
 		return nil
 	}
-	
+
 	return &CachixCache{Name: parts[0]}
 }

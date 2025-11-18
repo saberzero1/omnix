@@ -29,7 +29,7 @@ func TestAllChecksResult_SummaryMessage(t *testing.T) {
 			expected: "❌ Some required checks failed",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			msg := tt.result.SummaryMessage()
@@ -49,7 +49,7 @@ func TestAllChecksResult_ExitCode_AllCases(t *testing.T) {
 		{"Fail", Fail, 1},
 		{"Invalid", AllChecksResult(999), 1}, // Unknown state defaults to 1
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.expected, tt.result.ExitCode())
@@ -90,7 +90,7 @@ func TestPrintCheckResult(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Just verify it doesn't panic

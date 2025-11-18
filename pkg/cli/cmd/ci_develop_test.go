@@ -13,7 +13,7 @@ func TestCIRunCommand(t *testing.T) {
 	// Create a temporary config file
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "om.yaml")
-	
+
 	configContent := `
 ci:
   default:
@@ -29,7 +29,7 @@ ci:
 `
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
 	require.NoError(t, err)
-	
+
 	// Test the command can be created
 	cmd := newCIRunCmd()
 	assert.NotNil(t, cmd)
@@ -40,7 +40,7 @@ func TestCIGHMatrixCommand(t *testing.T) {
 	// Create a temporary config file
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "om.yaml")
-	
+
 	configContent := `
 ci:
   default:
@@ -50,7 +50,7 @@ ci:
 `
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
 	require.NoError(t, err)
-	
+
 	// Test the command can be created
 	cmd := newCIGHMatrixCmd()
 	assert.NotNil(t, cmd)
@@ -69,10 +69,10 @@ func TestCICommandStructure(t *testing.T) {
 	cmd := NewCICmd()
 	assert.NotNil(t, cmd)
 	assert.Equal(t, "ci", cmd.Use)
-	
+
 	// Test it has subcommands
 	assert.Greater(t, len(cmd.Commands()), 0)
-	
+
 	// Test subcommands are registered
 	var hasRun, hasMatrix bool
 	for _, subcmd := range cmd.Commands() {
@@ -83,7 +83,7 @@ func TestCICommandStructure(t *testing.T) {
 			hasMatrix = true
 		}
 	}
-	
+
 	assert.True(t, hasRun, "ci run command should be registered")
 	assert.True(t, hasMatrix, "ci gh-matrix command should be registered")
 }
@@ -91,26 +91,26 @@ func TestCICommandStructure(t *testing.T) {
 func TestCIFlags(t *testing.T) {
 	// Test ci run flags
 	runCmd := newCIRunCmd()
-	
+
 	systemsFlag := runCmd.Flags().Lookup("systems")
 	assert.NotNil(t, systemsFlag)
-	
+
 	githubFlag := runCmd.Flags().Lookup("github-output")
 	assert.NotNil(t, githubFlag)
-	
+
 	configFlag := runCmd.Flags().Lookup("config")
 	assert.NotNil(t, configFlag)
-	
+
 	// Test ci gh-matrix flags
 	matrixCmd := newCIGHMatrixCmd()
-	
+
 	systemsFlag = matrixCmd.Flags().Lookup("systems")
 	assert.NotNil(t, systemsFlag)
 }
 
 func TestDevelopFlags(t *testing.T) {
 	cmd := NewDevelopCmd()
-	
+
 	configFlag := cmd.Flags().Lookup("config")
 	assert.NotNil(t, configFlag)
 }

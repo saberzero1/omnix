@@ -3,9 +3,9 @@ package cli
 
 import (
 	"fmt"
-	
+
 	"github.com/spf13/cobra"
-	
+
 	"github.com/juspay/omnix/pkg/cli/cmd"
 	"github.com/juspay/omnix/pkg/common"
 )
@@ -61,7 +61,7 @@ It provides various commands to make working with Nix easier:
 		default:
 			level = common.TraceLevel
 		}
-		
+
 		return common.SetupLogging(level, false)
 	},
 }
@@ -69,7 +69,7 @@ It provides various commands to make working with Nix easier:
 func init() {
 	// Add global flags
 	rootCmd.PersistentFlags().IntVarP(&verbose, "verbose", "v", 2, "verbosity level (0=error, 1=warn, 2=info, 3=debug, 4=trace)")
-	
+
 	// Register subcommands
 	rootCmd.AddCommand(cmd.NewHealthCmd())
 	rootCmd.AddCommand(cmd.NewInitCmd())

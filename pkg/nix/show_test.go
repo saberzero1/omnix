@@ -32,7 +32,7 @@ func TestFlakeOutputs_UnmarshalJSON(t *testing.T) {
 			wantSet: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var outputs FlakeOutputs
@@ -40,7 +40,7 @@ func TestFlakeOutputs_UnmarshalJSON(t *testing.T) {
 			if err != nil {
 				t.Fatalf("UnmarshalJSON() error = %v", err)
 			}
-			
+
 			if tt.wantVal && outputs.Val == nil {
 				t.Error("expected Val to be non-nil")
 			}
@@ -77,7 +77,7 @@ func TestFlakeOutputs_GetByPath(t *testing.T) {
 			},
 		},
 	}
-	
+
 	tests := []struct {
 		name    string
 		path    []string
@@ -109,7 +109,7 @@ func TestFlakeOutputs_GetByPath(t *testing.T) {
 			wantNil: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := outputs.GetByPath(tt.path...)
@@ -176,7 +176,7 @@ func TestFlakeOutputs_GetAttrsetOfVal(t *testing.T) {
 			wantCount: 0,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.outputs.GetAttrsetOfVal()
@@ -191,22 +191,22 @@ func TestFlakeShow_Integration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	
+
 	ctx := context.Background()
 	cmd := NewCmd()
-	
+
 	// Test with a known flake
 	flakeURL := NewFlakeURL("github:juspay/omnix")
-	
+
 	metadata, err := cmd.FlakeShow(ctx, flakeURL)
 	if err != nil {
 		t.Skipf("Failed to show flake (might not have network access): %v", err)
 	}
-	
+
 	if metadata == nil {
 		t.Fatal("expected non-nil metadata")
 	}
-	
+
 	// Check if we got outputs
 	if metadata.Outputs == nil {
 		t.Error("expected outputs to be non-nil")
@@ -217,23 +217,23 @@ func TestFlakeShow_Local(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	
+
 	ctx := context.Background()
 	cmd := NewCmd()
-	
+
 	// Test with current directory if it's a flake
 	flakeURL := NewFlakeURL(".")
-	
+
 	metadata, err := cmd.FlakeShow(ctx, flakeURL)
 	if err != nil {
 		// It's okay if the current directory is not a flake
 		t.Skipf("Current directory is not a flake: %v", err)
 	}
-	
+
 	if metadata == nil {
 		t.Fatal("expected non-nil metadata")
 	}
-	
+
 	// Just verify we can access outputs without error
 	if metadata.Outputs != nil {
 		_ = metadata.Outputs.GetByPath("packages")

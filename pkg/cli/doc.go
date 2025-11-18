@@ -16,14 +16,14 @@
 // The CLI is invoked through the Execute function:
 //
 //	package main
-//	
+//
 //	import (
 //	    "fmt"
 //	    "os"
-//	    
+//
 //	    "github.com/juspay/omnix/pkg/cli"
 //	)
-//	
+//
 //	func main() {
 //	    if err := cli.Execute(); err != nil {
 //	        fmt.Fprintf(os.Stderr, "Error: %v\n", err)

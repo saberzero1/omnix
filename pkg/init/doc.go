@@ -28,7 +28,7 @@
 //	        },
 //	    },
 //	}
-//	
+//
 //	outPath, err := template.ScaffoldAt(ctx, "/path/to/output")
 //	if err != nil {
 //	    log.Fatal(err)
@@ -69,7 +69,7 @@
 //	        },
 //	    },
 //	}
-//	
+//
 //	outPath, _ := template.ScaffoldAt(context.Background(), "./my-project")
 //	fmt.Println("Project created at:", outPath)
 //

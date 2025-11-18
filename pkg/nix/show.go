@@ -42,7 +42,7 @@ func (f *FlakeOutputs) UnmarshalJSON(data []byte) error {
 		f.Attrset = attrset
 		return nil
 	}
-	
+
 	// Try to unmarshal as a terminal value
 	var val FlakeVal
 	if err := json.Unmarshal(data, &val); err != nil {
@@ -77,12 +77,12 @@ func (f *FlakeOutputs) GetAttrsetOfVal() []struct {
 	if f.Attrset == nil {
 		return nil
 	}
-	
+
 	var result []struct {
 		Name string
 		Val  FlakeVal
 	}
-	
+
 	for name, output := range f.Attrset {
 		if output.Val != nil {
 			result = append(result, struct {
@@ -94,7 +94,7 @@ func (f *FlakeOutputs) GetAttrsetOfVal() []struct {
 			})
 		}
 	}
-	
+
 	return result
 }
 
@@ -117,11 +117,11 @@ func (f *FlakeMetadata) UnmarshalJSON(data []byte) error {
 	}{
 		Alias: (*Alias)(f),
 	}
-	
+
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
-	
+
 	if aux.Outputs != nil {
 		var outputs FlakeOutputs
 		if err := json.Unmarshal(aux.Outputs, &outputs); err != nil {
@@ -129,7 +129,7 @@ func (f *FlakeMetadata) UnmarshalJSON(data []byte) error {
 		}
 		f.Outputs = &outputs
 	}
-	
+
 	return nil
 }
 
