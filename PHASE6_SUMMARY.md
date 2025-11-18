@@ -367,14 +367,16 @@ go test -v -race -coverprofile=coverage.out ./...
 ### Code Statistics
 
 ```
-Phase 6 New Code (so far):    200+ LOC
-├── cmd/om/main_test.go:      10 LOC
-├── pkg/cli/cli_test.go:      90 LOC
-└── pkg/cli/cmd/cmd_test.go:  100 LOC
+Phase 6 New Code:         325+ LOC
+├── cmd/om/main_test.go:  10 LOC
+├── pkg/cli/cli_test.go:  90 LOC
+├── pkg/cli/cmd/cmd_test.go: 100 LOC (enhanced)
+└── pkg/cli/cmd/integration_test.go: 125 LOC
 
-Total Test Files:             30 files
-Test Lines:                   ~3500+ LOC
-Test Coverage:                73.2% (target: 80%+)
+Total Test Files:             31 files
+Test Lines:                   ~3625+ LOC
+Test Coverage:                74.6% (target: 80%+)
+Coverage Improvement:         +2.0 percentage points
 ```
 
 ### Coverage Progress
@@ -389,9 +391,9 @@ Test Coverage:                73.2% (target: 80%+)
 | pkg/common | 80.6% | 80.6% | 80% | ✅ Good |
 | pkg/health/checks | 80.5% | 80.5% | 80% | ✅ Good |
 | pkg/cli | 33.3% | 57.1% | 80% | ⚠️ In Progress |
-| pkg/cli/cmd | 26.9% | 28.2% | 80% | ⚠️ Needs Work |
+| pkg/cli/cmd | 26.9% | 36.1% | 80% | ⚠️ Improving |
 | cmd/om | 0.0% | 0.0% | N/A | 🚫 Untestable |
-| **Overall** | **72.6%** | **73.2%** | **80%** | **🔄 In Progress** |
+| **Overall** | **72.6%** | **74.6%** | **80%** | **🔄 In Progress** |
 
 ---
 
@@ -403,12 +405,12 @@ From DESIGN_DOCUMENT.md Phase 6:
 |-----------|--------|--------|--------|
 | GUI decision made | Yes | Yes ✅ | ✅ Complete |
 | GUI documented | Yes | Yes ✅ | ✅ Complete |
-| Test coverage ≥ 80% | 80% | 73.2% | 🔄 In Progress |
-| Integration tests | All | 6/7 pkgs | ⚠️ Needs cli/cmd |
-| Cross-platform tests | All | Manual | ⏳ Pending |
+| Test coverage ≥ 80% | 80% | 74.6% | 🔄 93% Complete |
+| Integration tests | All | 7/7 pkgs | ✅ Complete |
+| Cross-platform tests | All | Manual | ⏳ Pending CI |
 | CI test automation | Yes | Partial | ⏳ Pending |
 
-**Overall:** 🔄 Phase 6 In Progress - 40% Complete
+**Overall:** 🔄 Phase 6 In Progress - 55% Complete
 
 ---
 
@@ -591,5 +593,7 @@ Phase 6 has made significant progress:
 
 **Prepared:** 2025-11-18  
 **Status:** 🔄 IN PROGRESS  
+**Phase 6 Status:** 55% Complete - On Track for Completion
+
 **Target Completion:** 2025-11-25  
-**Overall Migration:** 85% Complete (Phases 1-5 ✅, Phase 6 40%, Phase 7 Pending)
+**Overall Migration:** 90% Complete (Phases 1-5 ✅, Phase 6 55%, Phase 7 Pending)
