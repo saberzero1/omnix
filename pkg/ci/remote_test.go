@@ -147,7 +147,7 @@ func TestRunCustomStepRemote(t *testing.T) {
 
 	result := runCustomStepRemote(ctx, "user@host", flake, step)
 
-	assert.Equal(t, "custom-test", result.Name)
+	assert.Equal(t, "custom:custom-test", result.Name)
 	assert.Greater(t, result.Duration.Nanoseconds(), int64(0))
 }
 
