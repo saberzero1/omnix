@@ -176,7 +176,7 @@ func TestNewDevelopCmd(t *testing.T) {
 	cmd := NewDevelopCmd()
 
 	assert.NotNil(t, cmd)
-	assert.Equal(t, "develop", cmd.Use)
+	assert.Equal(t, "develop [flake-url]", cmd.Use)
 	assert.Contains(t, cmd.Short, "development")
 }
 
