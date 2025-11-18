@@ -32,4 +32,6 @@ func init() {
 	// Register subcommands
 	rootCmd.AddCommand(cmd.NewHealthCmd())
 	rootCmd.AddCommand(cmd.NewInitCmd())
+	rootCmd.AddCommand(cmd.NewCICmd())
+	rootCmd.AddCommand(cmd.NewDevelopCmd())
 }
