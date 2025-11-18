@@ -106,7 +106,7 @@ func printFlakeOutputTable(w io.Writer, title string, outputs *nix.FlakeOutputs,
 
 	// Create table
 	table := tablewriter.NewTable(w)
-	table.Header("Name", "Description")
+	table.Header([]string{"Name", "Description"})
 
 	// Add rows
 	for _, val := range values {
@@ -114,7 +114,7 @@ func printFlakeOutputTable(w io.Writer, title string, outputs *nix.FlakeOutputs,
 		if desc == "" {
 			desc = "N/A"
 		}
-		table.Append(val.Name, desc)
+		table.Append([]string{val.Name, desc})
 	}
 
 	table.Render()

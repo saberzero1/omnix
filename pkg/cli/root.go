@@ -45,7 +45,8 @@ It provides various commands to make working with Nix easier:
   - om ci: Run CI for Nix projects
   - om develop: Manage development shells
   - om completion: Generate shell completions`,
-	Version: "2.0.0-alpha (Go)",
+	// Version will be set by SetVersion()
+	Version: "",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Setup logging based on verbosity flag
 		level := common.InfoLevel
