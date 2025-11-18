@@ -171,3 +171,28 @@ func TestInitCommand_Success(t *testing.T) {
 	_, err = os.Stat(filepath.Join(outputDir, "README.md"))
 	assert.NoError(t, err, "README.md should be copied")
 }
+
+func TestNewDevelopCmd(t *testing.T) {
+	cmd := NewDevelopCmd()
+
+	assert.NotNil(t, cmd)
+	assert.Equal(t, "develop", cmd.Use)
+	assert.Contains(t, cmd.Short, "development")
+}
+
+func TestNewCICmd(t *testing.T) {
+	cmd := NewCICmd()
+
+	assert.NotNil(t, cmd)
+	assert.Equal(t, "ci", cmd.Use)
+	assert.Contains(t, cmd.Short, "CI")
+
+	// Should have subcommands
+	assert.True(t, cmd.HasSubCommands())
+}
+
+func TestIsTerminal(t *testing.T) {
+	// Test with various file descriptors
+	// Just ensure the function doesn't panic
+	_ = isTerminal() // Just call it to ensure it works
+}
