@@ -88,12 +88,12 @@ func DetectEnv(ctx context.Context) (*Env, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user groups: %w", err)
 	}
-	
+
 	osType, err := detectOS(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to detect OS: %w", err)
 	}
-	
+
 	return &Env{
 		User:   currentUser,
 		Groups: groups,
@@ -124,12 +124,12 @@ func getCurrentUserGroups(ctx context.Context) ([]string, error) {
 		// This can happen on some systems
 		return []string{}, nil
 	}
-	
+
 	groupsStr := strings.TrimSpace(string(output))
 	if groupsStr == "" {
 		return []string{}, nil
 	}
-	
+
 	groups := strings.Fields(groupsStr)
 	return groups, nil
 }
@@ -140,13 +140,13 @@ func detectOS(ctx context.Context) (OSType, error) {
 		Type: runtime.GOOS,
 		Arch: runtime.GOARCH,
 	}
-	
+
 	// Check for NixOS
 	if _, err := os.Stat("/etc/NIXOS"); err == nil {
 		osType.IsNixOS = true
 		return osType, nil
 	}
-	
+
 	// Check for nix-darwin on macOS
 	if runtime.GOOS == "darwin" {
 		// Check if /etc/nix/nix.conf is a symlink (managed by nix-darwin)
@@ -155,6 +155,6 @@ func detectOS(ctx context.Context) (OSType, error) {
 			osType.IsNixDarwin = true
 		}
 	}
-	
+
 	return osType, nil
 }

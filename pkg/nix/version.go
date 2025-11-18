@@ -27,27 +27,27 @@ func (v Version) String() string {
 func ParseVersion(s string) (Version, error) {
 	// Lenient regex that matches the version number at the end
 	re := regexp.MustCompile(`(?:nix \((?:Nix|Determinate Nix [^\)]+)\) )?(\d+)\.(\d+)\.(\d+)$`)
-	
+
 	matches := re.FindStringSubmatch(s)
 	if matches == nil {
 		return Version{}, fmt.Errorf("failed to parse nix version from: %s", s)
 	}
-	
+
 	major, err := strconv.ParseUint(matches[1], 10, 32)
 	if err != nil {
 		return Version{}, fmt.Errorf("failed to parse major version: %w", err)
 	}
-	
+
 	minor, err := strconv.ParseUint(matches[2], 10, 32)
 	if err != nil {
 		return Version{}, fmt.Errorf("failed to parse minor version: %w", err)
 	}
-	
+
 	patch, err := strconv.ParseUint(matches[3], 10, 32)
 	if err != nil {
 		return Version{}, fmt.Errorf("failed to parse patch version: %w", err)
 	}
-	
+
 	return Version{
 		Major: uint32(major),
 		Minor: uint32(minor),

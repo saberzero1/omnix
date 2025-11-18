@@ -23,19 +23,19 @@ func GetInfo(ctx context.Context) (*Info, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Nix version: %w", err)
 	}
-	
+
 	// Detect environment
 	env, err := DetectEnv(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to detect environment: %w", err)
 	}
-	
+
 	// Get Nix configuration
 	config, err := GetConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Nix config: %w", err)
 	}
-	
+
 	return &Info{
 		Version: version,
 		Env:     env,

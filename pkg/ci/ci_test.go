@@ -165,8 +165,8 @@ func TestStepsConfig_GetEnabledSteps(t *testing.T) {
 		{
 			name: "with custom steps",
 			config: StepsConfig{
-				Build:    BuildStep{Enable: true},
-				Lockfile: LockfileStep{Enable: false},
+				Build:      BuildStep{Enable: true},
+				Lockfile:   LockfileStep{Enable: false},
 				FlakeCheck: FlakeCheckStep{Enable: false},
 				Custom: []CustomStep{
 					{Name: "test", Enable: true},
@@ -197,11 +197,11 @@ func TestStepsConfig_GetEnabledSteps(t *testing.T) {
 
 func TestGenerateMatrix(t *testing.T) {
 	tests := []struct {
-		name           string
-		systems        []string
-		config         Config
-		expectedCount  int
-		expectedFirst  *GitHubMatrixRow
+		name          string
+		systems       []string
+		config        Config
+		expectedCount int
+		expectedFirst *GitHubMatrixRow
 	}{
 		{
 			name:    "single system, single subflake",

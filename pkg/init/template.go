@@ -49,18 +49,18 @@ func (t *Template) ScaffoldAt(ctx context.Context, outDir string) (string, error
 	if err := common.CopyDirAll(t.Path, outDir); err != nil {
 		return "", fmt.Errorf("unable to copy files: %w", err)
 	}
-	
+
 	// Apply parameter actions
 	if err := t.applyActions(ctx, outDir); err != nil {
 		return "", err
 	}
-	
+
 	// Canonicalize the path
 	absPath, err := filepath.Abs(outDir)
 	if err != nil {
 		return "", fmt.Errorf("unable to canonicalize path: %w", err)
 	}
-	
+
 	return absPath, nil
 }
 
@@ -81,18 +81,18 @@ func (t *Template) applyActions(ctx context.Context, outDir string) error {
 	sort.Slice(sortedParams, func(i, j int) bool {
 		return ActionPriority(sortedParams[i].Action) < ActionPriority(sortedParams[j].Action)
 	})
-	
+
 	// Apply each action
 	for _, param := range sortedParams {
 		if param.Action.HasValue() {
 			fmt.Println(param.String())
 		}
-		
+
 		if err := param.Action.Apply(ctx, outDir); err != nil {
 			return fmt.Errorf("unable to apply param %s: %w", param.Name, err)
 		}
 	}
-	
+
 	return nil
 }
 

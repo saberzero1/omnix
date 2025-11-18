@@ -13,7 +13,7 @@ func TestExecuteRemoteCommand(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping SSH test in short mode")
 	}
-	
+
 	ctx := context.Background()
 
 	tests := []struct {
@@ -60,7 +60,7 @@ func TestRunBuildStepRemote(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping SSH test in short mode")
 	}
-	
+
 	ctx := context.Background()
 
 	flake, err := nix.ParseFlakeURL(".")
@@ -81,7 +81,7 @@ func TestRunBuildStepRemote(t *testing.T) {
 	// Should complete without panic
 	assert.Equal(t, "build", result.Name)
 	assert.Greater(t, result.Duration.Nanoseconds(), int64(0))
-	
+
 	// Will likely fail due to no SSH connection
 	if !result.Success {
 		assert.NotEmpty(t, result.Error)
@@ -93,7 +93,7 @@ func TestRunLockfileStepRemote(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping SSH test in short mode")
 	}
-	
+
 	ctx := context.Background()
 
 	flake, err := nix.ParseFlakeURL(".")
@@ -113,7 +113,7 @@ func TestRunFlakeCheckStepRemote(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping SSH test in short mode")
 	}
-	
+
 	ctx := context.Background()
 
 	flake, err := nix.ParseFlakeURL(".")
@@ -133,7 +133,7 @@ func TestRunCustomStepRemote(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping SSH test in short mode")
 	}
-	
+
 	ctx := context.Background()
 
 	flake, err := nix.ParseFlakeURL(".")
@@ -155,7 +155,7 @@ func TestRunWithRemoteHost(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping SSH test in short mode")
 	}
-	
+
 	ctx := context.Background()
 
 	config := Config{

@@ -20,25 +20,25 @@ func (tu *TrustedUsers) Check(ctx context.Context, nixInfo *nix.Info) []NamedChe
 	if !tu.Enable {
 		return []NamedCheck{}
 	}
-	
+
 	// Use the new User field directly (preferred over deprecated CurrentUser() method)
 	currentUser := nixInfo.Env.User
 	userGroups := make(map[string]bool)
 	for _, group := range nixInfo.Env.Groups {
 		userGroups[group] = true
 	}
-	
+
 	// TODO: Parse trusted-users from nix config
 	// For now, we'll assume it's not set
 	isTrusted := false
 	trustedUsersStr := "root" // Placeholder
-	
+
 	var result CheckResult
 	if isTrusted {
 		result = GreenResult{}
 	} else {
 		msg := fmt.Sprintf("User '%s' not present in trusted_users", currentUser)
-		
+
 		var suggestion string
 		if configLabel := nixInfo.Env.OS.NixSystemConfigLabel(); configLabel != "" {
 			suggestion = fmt.Sprintf(
@@ -51,20 +51,20 @@ func (tu *TrustedUsers) Check(ctx context.Context, nixInfo *nix.Info) []NamedChe
 				currentUser,
 			)
 		}
-		
+
 		result = RedResult{
 			Message:    msg,
 			Suggestion: suggestion,
 		}
 	}
-	
+
 	check := Check{
 		Title:    "Trusted Users",
 		Info:     fmt.Sprintf("trusted-users = %s", trustedUsersStr),
 		Result:   result,
 		Required: true,
 	}
-	
+
 	return []NamedCheck{
 		{Name: "trusted-users", Check: check},
 	}

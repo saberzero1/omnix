@@ -43,26 +43,26 @@ func (r ReplaceAction) Apply(ctx context.Context, outDir string) error {
 	if r.Value == nil {
 		return nil
 	}
-	
+
 	// Find all files in the directory
 	files, err := findAllPaths(outDir)
 	if err != nil {
 		return fmt.Errorf("failed to find paths: %w", err)
 	}
-	
+
 	// Sort in reverse order to process files before their parent directories get renamed
 	sort.Sort(sort.Reverse(sort.StringSlice(files)))
-	
+
 	for _, relPath := range files {
 		filePath := filepath.Join(outDir, relPath)
-		
+
 		// Replace in file content
 		if info, err := os.Stat(filePath); err == nil && info.Mode().IsRegular() {
 			content, err := os.ReadFile(filePath)
 			if err != nil {
 				return fmt.Errorf("failed to read file %s: %w", filePath, err)
 			}
-			
+
 			contentStr := string(content)
 			if strings.Contains(contentStr, r.Placeholder) {
 				fmt.Printf("   ✍️ %s\n", relPath)
@@ -72,7 +72,7 @@ func (r ReplaceAction) Apply(ctx context.Context, outDir string) error {
 				}
 			}
 		}
-		
+
 		// Rename path if necessary
 		fileName := filepath.Base(relPath)
 		if strings.Contains(fileName, r.Placeholder) {
@@ -86,7 +86,7 @@ func (r ReplaceAction) Apply(ctx context.Context, outDir string) error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -111,13 +111,13 @@ func (r RetainAction) Apply(ctx context.Context, outDir string) error {
 	if r.Value == nil || *r.Value {
 		return nil
 	}
-	
+
 	// Find all files
 	files, err := findAllPaths(outDir)
 	if err != nil {
 		return fmt.Errorf("failed to find paths: %w", err)
 	}
-	
+
 	// Match files against glob patterns
 	var filesToDelete []string
 	for _, file := range files {
@@ -132,17 +132,17 @@ func (r RetainAction) Apply(ctx context.Context, outDir string) error {
 			}
 		}
 	}
-	
+
 	if len(filesToDelete) == 0 {
 		// No files matched the glob patterns; nothing to delete.
 		// This is not an error: RetainAction is designed to work for template features that may not exist in all cases,
 		// regardless of whether the patterns are marked as optional.
 		return nil
 	}
-	
+
 	// Sort in reverse to delete children before parents
 	sort.Sort(sort.Reverse(sort.StringSlice(filesToDelete)))
-	
+
 	for _, relPath := range filesToDelete {
 		path := filepath.Join(outDir, relPath)
 		fmt.Printf("   ❌ %s\n", relPath)
@@ -150,34 +150,34 @@ func (r RetainAction) Apply(ctx context.Context, outDir string) error {
 			return fmt.Errorf("failed to remove %s: %w", path, err)
 		}
 	}
-	
+
 	return nil
 }
 
 // findAllPaths returns all file and directory paths relative to the root
 func findAllPaths(root string) ([]string, error) {
 	var paths []string
-	
+
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		// Get relative path
 		relPath, err := filepath.Rel(root, path)
 		if err != nil {
 			return err
 		}
-		
+
 		// Skip the root itself
 		if relPath == "." {
 			return nil
 		}
-		
+
 		paths = append(paths, relPath)
 		return nil
 	})
-	
+
 	return paths, err
 }
 

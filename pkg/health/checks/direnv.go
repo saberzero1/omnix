@@ -14,7 +14,7 @@ type Direnv struct{}
 func (d *Direnv) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
 	_, err := exec.LookPath("direnv")
 	hasDirenv := err == nil
-	
+
 	var result CheckResult
 	if hasDirenv {
 		result = GreenResult{}
@@ -24,14 +24,14 @@ func (d *Direnv) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
 			Suggestion: "Install direnv from https://direnv.net/",
 		}
 	}
-	
+
 	check := Check{
 		Title:    "Direnv",
 		Info:     "direnv provides automatic directory-specific environment management",
 		Result:   result,
 		Required: false, // Optional but recommended
 	}
-	
+
 	return []NamedCheck{
 		{Name: "direnv", Check: check},
 	}

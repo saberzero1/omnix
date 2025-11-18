@@ -192,8 +192,8 @@ func TestStepsConfig_NoStepsEnabled(t *testing.T) {
 
 func TestStepsConfig_MultipleCustomSteps(t *testing.T) {
 	config := StepsConfig{
-		Build:    BuildStep{Enable: false},
-		Lockfile: LockfileStep{Enable: false},
+		Build:      BuildStep{Enable: false},
+		Lockfile:   LockfileStep{Enable: false},
 		FlakeCheck: FlakeCheckStep{Enable: false},
 		Custom: []CustomStep{
 			{Name: "test1", Enable: true},

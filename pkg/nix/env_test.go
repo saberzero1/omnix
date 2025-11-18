@@ -16,7 +16,7 @@ func TestGetCurrentUser(t *testing.T) {
 		os.Setenv("USER", origUser)
 		os.Setenv("USERNAME", origUsername)
 	}()
-	
+
 	tests := []struct {
 		name         string
 		userEnv      string
@@ -48,12 +48,12 @@ func TestGetCurrentUser(t *testing.T) {
 			wantNonEmpty: false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Setenv("USER", tt.userEnv)
 			os.Setenv("USERNAME", tt.usernameEnv)
-			
+
 			user := getCurrentUser()
 			if tt.wantNonEmpty && user == "" {
 				t.Error("getCurrentUser() returned empty string, want non-empty")
@@ -61,14 +61,14 @@ func TestGetCurrentUser(t *testing.T) {
 			if !tt.wantNonEmpty && user != "" {
 				t.Errorf("getCurrentUser() = %v, want empty string", user)
 			}
-			
+
 			// If userEnv is set, it should be returned
 			if tt.userEnv != "" && user != tt.userEnv {
 				t.Errorf("getCurrentUser() = %v, want %v", user, tt.userEnv)
 			}
 		})
 	}
-	
+
 	// Test actual behavior
 	user := getCurrentUser()
 	// Should return something on most systems
@@ -79,12 +79,12 @@ func TestGetCurrentUser(t *testing.T) {
 func TestGetCurrentUserGroups(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	groups, err := getCurrentUserGroups(ctx)
 	if err != nil {
 		t.Fatalf("getCurrentUserGroups() error = %v", err)
 	}
-	
+
 	// Groups can be empty on some systems, so we just verify no error
 	t.Logf("User groups: %v", groups)
 }
@@ -92,12 +92,12 @@ func TestGetCurrentUserGroups(t *testing.T) {
 func TestDetectOS(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	osType, err := detectOS(ctx)
 	if err != nil {
 		t.Fatalf("detectOS() error = %v", err)
 	}
-	
+
 	// Verify basic fields are set
 	if osType.Type == "" {
 		t.Error("detectOS() Type is empty")
@@ -105,27 +105,27 @@ func TestDetectOS(t *testing.T) {
 	if osType.Arch == "" {
 		t.Error("detectOS() Arch is empty")
 	}
-	
+
 	// Type should match runtime.GOOS
 	if osType.Type != runtime.GOOS {
 		t.Errorf("detectOS() Type = %v, want %v", osType.Type, runtime.GOOS)
 	}
-	
+
 	// Arch should match runtime.GOARCH
 	if osType.Arch != runtime.GOARCH {
 		t.Errorf("detectOS() Arch = %v, want %v", osType.Arch, runtime.GOARCH)
 	}
-	
+
 	t.Logf("Detected OS: %s", osType.String())
 	t.Logf("IsNixOS: %v, IsNixDarwin: %v", osType.IsNixOS, osType.IsNixDarwin)
-	
+
 	// Additional checks based on detected OS
 	if osType.IsNixOS {
 		if osType.Type != "linux" {
 			t.Error("NixOS should have Type=linux")
 		}
 	}
-	
+
 	if osType.IsNixDarwin {
 		if osType.Type != "darwin" {
 			t.Error("nix-darwin should have Type=darwin")
@@ -177,7 +177,7 @@ func TestOSTypeString(t *testing.T) {
 			want: "freebsd",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.os.String(); got != tt.want {
@@ -215,7 +215,7 @@ func TestOSTypeNixConfigLabel(t *testing.T) {
 			want: "/etc/nix/nix.conf",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.os.NixConfigLabel(); got != tt.want {
@@ -230,20 +230,20 @@ func TestDetectEnv(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	env, err := DetectEnv(ctx)
 	if err != nil {
 		t.Fatalf("DetectEnv() error = %v", err)
 	}
-	
+
 	// Verify env is populated
 	if env == nil {
 		t.Fatal("DetectEnv() returned nil")
 	}
-	
+
 	// CurrentUser might be empty in some environments, so we just log it
 	t.Logf("Current user: %s", env.User)
 	t.Logf("User groups: %v", env.Groups)
@@ -254,7 +254,7 @@ func TestDetectEnv(t *testing.T) {
 func TestDetectEnvWithCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
-	
+
 	_, err := DetectEnv(ctx)
 	// Should still work because we don't use context for most operations
 	// The context is only passed to getCurrentUserGroups which handles errors

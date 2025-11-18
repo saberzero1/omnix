@@ -130,11 +130,11 @@ func runSubflakesParallel(ctx context.Context, flake nix.FlakeURL, subflakes []s
 
 	// Create channels for work distribution
 	type job struct {
-		index int
-		name  string
+		index  int
+		name   string
 		config SubflakeConfig
 	}
-	
+
 	type jobResult struct {
 		index  int
 		result Result
@@ -171,7 +171,7 @@ func runSubflakesParallel(ctx context.Context, flake nix.FlakeURL, subflakes []s
 	// Collect results
 	resultsMap := make(map[int]Result)
 	var firstError error
-	
+
 	for i := 0; i < len(subflakes); i++ {
 		jr := <-jobResults
 		if jr.err != nil && firstError == nil {
@@ -415,7 +415,7 @@ func executeRemoteCommand(ctx context.Context, host string, command []string) (s
 	// Build SSH command
 	// SSH command format: ssh user@host "command args..."
 	sshArgs := []string{host}
-	
+
 	// Convert command array to shell command string with proper escaping
 	// Use POSIX shell escaping: wrap each argument in single quotes and escape any embedded single quotes
 	cmdParts := make([]string, len(command))
@@ -430,7 +430,7 @@ func executeRemoteCommand(ctx context.Context, host string, command []string) (s
 	// Execute SSH command
 	cmd := exec.CommandContext(ctx, "ssh", sshArgs...)
 	output, err := cmd.CombinedOutput()
-	
+
 	return string(output), err
 }
 

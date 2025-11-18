@@ -10,12 +10,12 @@ import (
 
 func TestFlakeEnabled_Check(t *testing.T) {
 	ctx := context.Background()
-	
+
 	tests := []struct {
-		name             string
-		features         []string
-		expectGreen      bool
-		expectRequired   bool
+		name           string
+		features       []string
+		expectGreen    bool
+		expectRequired bool
 	}{
 		{
 			name:           "Both flakes and nix-command enabled",
@@ -48,7 +48,7 @@ func TestFlakeEnabled_Check(t *testing.T) {
 			expectRequired: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			nixInfo := &nix.Info{
@@ -56,10 +56,10 @@ func TestFlakeEnabled_Check(t *testing.T) {
 					ExperimentalFeatures: nix.ConfigValue[[]string]{Value: tt.features},
 				},
 			}
-			
+
 			check := &FlakeEnabled{}
 			results := check.Check(ctx, nixInfo)
-			
+
 			assert.Len(t, results, 1)
 			assert.Equal(t, "flake-enabled", results[0].Name)
 			assert.Equal(t, tt.expectGreen, results[0].Check.Result.IsGreen())
@@ -70,7 +70,7 @@ func TestFlakeEnabled_Check(t *testing.T) {
 
 func TestNixVersion_Check(t *testing.T) {
 	ctx := context.Background()
-	
+
 	tests := []struct {
 		name           string
 		minVersion     nix.Version
@@ -102,16 +102,16 @@ func TestNixVersion_Check(t *testing.T) {
 			expectGreen:    true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			nixInfo := &nix.Info{
 				Version: tt.currentVersion,
 			}
-			
+
 			check := &NixVersion{MinVersion: tt.minVersion}
 			results := check.Check(ctx, nixInfo)
-			
+
 			assert.Len(t, results, 1)
 			assert.Equal(t, "supported-nix-versions", results[0].Name)
 			assert.Equal(t, tt.expectGreen, results[0].Check.Result.IsGreen())
@@ -135,10 +135,10 @@ func TestTrustedUsers_CheckDisabled(t *testing.T) {
 			Groups: []string{"users"},
 		},
 	}
-	
+
 	check := &TrustedUsers{Enable: false}
 	results := check.Check(ctx, nixInfo)
-	
+
 	// Should return empty when disabled
 	assert.Empty(t, results)
 }
@@ -146,10 +146,10 @@ func TestTrustedUsers_CheckDisabled(t *testing.T) {
 func TestRosetta_CheckNonMacOS(t *testing.T) {
 	ctx := context.Background()
 	nixInfo := &nix.Info{}
-	
+
 	check := &Rosetta{}
 	_ = check.Check(ctx, nixInfo)
-	
+
 	// Should return empty on non-macOS or non-ARM64
 	// (This test will pass on Linux, may fail on macOS ARM64)
 	// The actual behavior depends on runtime.GOOS and runtime.GOARCH
@@ -158,20 +158,20 @@ func TestRosetta_CheckNonMacOS(t *testing.T) {
 func TestDirenv_Check(t *testing.T) {
 	ctx := context.Background()
 	nixInfo := &nix.Info{}
-	
+
 	check := &Direnv{}
 	_ = check.Check(ctx, nixInfo)
-	
+
 	// Just verify it doesn't panic
 }
 
 func TestHomebrew_CheckNonMacOS(t *testing.T) {
 	ctx := context.Background()
 	nixInfo := &nix.Info{}
-	
+
 	check := &Homebrew{}
 	_ = check.Check(ctx, nixInfo)
-	
+
 	// On non-macOS, should return empty
 	// On macOS, should return 1 check
 	// The actual behavior depends on runtime.GOOS
@@ -180,10 +180,10 @@ func TestHomebrew_CheckNonMacOS(t *testing.T) {
 func TestShell_Check(t *testing.T) {
 	ctx := context.Background()
 	nixInfo := &nix.Info{}
-	
+
 	check := &Shell{}
 	results := check.Check(ctx, nixInfo)
-	
+
 	// May return 0 or 1 depending on whether SHELL is set
 	// Just verify it doesn't panic
 	assert.NotNil(t, results)
@@ -191,10 +191,10 @@ func TestShell_Check(t *testing.T) {
 
 func TestParseCachixURL(t *testing.T) {
 	tests := []struct {
-		name        string
-		url         string
-		expectName  string
-		expectNil   bool
+		name       string
+		url        string
+		expectName string
+		expectNil  bool
 	}{
 		{
 			name:       "Valid cachix URL",
@@ -219,11 +219,11 @@ func TestParseCachixURL(t *testing.T) {
 			expectNil: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ParseCachixURL(tt.url)
-			
+
 			if tt.expectNil {
 				assert.Nil(t, result)
 			} else {
