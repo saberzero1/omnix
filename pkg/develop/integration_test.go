@@ -124,7 +124,8 @@ func TestUseCachixCache(t *testing.T) {
 }
 
 func TestIsCachixAvailable_ChecksPath(t *testing.T) {
-	// Just verify it doesn't panic
-	available := IsCachixAvailable()
-	assert.IsType(t, false, available)
+	// Call multiple times to ensure consistency
+	result1 := IsCachixAvailable()
+	result2 := IsCachixAvailable()
+	assert.Equal(t, result1, result2)
 }

@@ -183,7 +183,7 @@ func TestStepsConfig_GetEnabledSteps(t *testing.T) {
 				FlakeCheck: FlakeCheckStep{Enable: false},
 				Custom:     []CustomStep{},
 			},
-			expected: nil, // Changed from []string{} to nil
+			expected: nil,
 		},
 	}
 

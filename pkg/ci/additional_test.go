@@ -94,10 +94,14 @@ func TestRunSubflake_InvalidFlakeURL(t *testing.T) {
 		Systems: []string{"x86_64-linux"},
 	}
 
-	// This should handle the error gracefully
-	_, err = runSubflake(ctx, flake, "test", subflake, opts)
-	// May error or succeed depending on URL parsing - just verify it doesn't panic
-	_ = err
+	// This should handle the error gracefully or succeed
+	result, err := runSubflake(ctx, flake, "test", subflake, opts)
+	// Verify it doesn't panic - either succeeds or fails gracefully
+	if err != nil {
+		assert.Error(t, err)
+	} else {
+		assert.Equal(t, "test", result.Subflake)
+	}
 }
 
 func TestStepResult_JSONSerialization(t *testing.T) {

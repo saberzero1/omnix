@@ -23,7 +23,6 @@ func Run(ctx context.Context, project *Project) error {
 
 	// Log the warning about shell not being invoked
 	logger := common.Logger()
-	logger.Warn("")
 	logger.Warn("🚧 !!!!")
 	logger.Warn("🚧 Not invoking Nix devShell (not supported yet). Please use `direnv`!")
 	logger.Warn("🚧 !!!!")
@@ -63,7 +62,7 @@ func RunPreShell(ctx context.Context, project *Project) error {
 				// Log the check result
 				logger.Info(fmt.Sprintf("  %s: %s", check.Title, check.Result.String()))
 
-				if !check.Result.IsGreen() && check.Required {
+				if check.Required {
 					hasFailures = true
 				}
 			}

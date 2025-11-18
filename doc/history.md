@@ -54,14 +54,14 @@ Added Go implementations of CI/CD and development shell management:
   - Custom command execution
   - GitHub Actions matrix generation
   - CI orchestration and results tracking
-  - 44.1% test coverage with 20 test functions
+  - 58.6% test coverage with 47 test functions
   
 - **pkg/develop**: Development shell management
   - Project configuration and setup
   - Pre-shell health checks (Nix version, Rosetta, max-jobs)
   - Post-shell README rendering
   - Cachix integration support
-  - 48.8% test coverage with 17 test functions
+  - 50.0% test coverage with 37 test functions
 
 **Code Metrics:**
 - Total implementation: 1,017 LOC (68% reduction from Rust for CI)

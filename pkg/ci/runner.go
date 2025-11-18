@@ -3,6 +3,7 @@ package ci
 import (
 	"context"
 	"fmt"
+	"os/exec"
 	"time"
 
 	"github.com/juspay/omnix/pkg/nix"
@@ -234,11 +235,11 @@ func runCustomStep(ctx context.Context, flake nix.FlakeURL, step CustomStep) Ste
 		cmd := nix.NewCmd()
 		output, err = cmd.Run(ctx, step.Command[1:]...)
 	} else {
-		// For non-nix commands, use exec.Command
-		// This is not ideal but works for now
-		// TODO: Improve this to use a common command executor
-		cmd := nix.NewCmd()
-		output, err = cmd.Run(ctx, step.Command...)
+		// For non-nix commands, use exec.Command directly
+		execCmd := exec.CommandContext(ctx, step.Command[0], step.Command[1:]...)
+		outputBytes, execErr := execCmd.CombinedOutput()
+		output = string(outputBytes)
+		err = execErr
 	}
 
 	if err != nil {

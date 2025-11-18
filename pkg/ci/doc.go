@@ -22,7 +22,7 @@
 //	config, _ := ci.LoadConfig("om.yaml")
 //
 //	// Run CI for a flake
-//	flake, _ := nix.ParseFlakeUrl(".")
+//	flake, _ := nix.ParseFlakeURL(".")
 //	result, _ := ci.Run(ctx, flake, config, options)
 //
 // The package supports running CI steps in parallel and can generate

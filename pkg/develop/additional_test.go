@@ -136,27 +136,15 @@ func TestGetMarkdown_EmptyFile(t *testing.T) {
 func TestNewProject_InvalidFlakeURL(t *testing.T) {
 	ctx := context.Background()
 
-	// Try with various invalid URLs
-	invalidURLs := []string{
-		"",
-		"not a valid url",
-		// Empty URL was already tested in nix package
-	}
+	// Test with a URL that parses successfully but may behave differently
+	flake, err := nix.ParseFlakeURL("not-a-valid-url")
+	require.NoError(t, err)
 
-	for _, url := range invalidURLs {
-		if url == "" {
-			continue // ParseFlakeURL handles empty strings
-		}
-		flake, err := nix.ParseFlakeURL(url)
-		if err != nil {
-			continue // Skip if URL parsing fails
-		}
-
-		config := DefaultConfig()
-		_, err = NewProject(ctx, flake, config)
-		// Should either succeed or fail gracefully
-		_ = err
-	}
+	config := DefaultConfig()
+	project, err := NewProject(ctx, flake, config)
+	// Should succeed - NewProject doesn't validate URLs, just stores them
+	require.NoError(t, err)
+	assert.NotNil(t, project)
 }
 
 func TestNewProject_AbsolutePathConversion(t *testing.T) {

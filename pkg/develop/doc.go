@@ -16,7 +16,7 @@
 //	)
 //
 //	// Create a project for development
-//	flake, _ := nix.ParseFlakeUrl(".")
+//	flake, _ := nix.ParseFlakeURL(".")
 //	project, _ := develop.NewProject(ctx, flake, config)
 //
 //	// Run development shell setup
