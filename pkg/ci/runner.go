@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/juspay/omnix/pkg/nix"
@@ -415,19 +416,15 @@ func executeRemoteCommand(ctx context.Context, host string, command []string) (s
 	// SSH command format: ssh user@host "command args..."
 	sshArgs := []string{host}
 	
-	// Join command parts into a single string for SSH execution
-	cmdStr := ""
+	// Convert command array to shell command string with proper escaping
+	// Use POSIX shell escaping: wrap each argument in single quotes and escape any embedded single quotes
+	cmdParts := make([]string, len(command))
 	for i, part := range command {
-		if i > 0 {
-			cmdStr += " "
-		}
-		// Simple quoting - for production would need proper shell escaping
-		if len(part) > 0 && part[0] != '-' {
-			cmdStr += fmt.Sprintf("%q", part)
-		} else {
-			cmdStr += part
-		}
+		// Replace single quotes with '\'' (end quote, escaped quote, start quote)
+		escaped := strings.ReplaceAll(part, "'", "'\\''")
+		cmdParts[i] = "'" + escaped + "'"
 	}
+	cmdStr := strings.Join(cmdParts, " ")
 	sshArgs = append(sshArgs, cmdStr)
 
 	// Execute SSH command
@@ -506,7 +503,7 @@ func runFlakeCheckStepRemote(ctx context.Context, host string, flake nix.FlakeUR
 func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step CustomStep) StepResult {
 	start := time.Now()
 	result := StepResult{
-		Name:    step.Name,
+		Name:    "custom:" + step.Name,
 		Success: true,
 	}
 
