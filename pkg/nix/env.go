@@ -11,12 +11,23 @@ import (
 
 // Env represents the environment in which Nix operates.
 type Env struct {
-	// CurrentUser is the current user ($USER)
-	CurrentUser string
-	// CurrentUserGroups are the current user's groups
-	CurrentUserGroups []string
+	// User is the current user ($USER) - alias for CurrentUser
+	User string
+	// Groups are the current user's groups - alias for CurrentUserGroups
+	Groups []string
 	// OS is the underlying operating system
 	OS OSType
+}
+
+// Deprecated field names for backward compatibility
+// CurrentUser returns the current user
+func (e *Env) CurrentUser() string {
+	return e.User
+}
+
+// CurrentUserGroups returns the current user's groups
+func (e *Env) CurrentUserGroups() []string {
+	return e.Groups
 }
 
 // OSType represents the operating system type.
@@ -58,6 +69,18 @@ func (o OSType) NixConfigLabel() string {
 	return "/etc/nix/nix.conf"
 }
 
+// NixSystemConfigLabel returns the label for system configuration files.
+// Returns empty string if not on NixOS or nix-darwin.
+func (o OSType) NixSystemConfigLabel() string {
+	if o.IsNixOS {
+		return "/etc/nixos/configuration.nix"
+	}
+	if o.IsNixDarwin {
+		return "~/.nixpkgs/darwin-configuration.nix"
+	}
+	return ""
+}
+
 // DetectEnv detects the Nix environment on the current system.
 func DetectEnv(ctx context.Context) (*Env, error) {
 	currentUser := getCurrentUser()
@@ -72,9 +95,9 @@ func DetectEnv(ctx context.Context) (*Env, error) {
 	}
 	
 	return &Env{
-		CurrentUser:       currentUser,
-		CurrentUserGroups: groups,
-		OS:                osType,
+		User:   currentUser,
+		Groups: groups,
+		OS:     osType,
 	}, nil
 }
 
