@@ -43,6 +43,9 @@ func newCIRunCmd() *cobra.Command {
 		ciConfigPath     string
 		ciOutputPath     string
 		ciNoLink         bool
+		ciRemoteHost     string
+		ciParallel       bool
+		ciMaxConcurrency int
 	)
 	
 	cmd := &cobra.Command{
@@ -101,6 +104,9 @@ Example:
 				Systems:                systems,
 				GitHubOutput:          ciGitHubOutput,
 				IncludeAllDependencies: ciIncludeAllDeps,
+				RemoteHost:            ciRemoteHost,
+				Parallel:              ciParallel,
+				MaxConcurrency:        ciMaxConcurrency,
 			}
 			
 			results, err := ci.Run(ctx, flake, config, opts)
@@ -151,6 +157,9 @@ Example:
 	cmd.Flags().StringVarP(&ciConfigPath, "config", "c", "om.yaml", "Path to om.yaml configuration file")
 	cmd.Flags().StringVarP(&ciOutputPath, "out-link", "o", "result.json", "Path to output results JSON")
 	cmd.Flags().BoolVar(&ciNoLink, "no-link", false, "Do not create output results file")
+	cmd.Flags().StringVar(&ciRemoteHost, "remote", "", "Remote host for SSH-based builds (e.g., user@host)")
+	cmd.Flags().BoolVar(&ciParallel, "parallel", false, "Run subflakes in parallel")
+	cmd.Flags().IntVar(&ciMaxConcurrency, "max-concurrency", 0, "Maximum number of parallel builds (0 = unlimited)")
 	
 	return cmd
 }

@@ -7,7 +7,8 @@
 //   - Running flake checks
 //   - Custom step execution
 //   - GitHub Actions matrix generation
-//   - Remote build support (SSH)
+//   - Parallel subflake execution
+//   - Remote build support via SSH
 //   - Results JSON output
 //
 // Example usage:
@@ -23,8 +24,14 @@
 //
 //	// Run CI for a flake
 //	flake, _ := nix.ParseFlakeURL(".")
-//	result, _ := ci.Run(ctx, flake, config, options)
+//	opts := ci.RunOptions{
+//	    Systems:    []string{"x86_64-linux"},
+//	    Parallel:   true,                    // Run in parallel
+//	    RemoteHost: "user@remote.host",      // Optional: remote builds
+//	}
+//	result, _ := ci.Run(ctx, flake, config, opts)
 //
-// The package supports running CI steps in parallel and can generate
+// The package supports running CI steps in parallel for improved performance
+// and can execute builds on remote hosts via SSH. It also generates
 // GitHub Actions matrix configurations for cross-platform testing.
 package ci

@@ -11,6 +11,8 @@ The `ci` package provides comprehensive CI/CD automation for Nix flakes.
 - **GitHub Matrix Generation**: Generate GitHub Actions matrix configurations
 - **Multi-System Support**: Build for multiple systems
 - **Results Output**: JSON results for integration with CI systems
+- **Parallel Execution**: Run subflakes in parallel for faster CI
+- **Remote Builds**: Execute builds on remote hosts via SSH
 
 ## Usage
 
@@ -42,6 +44,29 @@ results, _ := ci.Run(context.Background(), flake, config, opts)
 for _, result := range results {
     fmt.Printf("Subflake %s: success=%v\n", result.Subflake, result.Success)
 }
+```
+
+### Parallel Execution
+
+```go
+opts := ci.RunOptions{
+    Systems:        []string{"x86_64-linux"},
+    Parallel:       true,          // Enable parallel execution
+    MaxConcurrency: 4,              // Limit to 4 concurrent builds
+}
+
+results, _ := ci.Run(ctx, flake, config, opts)
+```
+
+### Remote Builds via SSH
+
+```go
+opts := ci.RunOptions{
+    Systems:    []string{"x86_64-linux"},
+    RemoteHost: "user@builder.example.com",  // Execute on remote host
+}
+
+results, _ := ci.Run(ctx, flake, config, opts)
 ```
 
 ### Generate GitHub Actions Matrix

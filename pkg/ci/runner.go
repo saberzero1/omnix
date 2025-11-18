@@ -20,6 +20,15 @@ type RunOptions struct {
 
 	// IncludeAllDependencies includes all dependencies in results
 	IncludeAllDependencies bool
+
+	// RemoteHost specifies a remote host for SSH-based builds (e.g., "user@host")
+	RemoteHost string
+
+	// Parallel controls whether to run steps in parallel
+	Parallel bool
+
+	// MaxConcurrency limits the number of parallel steps (0 = unlimited)
+	MaxConcurrency int
 }
 
 // Result represents the result of a CI run
@@ -57,7 +66,11 @@ type StepResult struct {
 
 // Run executes the CI pipeline for a flake
 func Run(ctx context.Context, flake nix.FlakeURL, config Config, opts RunOptions) ([]Result, error) {
-	var results []Result
+	// Collect subflakes to run
+	var subflakes []struct {
+		name   string
+		config SubflakeConfig
+	}
 
 	for name, subflake := range config.Default {
 		// Skip if marked to skip
@@ -70,12 +83,111 @@ func Run(ctx context.Context, flake nix.FlakeURL, config Config, opts RunOptions
 			continue
 		}
 
-		result, err := runSubflake(ctx, flake, name, subflake, opts)
+		subflakes = append(subflakes, struct {
+			name   string
+			config SubflakeConfig
+		}{name, subflake})
+	}
+
+	// Run sequentially or in parallel based on opts
+	if opts.Parallel {
+		return runSubflakesParallel(ctx, flake, subflakes, opts)
+	}
+
+	return runSubflakesSequential(ctx, flake, subflakes, opts)
+}
+
+// runSubflakesSequential runs subflakes one after another
+func runSubflakesSequential(ctx context.Context, flake nix.FlakeURL, subflakes []struct {
+	name   string
+	config SubflakeConfig
+}, opts RunOptions) ([]Result, error) {
+	var results []Result
+
+	for _, sf := range subflakes {
+		result, err := runSubflake(ctx, flake, sf.name, sf.config, opts)
 		if err != nil {
-			return results, fmt.Errorf("failed to run subflake %s: %w", name, err)
+			return results, fmt.Errorf("failed to run subflake %s: %w", sf.name, err)
 		}
 
 		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+// runSubflakesParallel runs subflakes in parallel
+func runSubflakesParallel(ctx context.Context, flake nix.FlakeURL, subflakes []struct {
+	name   string
+	config SubflakeConfig
+}, opts RunOptions) ([]Result, error) {
+	// Determine concurrency limit
+	maxConcurrency := opts.MaxConcurrency
+	if maxConcurrency <= 0 {
+		maxConcurrency = len(subflakes)
+	}
+
+	// Create channels for work distribution
+	type job struct {
+		index int
+		name  string
+		config SubflakeConfig
+	}
+	
+	type jobResult struct {
+		index  int
+		result Result
+		err    error
+	}
+
+	jobs := make(chan job, len(subflakes))
+	jobResults := make(chan jobResult, len(subflakes))
+
+	// Start worker goroutines
+	for w := 0; w < maxConcurrency; w++ {
+		go func() {
+			for j := range jobs {
+				result, err := runSubflake(ctx, flake, j.name, j.config, opts)
+				jobResults <- jobResult{
+					index:  j.index,
+					result: result,
+					err:    err,
+				}
+			}
+		}()
+	}
+
+	// Queue all jobs
+	for i, sf := range subflakes {
+		jobs <- job{
+			index:  i,
+			name:   sf.name,
+			config: sf.config,
+		}
+	}
+	close(jobs)
+
+	// Collect results
+	resultsMap := make(map[int]Result)
+	var firstError error
+	
+	for i := 0; i < len(subflakes); i++ {
+		jr := <-jobResults
+		if jr.err != nil && firstError == nil {
+			firstError = jr.err
+		}
+		resultsMap[jr.index] = jr.result
+	}
+
+	// Return error if any occurred
+	if firstError != nil {
+		return nil, firstError
+	}
+
+	// Sort results by original order
+	results := make([]Result, len(subflakes))
+	for i := 0; i < len(subflakes); i++ {
+		results[i] = resultsMap[i]
 	}
 
 	return results, nil
@@ -104,7 +216,12 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 
 	// Run build step
 	if subflake.Steps.Build.Enable {
-		stepResult := runBuildStep(ctx, subflakeURL, subflake.Steps.Build, opts)
+		var stepResult StepResult
+		if opts.RemoteHost != "" {
+			stepResult = runBuildStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.Build, opts)
+		} else {
+			stepResult = runBuildStep(ctx, subflakeURL, subflake.Steps.Build, opts)
+		}
 		result.Steps["build"] = stepResult
 		if !stepResult.Success {
 			result.Success = false
@@ -113,7 +230,12 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 
 	// Run lockfile step
 	if subflake.Steps.Lockfile.Enable {
-		stepResult := runLockfileStep(ctx, subflakeURL, subflake.Steps.Lockfile)
+		var stepResult StepResult
+		if opts.RemoteHost != "" {
+			stepResult = runLockfileStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.Lockfile)
+		} else {
+			stepResult = runLockfileStep(ctx, subflakeURL, subflake.Steps.Lockfile)
+		}
 		result.Steps["lockfile"] = stepResult
 		if !stepResult.Success {
 			result.Success = false
@@ -122,7 +244,12 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 
 	// Run flake check step
 	if subflake.Steps.FlakeCheck.Enable {
-		stepResult := runFlakeCheckStep(ctx, subflakeURL, subflake.Steps.FlakeCheck)
+		var stepResult StepResult
+		if opts.RemoteHost != "" {
+			stepResult = runFlakeCheckStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.FlakeCheck)
+		} else {
+			stepResult = runFlakeCheckStep(ctx, subflakeURL, subflake.Steps.FlakeCheck)
+		}
 		result.Steps["flakeCheck"] = stepResult
 		if !stepResult.Success {
 			result.Success = false
@@ -132,7 +259,12 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 	// Run custom steps
 	for _, customStep := range subflake.Steps.Custom {
 		if customStep.Enable {
-			stepResult := runCustomStep(ctx, subflakeURL, customStep)
+			var stepResult StepResult
+			if opts.RemoteHost != "" {
+				stepResult = runCustomStepRemote(ctx, opts.RemoteHost, subflakeURL, customStep)
+			} else {
+				stepResult = runCustomStep(ctx, subflakeURL, customStep)
+			}
 			result.Steps["custom:"+customStep.Name] = stepResult
 			if !stepResult.Success {
 				result.Success = false
@@ -271,4 +403,120 @@ func LogResult(result Result, logger *zap.Logger) {
 				zap.String("error", stepResult.Error))
 		}
 	}
+}
+
+// executeRemoteCommand executes a command on a remote host via SSH
+func executeRemoteCommand(ctx context.Context, host string, command []string) (string, error) {
+	if host == "" {
+		return "", fmt.Errorf("remote host not specified")
+	}
+
+	// Build SSH command
+	// SSH command format: ssh user@host "command args..."
+	sshArgs := []string{host}
+	
+	// Join command parts into a single string for SSH execution
+	cmdStr := ""
+	for i, part := range command {
+		if i > 0 {
+			cmdStr += " "
+		}
+		// Simple quoting - for production would need proper shell escaping
+		if len(part) > 0 && part[0] != '-' {
+			cmdStr += fmt.Sprintf("%q", part)
+		} else {
+			cmdStr += part
+		}
+	}
+	sshArgs = append(sshArgs, cmdStr)
+
+	// Execute SSH command
+	cmd := exec.CommandContext(ctx, "ssh", sshArgs...)
+	output, err := cmd.CombinedOutput()
+	
+	return string(output), err
+}
+
+// runBuildStepRemote executes the build step on a remote host
+func runBuildStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step BuildStep, opts RunOptions) StepResult {
+	start := time.Now()
+	result := StepResult{
+		Name:    "build",
+		Success: true,
+	}
+
+	// Build the command
+	args := []string{"nix", "build", flake.String(), "--no-link", "--print-out-paths"}
+	if step.Impure {
+		args = append(args, "--impure")
+	}
+
+	output, err := executeRemoteCommand(ctx, host, args)
+	if err != nil {
+		result.Success = false
+		result.Error = fmt.Sprintf("remote build failed: %v", err)
+	}
+	result.Output = output
+	result.Duration = time.Since(start)
+
+	return result
+}
+
+// runLockfileStepRemote executes the lockfile check step on a remote host
+func runLockfileStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step LockfileStep) StepResult {
+	start := time.Now()
+	result := StepResult{
+		Name:    "lockfile",
+		Success: true,
+	}
+
+	args := []string{"nix", "flake", "lock", "--no-update-lock-file", flake.String()}
+	output, err := executeRemoteCommand(ctx, host, args)
+	if err != nil {
+		result.Success = false
+		result.Error = "flake.lock is out of date"
+	}
+	result.Output = output
+	result.Duration = time.Since(start)
+
+	return result
+}
+
+// runFlakeCheckStepRemote executes the flake check step on a remote host
+func runFlakeCheckStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step FlakeCheckStep) StepResult {
+	start := time.Now()
+	result := StepResult{
+		Name:    "flakeCheck",
+		Success: true,
+	}
+
+	args := []string{"nix", "flake", "check", flake.String()}
+	output, err := executeRemoteCommand(ctx, host, args)
+	if err != nil {
+		result.Success = false
+		result.Error = fmt.Sprintf("flake check failed: %v", err)
+	}
+	result.Output = output
+	result.Duration = time.Since(start)
+
+	return result
+}
+
+// runCustomStepRemote executes a custom step on a remote host
+func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step CustomStep) StepResult {
+	start := time.Now()
+	result := StepResult{
+		Name:    step.Name,
+		Success: true,
+	}
+
+	output, err := executeRemoteCommand(ctx, host, step.Command)
+	if err != nil {
+		result.Success = false
+		result.Error = fmt.Sprintf("custom step failed: %v", err)
+	}
+	result.Output = output
+	result.Duration = time.Since(start)
+
+	return result
 }
