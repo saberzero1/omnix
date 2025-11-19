@@ -308,9 +308,9 @@ func (c ChmodAction) Apply(_ context.Context, outDir string) error {
 
 // MoveAction moves or renames files
 type MoveAction struct {
-	From  string  // Source path pattern
-	To    string  // Destination path
-	Value *bool   // Enable/disable this action
+	From  string // Source path pattern
+	To    string // Destination path
+	Value *bool  // Enable/disable this action
 }
 
 // HasValue returns true if the move action has a value set
