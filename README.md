@@ -15,7 +15,7 @@ See <https://omnix.page/>
 
 ## Developing
 
-**Note:** omnix v2.0 is now written in Go. The Rust v1.x codebase is maintained in the v1 branch for reference.
+**Note:** omnix v2.0 is now written in Go. The Rust v1.x codebase is still present in the `crates/` directory for reference and will be moved to a `v1` branch in a future cleanup.
 
 ### Go Development (Production)
 
@@ -53,16 +53,17 @@ nix run . -- health
 
 ### Rust v1.x (Legacy)
 
-The Rust version (v1.x) is maintained in the v1 branch:
+The Rust version (v1.x) is still present in the main branch under the `crates/` directory:
 
 ```sh
 # Build Rust version
 nix build .#omnix-cli
 
 # Work on Rust code (legacy)
-git checkout v1
 just watch  # Development with live reload
 ```
+
+> **Note:** The `v1` branch will be created post-v2.0.0 release to archive the Rust codebase. Until then, all Rust sources remain in the main branch.
 
 See [`MIGRATION_GUIDE.md`](./MIGRATION_GUIDE.md) for migrating from v1.x to v2.0.
 

@@ -18,7 +18,7 @@ Phase 7 marks the completion of the Rust-to-Go migration, delivering omnix v2.0.
 From DESIGN_DOCUMENT.md Phase 7 (Weeks 22-24):
 
 1. ✅ Update Nix flake.nix with Go build
-2. ✅ Remove Rust build infrastructure (keep as v1 branch reference)
+2. 🔄 Remove Rust build infrastructure (Rust code and build system remain in main branch during transition; removal planned post-v2.0.0 release, with v1 branch as reference)
 3. ✅ Update all documentation
 4. ✅ Create migration guide for users
 5. ✅ Update history.md with 2.0.0 release notes

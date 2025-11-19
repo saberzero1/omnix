@@ -58,7 +58,7 @@
       rec {
         # v2.0.0: Go version is now the default
         # Rust version (v1.x) kept as omnix-cli for reference
-        default = self'.packages.omnix-go or omnix-cli;
+        default = self'.packages.omnix-go;
         omnix-cli = crates."omnix-cli".crane.outputs.drv.crate.overrideAttrs (oa: {
           nativeBuildInputs = (oa.nativeBuildInputs or [ ]) ++ [ pkgs.installShellFiles ];
           postInstall = ''

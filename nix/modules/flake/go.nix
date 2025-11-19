@@ -11,7 +11,7 @@
         version = "2.0.0-beta";
         src = lib.cleanSource inputs.self;
 
-        # Computed vendorHash from: nix hash path vendor
+        # vendorHash computed by Nix (set to lib.fakeHash, build, then use reported hash)
         vendorHash = "sha256-fw5op35m+fp0PGR60tqXuU6t0f4KMKw19ip3RTCiibc=";
 
         # Disable CGO for static linking
@@ -23,7 +23,6 @@
           "-w" # Strip debug symbols
           "-X main.Version=${version}"
           "-X main.Commit=${inputs.self.rev or inputs.self.dirtyRev or "dev"}"
-          "-X main.BuildTime=1970-01-01T00:00:00Z"
         ];
 
         # Only build the main binary
@@ -33,6 +32,8 @@
         nativeBuildInputs = [ pkgs.installShellFiles ];
         postInstall = ''
           # Generate shell completions
+          # Note: PowerShell is supported by the CLI but installShellCompletion doesn't support it
+          # PowerShell users can generate completions with: om completion powershell
           installShellCompletion --cmd om \
             --bash <($out/bin/om completion bash) \
             --zsh <($out/bin/om completion zsh) \
@@ -50,8 +51,6 @@
       };
     };
 
-    # Set the Go version as default for v2.0
-    # Keep Rust version available as omnix-cli during transition
-    # packages.default will be set in rust.nix or here based on preference
+    # packages.default is set in rust.nix to point to omnix-go
   };
 }
