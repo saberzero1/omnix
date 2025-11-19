@@ -51,7 +51,18 @@ Comprehensive testing improvements and GUI migration decision:
   - Comprehensive flag validation for all commands
   - **RunE execution tests with real Nix environment**
   - Error path testing for robustness
+  - **Cross-platform CI matrix** (Linux x86_64, macOS x86_64/ARM64)
   - All tests passing ✅ (100% pass rate)
+
+- **CI/CD Automation** ✅:
+  - Created `.github/workflows/go-test.yaml` for cross-platform testing
+  - **Test matrix**: 3 platforms × 2 Go versions = 6 test configurations
+  - **Platforms**: Ubuntu (x86_64), macOS 13 (x86_64), macOS latest (ARM64)
+  - **Go versions**: 1.22, 1.23
+  - Parallel execution with fail-fast disabled
+  - Coverage artifacts per platform
+  - Integration tests with Nix on Linux
+  - Automated linting on Linux and macOS
 
 **Code Metrics:**
 - New test code: **845+ LOC**

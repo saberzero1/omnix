@@ -1,0 +1,200 @@
+name: "Go Tests - Cross-Platform"
+
+# This workflow runs Go tests across multiple platforms
+# to ensure the Go codebase works on all supported systems
+
+on:
+  push:
+    branches:
+      - "main"
+      - "copilot/**"
+  pull_request:
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/go-test.yaml'
+
+jobs:
+  go-test:
+    name: Go Tests (${{ matrix.os }}, Go ${{ matrix.go-version }})
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, macos-13]  # macos-latest is arm64, macos-13 is x86_64
+        go-version: ['1.22', '1.23']
+        include:
+          # Add labels for clarity
+          - os: ubuntu-latest
+            platform: linux-x86_64
+          - os: macos-latest
+            platform: darwin-aarch64
+          - os: macos-13
+            platform: darwin-x86_64
+      fail-fast: false
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+      
+      - name: Verify Go installation
+        run: |
+          go version
+          go env
+      
+      - name: Download dependencies
+        run: |
+          go mod download
+          go mod verify
+      
+      - name: Build
+        run: |
+          go build -v -o bin/om ./cmd/om
+          ./bin/om --version || echo "Binary built successfully"
+      
+      - name: Run tests (short mode)
+        run: |
+          go test -v -short -race -coverprofile=coverage-short.out ./...
+      
+      - name: Run tests (full mode)
+        # Full tests require Nix, which may not be available on all platforms
+        # Run with a timeout to prevent hanging
+        timeout-minutes: 10
+        continue-on-error: true  # Don't fail the job if Nix is not available
+        run: |
+          go test -v -race -coverprofile=coverage-full.out ./...
+      
+      - name: Generate coverage report
+        run: |
+          go tool cover -func=coverage-short.out | tee coverage-summary.txt
+          echo "## Coverage Report (${{ matrix.platform }})" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -1 coverage-summary.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+      
+      - name: Upload coverage to artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.platform }}-go${{ matrix.go-version }}
+          path: |
+            coverage-short.out
+            coverage-full.out
+            coverage-summary.txt
+          if-no-files-found: warn
+      
+      - name: Check coverage threshold
+        run: |
+          coverage=$(go tool cover -func=coverage-short.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage: ${coverage}%"
+          if (( $(echo "$coverage < 74" | bc -l) )); then
+            echo "::warning::Coverage ${coverage}% is below 74% threshold"
+          fi
+
+  go-lint:
+    name: Go Lint (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+      fail-fast: false
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+      
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+      
+      - name: Run golangci-lint
+        run: |
+          golangci-lint run --timeout=10m --out-format=colored-line-number
+
+  go-integration:
+    name: Go Integration Tests (with Nix)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            accept-flake-config = true
+            experimental-features = nix-command flakes
+      
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+      
+      - name: Download dependencies
+        run: |
+          go mod download
+          go mod verify
+      
+      - name: Run integration tests with Nix
+        run: |
+          go test -v -race -coverprofile=coverage-integration.out ./...
+          go tool cover -func=coverage-integration.out
+      
+      - name: Upload integration coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration-nix
+          path: coverage-integration.out
+          if-no-files-found: error
+      
+      - name: Generate coverage summary
+        run: |
+          echo "## Integration Test Coverage (with Nix)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          go tool cover -func=coverage-integration.out | tail -20 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  go-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [go-test, go-lint, go-integration]
+    if: always()
+    
+    steps:
+      - name: Check job statuses
+        run: |
+          echo "## Go Test Matrix Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Results:" >> $GITHUB_STEP_SUMMARY
+          echo "- go-test: ${{ needs.go-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- go-lint: ${{ needs.go-lint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- go-integration: ${{ needs.go-integration.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.go-test.result }}" == "success" ] && \
+             [ "${{ needs.go-lint.result }}" == "success" ] && \
+             [ "${{ needs.go-integration.result }}" == "success" ]; then
+            echo "✅ All Go tests passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some tests failed. Check individual job logs." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
