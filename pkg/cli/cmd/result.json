@@ -2,7 +2,7 @@
   {
     "subflake": ".",
     "steps": {},
-    "duration": 3867,
+    "duration": 1783,
     "success": true
   }
 ]
