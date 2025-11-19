@@ -19,11 +19,6 @@ linters:
     - gocyclo
     # - revive  # Disabled due to false positives on interface implementations
 
-formatters:
-  enable:
-    - gofmt
-    - goimports
-
 linters-settings:
   gocyclo:
     min-complexity: 15
@@ -67,8 +62,6 @@ issues:
       text: "var-naming.*package names"
 
 output:
-  formats:
-    text:
-      print-issued-lines: true
-      print-linter-name: true
-      colors: true
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true

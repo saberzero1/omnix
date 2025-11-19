@@ -93,9 +93,7 @@ jobs:
         run: |
           coverage=$(go tool cover -func=coverage-short.out | grep total | awk '{print $3}' | sed 's/%//')
           echo "Total coverage: ${coverage}%"
-          if (( $(echo "$coverage < 74" | bc -l) )); then
-            echo "::warning::Coverage ${coverage}% is below 74% threshold"
-          fi
+          python3 -c "import sys; sys.exit(0 if float('$coverage') >= 74 else 1)" || echo "::warning::Coverage ${coverage}% is below 74% threshold"
 
   go-lint:
     name: Go Lint (${{ matrix.os }})
