@@ -37,6 +37,10 @@ linters-settings:
     rules:
       - name: exported
         disabled: false
+      - name: package-comments
+        disabled: true  # Allow packages without comments
+      - name: unused-parameter
+        disabled: true  # Allow unused parameters (common in interface implementations)
 
 issues:
   exclude-use-default: false
