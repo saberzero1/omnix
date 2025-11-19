@@ -4,6 +4,7 @@ name: "Go Tests - Cross-Platform"
 # to ensure the Go codebase works on all supported systems
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - "main"
