@@ -520,7 +520,7 @@ Time Taken:            ~3 months (estimated)
 Feature Parity:        100% CLI commands
 Breaking Changes:      1 (GUI removed)
 Documentation:         5 major documents
-Code Removed:          ~9,300 LOC Rust
+Code to be removed:    ~9,300 LOC Rust (post-v2.0.0 release)
 Code Added:            ~11,000 LOC Go
 ```
 
