@@ -31,7 +31,7 @@ func Run(ctx context.Context, project *Project) error {
 }
 
 // RunPreShell performs health checks before entering the development shell
-func RunPreShell(ctx context.Context, _ *Project) error {
+func RunPreShell(ctx context.Context, project *Project) error {
 	logger := common.Logger()
 
 	// Get Nix info
@@ -40,16 +40,31 @@ func RunPreShell(ctx context.Context, _ *Project) error {
 		return fmt.Errorf("unable to gather nix info: %w", err)
 	}
 
-	// Run relevant health checks
-	relevantChecks := []checks.Checkable{
-		// Always run these checks
-		&checks.NixVersion{MinVersion: nix.Version{Major: 2, Minor: 13, Patch: 0}},
-		&checks.Rosetta{},
-		&checks.MaxJobs{},
+	// Build list of checks based on configuration
+	var relevantChecks []checks.Checkable
+
+	if project.Config.HealthChecks.NixVersion {
+		relevantChecks = append(relevantChecks,
+			&checks.NixVersion{MinVersion: nix.Version{Major: 2, Minor: 13, Patch: 0}})
 	}
 
-	// TODO: Add cache-related checks when health.Config is available
-	// For now, we'll keep it simple
+	if project.Config.HealthChecks.Rosetta {
+		relevantChecks = append(relevantChecks, &checks.Rosetta{})
+	}
+
+	if project.Config.HealthChecks.MaxJobs {
+		relevantChecks = append(relevantChecks, &checks.MaxJobs{})
+	}
+
+	if project.Config.HealthChecks.Caches {
+		relevantChecks = append(relevantChecks, &checks.Caches{
+			Required: []string{"https://cache.nixos.org"},
+		})
+	}
+
+	if project.Config.HealthChecks.FlakeEnabled {
+		relevantChecks = append(relevantChecks, &checks.FlakeEnabled{})
+	}
 
 	logger.Info("🏥 Running health checks...")
 

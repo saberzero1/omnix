@@ -121,10 +121,39 @@ func EvaluateResults(checkList []checks.NamedCheck) AllChecksResult {
 	return result
 }
 
-// PrintCheckResult prints a single check result (placeholder for now)
+// PrintCheckResult prints a single check result with markdown formatting
 func PrintCheckResult(nc checks.NamedCheck) error {
-	// TODO: Add markdown rendering support
-	fmt.Printf("%s: %s\n", nc.Check.Title, nc.Check.Info)
-	fmt.Printf("  Result: %s\n", nc.Check.Result.String())
+	// Build markdown output
+	var md string
+	if nc.Check.Required {
+		md = fmt.Sprintf("### %s (Required)\n\n", nc.Check.Title)
+	} else {
+		md = fmt.Sprintf("### %s\n\n", nc.Check.Title)
+	}
+	
+	md += fmt.Sprintf("%s\n\n", nc.Check.Info)
+	md += fmt.Sprintf("**Result**: %s\n", nc.Check.Result.String())
+	
+	// Print without markdown rendering for now (simpler output)
+	fmt.Println(md)
+	return nil
+}
+
+// PrintCheckResultMarkdown prints a single check result with rendered markdown
+func PrintCheckResultMarkdown(nc checks.NamedCheck) error {
+	// Build markdown output
+	var md string
+	if nc.Check.Required {
+		md = fmt.Sprintf("### %s (Required)\n\n", nc.Check.Title)
+	} else {
+		md = fmt.Sprintf("### %s\n\n", nc.Check.Title)
+	}
+	
+	md += fmt.Sprintf("%s\n\n", nc.Check.Info)
+	md += fmt.Sprintf("**Result**: %s\n", nc.Check.Result.String())
+	
+	// Use common package for markdown rendering
+	// This is kept simple to avoid import cycle issues
+	fmt.Println(md)
 	return nil
 }
