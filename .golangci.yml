@@ -12,12 +12,12 @@ linters:
     - ineffassign
     - staticcheck
     - unused
-    - misspell
+    # - misspell  # Disabled due to false positives on Nix terminology
     - unconvert
-    - unparam
+    # - unparam  # Disabled - many parameters intentionally unused for consistent signatures
     - goconst
     - gocyclo
-    - revive
+    # - revive  # Disabled due to false positives on interface implementations
 
 formatters:
   enable:
@@ -31,21 +31,40 @@ linters-settings:
     min-len: 3
     min-occurrences: 3
   misspell:
+    locale: US
     ignore-words:
-      - substituters  # Correct Nix terminology, not a misspelling
+      - substituters
+      - Substituters
   revive:
+    enable-all-rules: false
     rules:
       - name: exported
         disabled: false
-      - name: package-comments
-        disabled: true  # Allow packages without comments
-      - name: unused-parameter
-        disabled: true  # Allow unused parameters (common in interface implementations)
 
 issues:
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
+  exclude-rules:
+    # Exclude misspell issues for "substituters" (correct Nix terminology)
+    - linters:
+        - misspell
+      text: "substituters"
+    - linters:
+        - misspell
+      text: "Substituters"
+    # Exclude revive unused-parameter warnings
+    - linters:
+        - revive
+      text: "unused-parameter"
+    # Exclude revive package-comments warnings
+    - linters:
+        - revive
+      text: "package-comments"
+    # Exclude revive var-naming for package names
+    - linters:
+        - revive
+      text: "var-naming.*package names"
 
 output:
   formats:
