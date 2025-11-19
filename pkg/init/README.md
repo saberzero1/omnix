@@ -96,6 +96,38 @@ Conditionally keeps or deletes files matching glob patterns:
 
 When `Value` is `false`, all matching files are deleted.
 
+#### Chmod Action
+
+Changes file permissions on files matching glob patterns:
+
+```go
+{
+    Name:        "make-executable",
+    Description: "Make scripts executable",
+    Action: &init.ChmodAction{
+        Paths: []string{"*.sh", "scripts/**"},
+        Mode:  0755,
+        Value: boolPtr(true),
+    },
+}
+```
+
+#### Move Action
+
+Moves or renames files:
+
+```go
+{
+    Name:        "relocate-config",
+    Description: "Move config to proper location",
+    Action: &init.MoveAction{
+        From:  "example.config",
+        To:    "config/app.config",
+        Value: boolPtr(true),
+    },
+}
+```
+
 ### Setting Parameter Values
 
 ```go
@@ -131,8 +163,10 @@ type Action interface {
 Actions are applied in priority order:
 1. **Retain** actions (pruning) run first
 2. **Replace** actions run second
+3. **Chmod** actions run third
+4. **Move** actions run fourth
 
-This ensures files are deleted before text replacement occurs, preventing unnecessary work on files that will be deleted.
+This ensures files are deleted before text replacement occurs, permissions are set before moving, and files are moved last.
 
 ## Examples
 
@@ -234,4 +268,4 @@ Current implementation:
 - [ ] Add template test execution
 - [ ] Support for loading templates from flakes
 - [x] ~~Improve glob pattern matching (full globset support)~~ (Enhanced with ** support)
-- [ ] Add more sophisticated file operation support
+- [x] ~~Add more sophisticated file operation support~~ (Completed - added ChmodAction and MoveAction)
