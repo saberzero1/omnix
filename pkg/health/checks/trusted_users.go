@@ -15,7 +15,7 @@ type TrustedUsers struct {
 }
 
 // Check verifies that the current user is a trusted user
-func (tu *TrustedUsers) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
+func (tu *TrustedUsers) Check(_ context.Context, nixInfo *nix.Info) []NamedCheck {
 	// Skip if disabled
 	if !tu.Enable {
 		return []NamedCheck{}

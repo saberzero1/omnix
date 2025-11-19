@@ -50,7 +50,7 @@ Examples:
 	return cmd
 }
 
-func runInit(cmd *cobra.Command, args []string) error {
+func runInit(_ *cobra.Command, args []string) error {
 	ctx := context.Background()
 
 	outputDir := args[0]

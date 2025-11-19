@@ -1,3 +1,6 @@
+// Package main is the entry point for the omnix CLI tool.
+// Omnix is a companion CLI for Nix that provides commands for development,
+// CI/CD, health checks, and project initialization.
 package main
 
 import (

@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+const (
+	osDarwin = "darwin"
+	osLinux  = "linux"
+)
+
 // Env represents the environment in which Nix operates.
 type Env struct {
 	// User is the current user ($USER) - alias for CurrentUser
@@ -19,13 +24,12 @@ type Env struct {
 	OS OSType
 }
 
-// Deprecated field names for backward compatibility
-// CurrentUser returns the current user
+// CurrentUser returns the current user (deprecated: use User field directly)
 func (e *Env) CurrentUser() string {
 	return e.User
 }
 
-// CurrentUserGroups returns the current user's groups
+// CurrentUserGroups returns the current user's groups (deprecated: use Groups field directly)
 func (e *Env) CurrentUserGroups() []string {
 	return e.Groups
 }
@@ -49,9 +53,9 @@ func (o OSType) String() string {
 		return "NixOS"
 	case o.IsNixDarwin:
 		return "macOS (nix-darwin)"
-	case o.Type == "darwin":
+	case o.Type == osDarwin:
 		return "macOS"
-	case o.Type == "linux":
+	case o.Type == osLinux:
 		return "Linux"
 	default:
 		return o.Type
@@ -116,6 +120,8 @@ func getCurrentUser() string {
 }
 
 // getCurrentUserGroups returns the current user's groups.
+//
+//nolint:unparam // error return kept for future extensibility and API consistency
 func getCurrentUserGroups(ctx context.Context) ([]string, error) {
 	cmd := exec.CommandContext(ctx, "groups")
 	output, err := cmd.Output()
@@ -135,7 +141,9 @@ func getCurrentUserGroups(ctx context.Context) ([]string, error) {
 }
 
 // detectOS detects the operating system type.
-func detectOS(ctx context.Context) (OSType, error) {
+//
+//nolint:unparam // error return kept for future extensibility and API consistency
+func detectOS(_ context.Context) (OSType, error) {
 	osType := OSType{
 		Type: runtime.GOOS,
 		Arch: runtime.GOARCH,
@@ -148,7 +156,7 @@ func detectOS(ctx context.Context) (OSType, error) {
 	}
 
 	// Check for nix-darwin on macOS
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == osDarwin {
 		// Check if /etc/nix/nix.conf is a symlink (managed by nix-darwin)
 		info, err := os.Lstat("/etc/nix/nix.conf")
 		if err == nil && info.Mode()&os.ModeSymlink != 0 {

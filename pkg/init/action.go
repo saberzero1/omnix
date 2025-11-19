@@ -28,6 +28,7 @@ type ReplaceAction struct {
 	Value       *string
 }
 
+// HasValue returns true if the replace action has a value set
 func (r ReplaceAction) HasValue() bool {
 	return r.Value != nil
 }
@@ -39,7 +40,8 @@ func (r ReplaceAction) String() string {
 	return fmt.Sprintf("replace [%s => %s]", r.Placeholder, *r.Value)
 }
 
-func (r ReplaceAction) Apply(ctx context.Context, outDir string) error {
+// Apply performs the replace action on files in the output directory
+func (r ReplaceAction) Apply(_ context.Context, outDir string) error {
 	if r.Value == nil {
 		return nil
 	}
@@ -96,6 +98,7 @@ type RetainAction struct {
 	Value *bool
 }
 
+// HasValue returns true if the retain action has a value set
 func (r RetainAction) HasValue() bool {
 	return r.Value != nil
 }
@@ -107,7 +110,8 @@ func (r RetainAction) String() string {
 	return fmt.Sprintf("prune [%s]", strings.Join(r.Paths, ", "))
 }
 
-func (r RetainAction) Apply(ctx context.Context, outDir string) error {
+// Apply performs the retain action by pruning files not matching the retain patterns
+func (r RetainAction) Apply(_ context.Context, outDir string) error {
 	if r.Value == nil || *r.Value {
 		return nil
 	}
@@ -158,7 +162,7 @@ func (r RetainAction) Apply(ctx context.Context, outDir string) error {
 func findAllPaths(root string) ([]string, error) {
 	var paths []string
 
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(root, func(path string, _ os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

@@ -12,7 +12,7 @@ import (
 type Homebrew struct{}
 
 // Check verifies Homebrew installation on macOS
-func (h *Homebrew) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
+func (h *Homebrew) Check(_ context.Context, _ *nix.Info) []NamedCheck {
 	// Only relevant for macOS
 	if runtime.GOOS != "darwin" {
 		return []NamedCheck{}

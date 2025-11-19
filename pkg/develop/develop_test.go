@@ -178,7 +178,7 @@ func TestProject_GetWorkingDir_Remote(t *testing.T) {
 	assert.NotEmpty(t, dir)
 }
 
-func TestIsCachixAvailable(t *testing.T) {
+func TestIsCachixAvailable(_ *testing.T) {
 	// Just test that it doesn't panic
 	_ = IsCachixAvailable()
 }

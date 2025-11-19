@@ -11,7 +11,7 @@ import (
 type FlakeEnabled struct{}
 
 // Check verifies that flakes are enabled in the Nix configuration
-func (f *FlakeEnabled) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
+func (f *FlakeEnabled) Check(_ context.Context, nixInfo *nix.Info) []NamedCheck {
 	features := nixInfo.Config.ExperimentalFeatures.Value
 
 	hasFlakes := false

@@ -19,6 +19,7 @@ type CheckResult interface {
 // GreenResult indicates a passed check
 type GreenResult struct{}
 
+// IsGreen returns true indicating the check passed
 func (g GreenResult) IsGreen() bool  { return true }
 func (g GreenResult) String() string { return "✅ Passed" }
 
@@ -28,6 +29,7 @@ type RedResult struct {
 	Suggestion string // How to fix the problem
 }
 
+// IsGreen returns false indicating the check failed
 func (r RedResult) IsGreen() bool { return false }
 func (r RedResult) String() string {
 	return fmt.Sprintf("❌ Failed: %s. Fix: %s", r.Message, r.Suggestion)

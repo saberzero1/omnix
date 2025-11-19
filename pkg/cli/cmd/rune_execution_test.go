@@ -25,7 +25,7 @@ func TestHealthCommand_Execute(t *testing.T) {
 
 	// Execute the health command
 	err := cmd.Execute()
-	
+
 	// The command might fail if Nix is not available or if some checks fail
 	// We're testing that the command executes and doesn't panic
 	if err != nil {
@@ -52,7 +52,7 @@ func TestHealthCommand_JSONFlag(t *testing.T) {
 
 	// Execute with --json flag
 	_ = cmd.Execute()
-	
+
 	// If successful, should have some output (even if "not implemented")
 	// This exercises the JSON flag path in runHealth
 }
@@ -70,9 +70,9 @@ func TestShowCommand_Execute(t *testing.T) {
 
 	// Try to show current directory as a flake
 	cmd.SetArgs([]string{"."})
-	
+
 	err := cmd.Execute()
-	
+
 	// The command might fail if current directory is not a flake, which is expected
 	// We're testing that the command executes without panicking
 	if err != nil {
@@ -90,14 +90,14 @@ func TestShowCommand_WithFlakeURL(t *testing.T) {
 	// Create a minimal test flake
 	tmpDir := t.TempDir()
 	flakeNix := filepath.Join(tmpDir, "flake.nix")
-	
+
 	flakeContent := `{
   description = "Test flake";
   outputs = { self, nixpkgs }: {
     packages.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.hello;
   };
 }`
-	
+
 	err := os.WriteFile(flakeNix, []byte(flakeContent), 0644)
 	require.NoError(t, err)
 
@@ -109,7 +109,7 @@ func TestShowCommand_WithFlakeURL(t *testing.T) {
 
 	// Execute
 	_ = cmd.Execute()
-	
+
 	// Test exercises the show command path
 }
 
@@ -126,9 +126,9 @@ func TestDevelopCommand_Execute(t *testing.T) {
 
 	// Try with current directory
 	cmd.SetArgs([]string{"."})
-	
+
 	err := cmd.Execute()
-	
+
 	// Command might fail if Nix is not available or directory is not a flake
 	// We're testing the execution path
 	if err != nil {
@@ -144,12 +144,12 @@ func TestDevelopCommand_WithConfigFile(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	configFile := filepath.Join(tmpDir, "om.yaml")
-	
+
 	// Create a minimal config
 	configContent := `develop:
   pre_shell_hook: ""
   post_shell_hook: ""`
-	
+
 	err := os.WriteFile(configFile, []byte(configContent), 0644)
 	require.NoError(t, err)
 
@@ -172,7 +172,7 @@ func TestCIRunCommand_Execute(t *testing.T) {
 	// Create a minimal config file
 	tmpDir := t.TempDir()
 	configFile := filepath.Join(tmpDir, "om.yaml")
-	
+
 	configContent := `ci:
   default:
     ".":
@@ -184,7 +184,7 @@ func TestCIRunCommand_Execute(t *testing.T) {
           enable: false
         flakeCheck:
           enable: false`
-	
+
 	err := os.WriteFile(configFile, []byte(configContent), 0644)
 	require.NoError(t, err)
 
@@ -198,7 +198,7 @@ func TestCIRunCommand_Execute(t *testing.T) {
 	_ = cmd.Execute()
 }
 
-// TestCIGHMatrixCommand_Execute tests the CI gh-matrix command execution  
+// TestCIGHMatrixCommand_Execute tests the CI gh-matrix command execution
 func TestCIGHMatrixCommand_Execute(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
@@ -207,13 +207,13 @@ func TestCIGHMatrixCommand_Execute(t *testing.T) {
 	// Create a minimal config file
 	tmpDir := t.TempDir()
 	configFile := filepath.Join(tmpDir, "om.yaml")
-	
+
 	configContent := `ci:
   default:
     ".":
       dir: "."
       skip: false`
-	
+
 	err := os.WriteFile(configFile, []byte(configContent), 0644)
 	require.NoError(t, err)
 
@@ -225,7 +225,7 @@ func TestCIGHMatrixCommand_Execute(t *testing.T) {
 
 	// Execute
 	err = cmd.Execute()
-	
+
 	// This command should work without Nix as it just generates a matrix
 	// from the config file
 	if err != nil {
@@ -242,7 +242,7 @@ func TestCIRunCommand_WithSystems(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	configFile := filepath.Join(tmpDir, "om.yaml")
-	
+
 	configContent := `ci:
   default:
     ".":
@@ -250,7 +250,7 @@ func TestCIRunCommand_WithSystems(t *testing.T) {
       steps:
         build:
           enable: false`
-	
+
 	err := os.WriteFile(configFile, []byte(configContent), 0644)
 	require.NoError(t, err)
 
@@ -276,7 +276,7 @@ func TestCIRunCommand_Parallel(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	configFile := filepath.Join(tmpDir, "om.yaml")
-	
+
 	configContent := `ci:
   default:
     ".":
@@ -284,7 +284,7 @@ func TestCIRunCommand_Parallel(t *testing.T) {
       steps:
         build:
           enable: false`
-	
+
 	err := os.WriteFile(configFile, []byte(configContent), 0644)
 	require.NoError(t, err)
 

@@ -21,7 +21,7 @@ func DefaultNixVersion() NixVersion {
 }
 
 // Check verifies that the installed Nix version is supported
-func (nv *NixVersion) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
+func (nv *NixVersion) Check(_ context.Context, nixInfo *nix.Info) []NamedCheck {
 	currentVersion := nixInfo.Version
 
 	var result CheckResult

@@ -278,7 +278,7 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 }
 
 // runBuildStep executes the build step
-func runBuildStep(ctx context.Context, flake nix.FlakeURL, step BuildStep, opts RunOptions) StepResult {
+func runBuildStep(ctx context.Context, flake nix.FlakeURL, step BuildStep, _ RunOptions) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "build",
@@ -304,7 +304,7 @@ func runBuildStep(ctx context.Context, flake nix.FlakeURL, step BuildStep, opts 
 }
 
 // runLockfileStep executes the lockfile check step
-func runLockfileStep(ctx context.Context, flake nix.FlakeURL, step LockfileStep) StepResult {
+func runLockfileStep(ctx context.Context, flake nix.FlakeURL, _ LockfileStep) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "lockfile",
@@ -325,7 +325,7 @@ func runLockfileStep(ctx context.Context, flake nix.FlakeURL, step LockfileStep)
 }
 
 // runFlakeCheckStep executes the flake check step
-func runFlakeCheckStep(ctx context.Context, flake nix.FlakeURL, step FlakeCheckStep) StepResult {
+func runFlakeCheckStep(ctx context.Context, flake nix.FlakeURL, _ FlakeCheckStep) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "flakeCheck",

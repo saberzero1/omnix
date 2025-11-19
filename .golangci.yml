@@ -30,6 +30,9 @@ linters-settings:
   goconst:
     min-len: 3
     min-occurrences: 3
+  misspell:
+    ignore-words:
+      - substituters  # Correct Nix terminology, not a misspelling
   revive:
     rules:
       - name: exported

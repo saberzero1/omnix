@@ -104,8 +104,6 @@ type FlakeMetadata struct {
 	Description string `json:"description,omitempty"`
 	// Outputs from the flake
 	Outputs *FlakeOutputs `json:"-"`
-	// Raw outputs JSON for custom unmarshaling
-	rawOutputs json.RawMessage
 }
 
 // UnmarshalJSON implements custom JSON unmarshaling for FlakeMetadata

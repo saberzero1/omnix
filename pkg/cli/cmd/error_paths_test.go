@@ -17,10 +17,10 @@ func TestShowCommand_InvalidFlake(t *testing.T) {
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
-	
+
 	// Test with clearly invalid flake path
 	cmd.SetArgs([]string{"/nonexistent/invalid/path/to/flake"})
-	
+
 	err := cmd.Execute()
 	// Should error because the flake doesn't exist
 	assert.Error(t, err)
@@ -29,7 +29,7 @@ func TestShowCommand_InvalidFlake(t *testing.T) {
 // TestDevelopCommand_Args tests argument parsing
 func TestDevelopCommand_Args(t *testing.T) {
 	cmd := NewDevelopCmd()
-	
+
 	// Test that command accepts maximum 1 argument
 	assert.NotNil(t, cmd.Args)
 }
@@ -37,7 +37,7 @@ func TestDevelopCommand_Args(t *testing.T) {
 // TestCIRunCommand_Args tests argument parsing
 func TestCIRunCommand_Args(t *testing.T) {
 	cmd := newCIRunCmd()
-	
+
 	// Test that command accepts maximum 1 argument
 	assert.NotNil(t, cmd.Args)
 }
@@ -52,10 +52,10 @@ func TestInitCommand_MissingArgs(t *testing.T) {
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
-	
+
 	// Try to run without required args
 	cmd.SetArgs([]string{})
-	
+
 	err := cmd.Execute()
 	// Should error because output directory is required
 	assert.Error(t, err)

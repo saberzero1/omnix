@@ -11,7 +11,7 @@ import (
 type Shell struct{}
 
 // Check verifies shell configuration
-func (s *Shell) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
+func (s *Shell) Check(_ context.Context, _ *nix.Info) []NamedCheck {
 	shell := os.Getenv("SHELL")
 
 	if shell == "" {

@@ -12,7 +12,7 @@ type MaxJobs struct {
 }
 
 // Check verifies the max-jobs setting
-func (mj *MaxJobs) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
+func (mj *MaxJobs) Check(_ context.Context, _ *nix.Info) []NamedCheck {
 	// TODO: Implement max-jobs check
 	// This would check nixInfo.Config for max-jobs setting
 	// For now, skip this check

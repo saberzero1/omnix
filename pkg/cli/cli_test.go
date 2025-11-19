@@ -87,10 +87,10 @@ func TestRootCommand_Help(t *testing.T) {
 	rootCmd.SetOut(&buf)
 	rootCmd.SetErr(&buf)
 	rootCmd.SetArgs([]string{"--help"})
-	
+
 	err := rootCmd.Execute()
 	assert.NoError(t, err)
-	
+
 	output := buf.String()
 	assert.Contains(t, output, "omnix")
 	assert.Contains(t, output, "om")
@@ -99,7 +99,7 @@ func TestRootCommand_Help(t *testing.T) {
 
 func TestRootCommand_Version(t *testing.T) {
 	SetVersion("test-version", "test-commit")
-	
+
 	// Test that version is set in the command
 	assert.Contains(t, rootCmd.Version, "test-version")
 	assert.Contains(t, rootCmd.Version, "test-co") // truncated to 7 chars
@@ -131,4 +131,3 @@ func TestVerbosityLevels(t *testing.T) {
 		})
 	}
 }
-

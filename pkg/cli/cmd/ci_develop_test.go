@@ -39,12 +39,12 @@ ci:
 
 func TestCIRunCommand_Help(t *testing.T) {
 	cmd := newCIRunCmd()
-	
+
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
 	cmd.SetArgs([]string{"--help"})
-	
+
 	err := cmd.Execute()
 	assert.NoError(t, err)
 	assert.Contains(t, buf.String(), "run")
@@ -52,7 +52,7 @@ func TestCIRunCommand_Help(t *testing.T) {
 
 func TestCIRunCommand_AllFlags(t *testing.T) {
 	cmd := newCIRunCmd()
-	
+
 	// Test all flags are registered
 	flags := []string{
 		"systems",
@@ -65,7 +65,7 @@ func TestCIRunCommand_AllFlags(t *testing.T) {
 		"parallel",
 		"max-concurrency",
 	}
-	
+
 	for _, flagName := range flags {
 		flag := cmd.Flags().Lookup(flagName)
 		assert.NotNil(t, flag, "flag %s should be registered", flagName)
@@ -95,12 +95,12 @@ ci:
 
 func TestCIGHMatrixCommand_Help(t *testing.T) {
 	cmd := newCIGHMatrixCmd()
-	
+
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
 	cmd.SetArgs([]string{"--help"})
-	
+
 	err := cmd.Execute()
 	assert.NoError(t, err)
 	assert.Contains(t, buf.String(), "matrix")
@@ -108,13 +108,13 @@ func TestCIGHMatrixCommand_Help(t *testing.T) {
 
 func TestCIGHMatrixCommand_AllFlags(t *testing.T) {
 	cmd := newCIGHMatrixCmd()
-	
+
 	// Test all flags are registered
 	flags := []string{
 		"systems",
 		"config",
 	}
-	
+
 	for _, flagName := range flags {
 		flag := cmd.Flags().Lookup(flagName)
 		assert.NotNil(t, flag, "flag %s should be registered", flagName)
@@ -130,12 +130,12 @@ func TestDevelopCommand(t *testing.T) {
 
 func TestDevelopCommand_Help(t *testing.T) {
 	cmd := NewDevelopCmd()
-	
+
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
 	cmd.SetArgs([]string{"--help"})
-	
+
 	err := cmd.Execute()
 	assert.NoError(t, err)
 	assert.Contains(t, buf.String(), "develop")
@@ -143,7 +143,7 @@ func TestDevelopCommand_Help(t *testing.T) {
 
 func TestDevelopCommand_AllFlags(t *testing.T) {
 	cmd := NewDevelopCmd()
-	
+
 	// Test config flag is registered
 	flag := cmd.Flags().Lookup("config")
 	assert.NotNil(t, flag, "config flag should be registered")
@@ -199,5 +199,3 @@ func TestDevelopFlags(t *testing.T) {
 	configFlag := cmd.Flags().Lookup("config")
 	assert.NotNil(t, configFlag)
 }
-
-

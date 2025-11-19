@@ -20,7 +20,7 @@ type Project struct {
 }
 
 // NewProject creates a new Project instance
-func NewProject(ctx context.Context, flake nix.FlakeURL, config Config) (*Project, error) {
+func NewProject(_ context.Context, flake nix.FlakeURL, config Config) (*Project, error) {
 	var dir *string
 
 	// If it's a local path, canonicalize it
