@@ -263,7 +263,7 @@ From DESIGN_DOCUMENT.md Phase 7:
 ### New Files (Phase 7):
 ```
 nix/modules/flake/go.nix             (56 lines - Go build config)
-MIGRATION_GUIDE.md                   (432 lines - User guide)
+MIGRATION_GUIDE.md                   (311 lines - User guide)
 PHASE7_SUMMARY.md                    (this document)
 ```
 
@@ -319,7 +319,7 @@ not a dynamic executable  # ✅ Fully static
 ### Documentation Coverage
 
 **User-Facing:**
-- [x] MIGRATION_GUIDE.md (432 lines, comprehensive)
+- [x] MIGRATION_GUIDE.md (311 lines, comprehensive)
 - [x] README.md (updated for v2.0)
 - [x] doc/history.md (v2.0.0-beta release notes)
 - [x] All command docs (unchanged, still valid)
