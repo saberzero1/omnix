@@ -326,13 +326,13 @@ go tool cover -html=coverage.out
 ```bash
 # CI Commands
 om ci run                              # Run CI for current directory
-om ci run github:juspay/omnix          # Run CI for remote flake
+om ci run github:saberzero1/omnix          # Run CI for remote flake
 om ci run --systems x86_64-linux,aarch64-darwin  # Multi-platform CI
 om ci gh-matrix --systems x86_64-linux # Generate GitHub Actions matrix
 
 # Develop Command
 om develop                             # Setup dev environment for current directory
-om develop github:juspay/omnix         # Setup for remote flake
+om develop github:saberzero1/omnix         # Setup for remote flake
 om develop --config custom-om.yaml     # Use custom config
 ```
 
@@ -403,7 +403,7 @@ Phase 4 has delivered a **production-ready, fully integrated implementation** fo
 ---
 
 **Prepared:** 2025-11-18  
-**Packages:** `github.com/juspay/omnix/pkg/ci`, `github.com/juspay/omnix/pkg/develop`  
+**Packages:** `github.com/saberzero1/omnix/pkg/ci`, `github.com/saberzero1/omnix/pkg/develop`  
 **Version:** Phase 4 Milestone  
 **Coverage:** 54.9% average  
 **Quality:** Production Ready ✅  

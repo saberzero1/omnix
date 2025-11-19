@@ -3,7 +3,7 @@ package health
 import (
 	"testing"
 
-	"github.com/juspay/omnix/pkg/health/checks"
+	"github.com/saberzero1/omnix/pkg/health/checks"
 	"github.com/stretchr/testify/assert"
 )
 

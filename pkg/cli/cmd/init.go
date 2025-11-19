@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	templatepkg "github.com/juspay/omnix/pkg/init"
+	templatepkg "github.com/saberzero1/omnix/pkg/init"
 )
 
 var (

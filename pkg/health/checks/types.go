@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // CheckResult represents the result of a health check

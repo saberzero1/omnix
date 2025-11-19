@@ -21,7 +21,7 @@ The builtin registry (stored in [a flake][flake]) contains the following templat
 - [Rust project template](https://github.com/srid/rust-nix-template)
 - [NixOS/ nix-darwin/ home-manager template](https://github.com/juspay/nixos-unified-template)
 
-[flake]: https://github.com/juspay/omnix/blob/main/crates/omnix-init/registry/flake.nix
+[flake]: https://github.com/saberzero1/omnix/blob/main/crates/omnix-init/registry/flake.nix
 
 ## Initializing your own project templates {#custom}
 

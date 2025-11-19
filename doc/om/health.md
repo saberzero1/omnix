@@ -5,7 +5,7 @@ The `om health` command checks the health of your Nix install. Furthermore, indi
 [ny-cache]: https://github.com/nammayatri/nammayatri/blob/e25e0931e698a4eb369da0eba7f5a02dd03f59a6/om.yaml#L4-L6
 
 
-![](https://github.com/juspay/omnix/assets/3998/abbbc54b-d888-42fb-a2a8-31d9ae142d6a)
+![](https://github.com/saberzero1/omnix/assets/3998/abbbc54b-d888-42fb-a2a8-31d9ae142d6a)
 
 
 ## Checks performed

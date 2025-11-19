@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -135,7 +135,7 @@ func TestNewProject_LocalPath(t *testing.T) {
 func TestNewProject_RemoteFlake(t *testing.T) {
 	ctx := context.Background()
 
-	flake, err := nix.ParseFlakeURL("github:juspay/omnix")
+	flake, err := nix.ParseFlakeURL("github:saberzero1/omnix")
 	require.NoError(t, err)
 
 	config := DefaultConfig()
@@ -165,7 +165,7 @@ func TestProject_GetWorkingDir_Local(t *testing.T) {
 func TestProject_GetWorkingDir_Remote(t *testing.T) {
 	ctx := context.Background()
 
-	flake, err := nix.ParseFlakeURL("github:juspay/omnix")
+	flake, err := nix.ParseFlakeURL("github:saberzero1/omnix")
 	require.NoError(t, err)
 
 	config := DefaultConfig()

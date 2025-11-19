@@ -11,7 +11,7 @@ This guide helps developers get started with the Go version of Omnix.
 
 ```bash
 # Clone the repository
-git clone https://github.com/juspay/omnix
+git clone https://github.com/saberzero1/omnix
 cd omnix
 
 # Install dependencies

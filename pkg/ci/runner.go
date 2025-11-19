@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 	"go.uber.org/zap"
 )
 

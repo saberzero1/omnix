@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // Caches checks that required caches are configured

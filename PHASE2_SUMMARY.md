@@ -298,10 +298,10 @@ From DESIGN_DOCUMENT.md Phase 2:
 ### Quick Start
 ```bash
 # Install
-go get github.com/juspay/omnix/pkg/nix
+go get github.com/saberzero1/omnix/pkg/nix
 
 # Use
-import "github.com/juspay/omnix/pkg/nix"
+import "github.com/saberzero1/omnix/pkg/nix"
 
 version, _ := nix.ParseVersion("nix (Nix) 2.13.0")
 fmt.Println(version)  // 2.13.0
@@ -323,7 +323,7 @@ go tool cover -html=coverage.out
 ### Documentation
 ```bash
 # View godoc
-go doc github.com/juspay/omnix/pkg/nix
+go doc github.com/saberzero1/omnix/pkg/nix
 
 # Read README
 cat pkg/nix/README.md
@@ -346,7 +346,7 @@ Phase 2 has delivered a **production-ready foundation** for Nix interactions in 
 ---
 
 **Prepared:** 2025-11-17  
-**Package:** `github.com/juspay/omnix/pkg/nix`  
+**Package:** `github.com/saberzero1/omnix/pkg/nix`  
 **Version:** v0.1.0 (migration milestone)  
 **Coverage:** 76.7%  
 **Quality:** Production Ready ✅

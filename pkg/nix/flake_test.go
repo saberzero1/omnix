@@ -17,8 +17,8 @@ func TestNewFlakeURL(t *testing.T) {
 		},
 		{
 			name: "github URL",
-			url:  "github:juspay/omnix",
-			want: "github:juspay/omnix",
+			url:  "github:saberzero1/omnix",
+			want: "github:saberzero1/omnix",
 		},
 		{
 			name: "path with attribute",
@@ -75,7 +75,7 @@ func TestFlakeURL_AsLocalPath(t *testing.T) {
 		},
 		{
 			name: "github URL",
-			url:  "github:juspay/omnix",
+			url:  "github:saberzero1/omnix",
 			want: "",
 		},
 		{
@@ -118,7 +118,7 @@ func TestFlakeURL_IsLocal(t *testing.T) {
 		},
 		{
 			name: "github URL",
-			url:  "github:juspay/omnix",
+			url:  "github:saberzero1/omnix",
 			want: false,
 		},
 		{
@@ -170,9 +170,9 @@ func TestFlakeURL_WithAttr(t *testing.T) {
 		},
 		{
 			name: "github URL with attribute",
-			url:  "github:juspay/omnix",
+			url:  "github:saberzero1/omnix",
 			attr: "packages.x86_64-linux.default",
-			want: "github:juspay/omnix#packages.x86_64-linux.default",
+			want: "github:saberzero1/omnix#packages.x86_64-linux.default",
 		},
 	}
 
@@ -208,8 +208,8 @@ func TestFlakeURL_SplitAttr(t *testing.T) {
 		},
 		{
 			name:     "github with attribute",
-			url:      "github:juspay/omnix#default",
-			wantBase: "github:juspay/omnix",
+			url:      "github:saberzero1/omnix#default",
+			wantBase: "github:saberzero1/omnix",
 			wantAttr: "default",
 		},
 		{
@@ -252,8 +252,8 @@ func TestFlakeURL_Clean(t *testing.T) {
 		},
 		{
 			name: "non-local URL unchanged",
-			url:  "github:juspay/omnix",
-			want: "github:juspay/omnix",
+			url:  "github:saberzero1/omnix",
+			want: "github:saberzero1/omnix",
 		},
 		{
 			name: "absolute path",
@@ -288,8 +288,8 @@ func TestParseFlakeURL(t *testing.T) {
 		},
 		{
 			name:    "valid github URL",
-			input:   "github:juspay/omnix",
-			want:    "github:juspay/omnix",
+			input:   "github:saberzero1/omnix",
+			want:    "github:saberzero1/omnix",
 			wantErr: false,
 		},
 		{

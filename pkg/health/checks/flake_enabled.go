@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // FlakeEnabled checks that experimental features include flakes

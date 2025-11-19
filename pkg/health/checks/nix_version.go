@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // NixVersion checks that the Nix version meets minimum requirements

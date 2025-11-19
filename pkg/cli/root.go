@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/juspay/omnix/pkg/cli/cmd"
-	"github.com/juspay/omnix/pkg/common"
+	"github.com/saberzero1/omnix/pkg/cli/cmd"
+	"github.com/saberzero1/omnix/pkg/common"
 )
 
 var (

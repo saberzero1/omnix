@@ -267,7 +267,7 @@ om completion --help
 
 # Show command
 om show .
-om show github:juspay/omnix
+om show github:saberzero1/omnix
 
 # Completions
 om completion bash | head -20

@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/juspay/omnix/pkg/common"
+	"github.com/saberzero1/omnix/pkg/common"
 )
 
 // Action represents an action to perform on a template

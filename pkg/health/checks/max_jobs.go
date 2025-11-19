@@ -3,7 +3,7 @@ package checks
 import (
 	"context"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // MaxJobs checks the max-jobs configuration

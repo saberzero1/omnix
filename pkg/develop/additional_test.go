@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -168,7 +168,7 @@ func TestProject_GetWorkingDir_CurrentDir(t *testing.T) {
 	ctx := context.Background()
 
 	// Remote flake - should use current directory
-	flake, err := nix.ParseFlakeURL("github:juspay/omnix")
+	flake, err := nix.ParseFlakeURL("github:saberzero1/omnix")
 	require.NoError(t, err)
 
 	config := DefaultConfig()

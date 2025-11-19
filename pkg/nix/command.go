@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/juspay/omnix/pkg/common"
+	"github.com/saberzero1/omnix/pkg/common"
 	"go.uber.org/zap"
 )
 

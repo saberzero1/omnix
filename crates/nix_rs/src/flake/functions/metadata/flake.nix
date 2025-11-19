@@ -25,7 +25,7 @@
                   in
                   # Keep track of visited nodes to workaround a nasty Nix design wart that leads to infinite recursion otherwise.
                     # https://github.com/NixOS/nix/issues/7807
-                    # https://github.com/juspay/omnix/pull/389
+                    # https://github.com/saberzero1/omnix/pull/389
                   lib.optionals (!lib.hasAttr here visited)
                     (lib.concatLists (lib.mapAttrsToList
                       (k: v: [{ name = "${prefix}__${k}"; path = v.outPath; }] ++

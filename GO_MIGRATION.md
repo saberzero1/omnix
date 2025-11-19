@@ -7,7 +7,7 @@ This document tracks the progress of migrating Omnix from Rust to Go according t
 ### Completed Tasks
 
 #### 1. Go Module Structure
-- ✅ Initialized Go module (`github.com/juspay/omnix`)
+- ✅ Initialized Go module (`github.com/saberzero1/omnix`)
 - ✅ Created directory structure:
   - `cmd/om/` - Main binary entry point
   - `pkg/common/` - Shared utilities (replaces omnix-common)

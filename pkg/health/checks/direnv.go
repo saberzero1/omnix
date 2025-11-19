@@ -4,7 +4,7 @@ import (
 	"context"
 	"os/exec"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // Direnv checks for direnv installation

@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/juspay/omnix/pkg/cli"
-	"github.com/juspay/omnix/pkg/common"
+	"github.com/saberzero1/omnix/pkg/cli"
+	"github.com/saberzero1/omnix/pkg/common"
 )
 
 var (

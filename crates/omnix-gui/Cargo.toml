@@ -1,11 +1,11 @@
 [package]
 edition = "2021"
 license = "AGPL-3.0-only"
-repository = "https://github.com/juspay/omnix"
+repository = "https://github.com/saberzero1/omnix"
 # If you change the name here, you must also do it in flake.nix (and run `cargo generate-lockfile` afterwards)
 name = "omnix-gui"
 version = "0.1.0"
-homepage = "https://github.com/juspay/omnix"
+homepage = "https://github.com/saberzero1/omnix"
 build = "build.rs"
 description = "Graphical interface for Omnix"
 

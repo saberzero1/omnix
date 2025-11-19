@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/juspay/omnix/pkg/common"
-	"github.com/juspay/omnix/pkg/develop"
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/common"
+	"github.com/saberzero1/omnix/pkg/develop"
+	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -30,7 +30,7 @@ The develop workflow:
 Example:
   om develop
   om develop .
-  om develop github:juspay/omnix`,
+  om develop github:saberzero1/omnix`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()

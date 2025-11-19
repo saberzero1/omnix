@@ -2,7 +2,7 @@
 name = "omnix-common"
 version = "1.3.0"
 edition = "2021"
-repository = "https://github.com/juspay/omnix"
+repository = "https://github.com/saberzero1/omnix"
 license = "AGPL-3.0-only"
 description = "Common functionality for omnix frontends"
 

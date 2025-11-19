@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/juspay/omnix/pkg/health/checks"
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/health/checks"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // NixHealth contains all health checks for a Nix installation

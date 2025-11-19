@@ -196,7 +196,7 @@ func TestFlakeShow_Integration(t *testing.T) {
 	cmd := NewCmd()
 
 	// Test with a known flake
-	flakeURL := NewFlakeURL("github:juspay/omnix")
+	flakeURL := NewFlakeURL("github:saberzero1/omnix")
 
 	metadata, err := cmd.FlakeShow(ctx, flakeURL)
 	if err != nil {
