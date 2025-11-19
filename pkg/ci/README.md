@@ -152,7 +152,7 @@ jobs:
 This package replaces the `omnix-ci` Rust crate. Key changes:
 
 - **Error Handling**: Rust's `Result<T, E>` → Go's `(T, error)`
-- **Concurrency**: Rust's async/await → Go's goroutines (future enhancement)
+- **Concurrency**: Rust's async/await → Go's goroutines ✅ (Implemented - see parallel_test.go)
 - **Config**: YAML parsing uses `gopkg.in/yaml.v3`
 - **Nix Commands**: Uses `pkg/nix.Cmd` for command execution
 
