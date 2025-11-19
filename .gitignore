@@ -16,3 +16,4 @@ dist
 *.out
 coverage.out
 coverage.html
+vendor/
