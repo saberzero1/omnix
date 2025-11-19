@@ -16,3 +16,6 @@ dist
 *.out
 coverage.out
 coverage.html
+vendor/
+result.json
+**/result.json

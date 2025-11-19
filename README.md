@@ -15,75 +15,74 @@ See <https://omnix.page/>
 
 ## Developing
 
-**Note:** This project is currently being migrated from Rust to Go (see `DESIGN_DOCUMENT.md`). Phase 1 is complete with both Rust and Go code coexisting during the transition.
+**Note:** omnix v2.0 is now written in Go. The Rust v1.x codebase is still present in the `crates/` directory for reference and will be moved to a `v1` branch in a future cleanup.
 
-### Rust Development (Production)
+### Go Development (Production)
 
 1. [Install Nix](https://nixos.asia/en/install)
-1. [Setup `direnv`](https://nixos.asia/en/direnv)
-1. Clone this repo, `cd` to it, and run `direnv allow`.
+2. [Setup `direnv`](https://nixos.asia/en/direnv)
+3. Clone this repo, `cd` to it, and run `direnv allow`.
 
-This will automatically activate the nix develop shell. Open VSCode and install recommended extensions, ensuring that direnv activates in VSCode as well.
+This will automatically activate the nix develop shell with Go 1.23+ and all development tools. Open VSCode and install recommended extensions, ensuring that direnv activates in VSCode as well.
 
-### Go Development (Migration in Progress)
+#### Quick Start
 
-For working on the Go implementation:
-
-1. Install Go 1.22 or later (or use Nix devShell)
-2. Run `go mod download` to fetch dependencies
-3. See `GO_QUICKSTART.md` for detailed Go development guide
-
-Quick Go commands:
 ```sh
-just go-build   # Build Go version
-just go-test    # Run Go tests
-just go-ci      # Full Go CI (format, lint, test, build)
+just go-build   # Build Go binary
+just go-test    # Run tests
+just go-ci      # Full CI (format, lint, test, build)
+just go-run [args]  # Run locally (e.g., just go-run health)
 ```
 
-### Running locally
-
-**Rust version:**
-```sh
-just watch # Or `just w`; you can also pass args, e.g.: `just w show`
-```
-
-**Go version (in development):**
-```sh
-just go-run [args]  # Run Go version
-```
+See [`GO_QUICKSTART.md`](./GO_QUICKSTART.md) for detailed Go development guide.
 
 ### Nix workflows
 
-Inside the nix develop shell (activated by direnv) you can use any of the `cargo` or `rustc` commands, as well as [`just`](https://just.systems/) workflows. Nix specific commands can also be used to work with the project:
+Inside the nix develop shell (activated by direnv):
 
 ```sh
-# Full nix build of CLI
+# Build Go version via Nix (recommended for production builds)
 nix build
 
 # Build and run the CLI
 nix run
+
+# Or run directly without building
+nix run . -- health
 ```
+
+### Rust v1.x (Legacy)
+
+The Rust version (v1.x) is still present in the main branch under the `crates/` directory:
+
+```sh
+# Build Rust version
+nix build .#omnix-cli
+
+# Work on Rust code (legacy)
+just watch  # Development with live reload
+```
+
+> **Note:** The `v1` branch will be created post-v2.0.0 release to archive the Rust codebase. Until then, all Rust sources remain in the main branch.
+
+See [`MIGRATION_GUIDE.md`](./MIGRATION_GUIDE.md) for migrating from v1.x to v2.0.
 
 ### Contributing
 
 >[!TIP]
-> Run `just pca` to autoformat the source tree.
+> Run `just pca` to autoformat the source tree (runs gofmt, nixpkgs-fmt).
 
-- Run `just ci` to **run CI locally**.
+- Run `just go-ci` to **run CI locally** (format, lint, test, build).
 - Add **documentation** wherever useful.
     - Run `just doc run` to preview website docs; edit, and run `just doc check`
-    - To preview Rust API docs, run `just doc cargo`.
+    - For Go API docs, see package documentation with `go doc`
 - Changes must accompany a corresponding `history.md` entry.[^cc]
 
 [^cc]: We don't use any automatic changelog generator for this repo.
 
 ### Release HOWTO
 
-Begin with a release PR:
-
-- Pick a version
-- Update `history.md` to make sure new release header is present
-- Run [`cargo workspace publish`](https://github.com/pksunkara/cargo-workspaces?tab=readme-ov-file#publish) in devShell, using the picked version.
+See [PHASE7_SUMMARY.md](./PHASE7_SUMMARY.md) for release process.
 
 ---
 
