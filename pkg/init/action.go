@@ -126,11 +126,7 @@ func (r RetainAction) Apply(_ context.Context, outDir string) error {
 	var filesToDelete []string
 	for _, file := range files {
 		for _, pattern := range r.Paths {
-			matched, err := filepath.Match(pattern, file)
-			if err != nil {
-				return fmt.Errorf("invalid glob pattern %s: %w", pattern, err)
-			}
-			if matched {
+			if matchGlob(pattern, file) {
 				filesToDelete = append(filesToDelete, file)
 				break
 			}
@@ -156,6 +152,60 @@ func (r RetainAction) Apply(_ context.Context, outDir string) error {
 	}
 
 	return nil
+}
+
+// matchGlob matches a path against a glob pattern with enhanced ** support
+func matchGlob(pattern, path string) bool {
+	// Convert backslashes to forward slashes for consistency
+	pattern = filepath.ToSlash(pattern)
+	path = filepath.ToSlash(path)
+
+	// Handle ** patterns (match zero or more directories)
+	if strings.Contains(pattern, "**") {
+		// Split pattern into parts
+		parts := strings.Split(pattern, "**")
+		
+		// For simple cases like "dir/**" or "**/file.txt"
+		if len(parts) == 2 {
+			prefix := parts[0]
+			suffix := parts[1]
+			
+			// Remove leading/trailing slashes
+			prefix = strings.TrimSuffix(prefix, "/")
+			suffix = strings.TrimPrefix(suffix, "/")
+			
+			// Check prefix
+			if prefix != "" && !strings.HasPrefix(path, prefix) {
+				return false
+			}
+			
+			// Check suffix
+			if suffix != "" {
+				// Match the suffix as a regular glob
+				if suffix == "" {
+					return true
+				}
+				// Match any component ending with suffix
+				matched, _ := filepath.Match(suffix, filepath.Base(path))
+				if matched {
+					return true
+				}
+				// Also check if the full suffix matches
+				if strings.HasSuffix(path, suffix) {
+					return true
+				}
+			} else {
+				// Pattern is like "dir/**", match anything under dir
+				return true
+			}
+			
+			return false
+		}
+	}
+	
+	// Fall back to basic glob matching
+	matched, _ := filepath.Match(pattern, filepath.Base(path))
+	return matched
 }
 
 // findAllPaths returns all file and directory paths relative to the root

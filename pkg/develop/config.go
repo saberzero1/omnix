@@ -14,6 +14,8 @@ type Config struct {
 	Readme ReadmeConfig `yaml:"readme" json:"readme"`
 	// HealthChecks configures which health checks to run
 	HealthChecks HealthChecksConfig `yaml:"health-checks" json:"health-checks"`
+	// Direnv configures automatic direnv setup
+	Direnv DirenvConfig `yaml:"direnv" json:"direnv"`
 }
 
 // ReadmeConfig specifies how to display README information
@@ -46,11 +48,15 @@ func DefaultConfig() Config {
 			Enable: true,
 		},
 		HealthChecks: HealthChecksConfig{
-			NixVersion: true,
-			Rosetta:    true,
-			MaxJobs:    true,
-			Caches:     false,
+			NixVersion:   true,
+			Rosetta:      true,
+			MaxJobs:      true,
+			Caches:       false,
 			FlakeEnabled: false,
+		},
+		Direnv: DirenvConfig{
+			Enable:             false,
+			AllowAutomatically: false,
 		},
 	}
 }
