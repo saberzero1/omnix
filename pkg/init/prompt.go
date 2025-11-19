@@ -47,11 +47,12 @@ func PromptForParams(params []Param) (map[string]interface{}, error) {
 			}
 
 			value := strings.TrimSpace(strings.ToLower(input))
-			if value == "y" || value == "yes" {
+			switch value {
+			case "y", "yes":
 				values[param.Name] = true
-			} else if value == "n" || value == "no" || value == "" {
+			case "n", "no", "":
 				values[param.Name] = false
-			} else {
+			default:
 				fmt.Printf("Invalid input '%s', defaulting to 'no'\n", value)
 				values[param.Name] = false
 			}

@@ -167,8 +167,3 @@ func DefaultCachesConfig() []string {
 		"https://cache.nixos.org",
 	}
 }
-
-// boolPtr is a helper function to create a bool pointer
-func boolPtr(b bool) *bool {
-	return &b
-}
