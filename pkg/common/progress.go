@@ -55,7 +55,10 @@ func (p *ProgressIndicator) Start() {
 		for {
 			select {
 			case <-p.ticker.C:
-				_, _ = fmt.Fprintf(p.writer, "\r%s %s", frames[i%len(frames)], p.message)
+				p.mu.Lock()
+				msg := p.message
+				p.mu.Unlock()
+				_, _ = fmt.Fprintf(p.writer, "\r%s %s", frames[i%len(frames)], msg)
 				i++
 			case <-p.done:
 				return
