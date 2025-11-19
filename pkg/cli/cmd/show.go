@@ -10,7 +10,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // NewShowCmd creates the show command
@@ -96,13 +96,13 @@ func printFlakeOutputTable(w io.Writer, title string, outputs *nix.FlakeOutputs,
 	blue := color.New(color.FgBlue, color.Bold)
 	green := color.New(color.FgGreen, color.Bold)
 
-	blue.Fprint(w, title)
+	_, _ = blue.Fprint(w, title)
 	if command != "" {
-		fmt.Fprint(w, " (")
-		green.Fprint(w, command)
-		fmt.Fprint(w, ")")
+		_, _ = fmt.Fprint(w, " (")
+		_, _ = green.Fprint(w, command)
+		_, _ = fmt.Fprint(w, ")")
 	}
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 
 	// Create table
 	table := tablewriter.NewTable(w)
@@ -114,11 +114,11 @@ func printFlakeOutputTable(w io.Writer, title string, outputs *nix.FlakeOutputs,
 		if desc == "" {
 			desc = "N/A"
 		}
-		table.Append([]string{val.Name, desc})
+		_ = table.Append([]string{val.Name, desc})
 	}
 
-	table.Render()
-	fmt.Fprintln(w)
+	_ = table.Render()
+	_, _ = fmt.Fprintln(w)
 }
 
 // isTerminal checks if the output is a terminal

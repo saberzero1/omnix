@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/juspay/omnix/pkg/cli/cmd"
-	"github.com/juspay/omnix/pkg/common"
+	"github.com/saberzero1/omnix/pkg/cli/cmd"
+	"github.com/saberzero1/omnix/pkg/common"
 )
 
 var (
@@ -47,9 +47,9 @@ It provides various commands to make working with Nix easier:
   - om completion: Generate shell completions`,
 	// Version will be set by SetVersion()
 	Version: "",
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 		// Setup logging based on verbosity flag
-		level := common.InfoLevel
+		var level common.LogLevel
 		switch verbose {
 		case 0:
 			level = common.ErrorLevel

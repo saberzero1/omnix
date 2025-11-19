@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,7 +38,7 @@ func TestCaches_Check_WithMissingCaches(t *testing.T) {
 
 	nixInfo := &nix.Info{
 		Config: nix.Config{
-			Substituters: nix.ConfigValue[[]string]{
+			Substituters: nix.ConfigValue[[]string]{ //nolint:misspell // "Substituters" is correct Nix terminology
 				Value: []string{"https://cache.nixos.org"},
 			},
 		},
@@ -63,7 +63,7 @@ func TestCaches_Check_AllPresent(t *testing.T) {
 
 	nixInfo := &nix.Info{
 		Config: nix.Config{
-			Substituters: nix.ConfigValue[[]string]{
+			Substituters: nix.ConfigValue[[]string]{ //nolint:misspell // "Substituters" is correct Nix terminology
 				Value: []string{
 					"https://cache.nixos.org",
 					"https://other-cache.org",
@@ -78,7 +78,7 @@ func TestCaches_Check_AllPresent(t *testing.T) {
 	results := check.Check(ctx, nixInfo)
 
 	assert.Len(t, results, 1)
-	// Note: The check implementation has empty substituters placeholder,
+	// Note: The check implementation has empty substituters placeholder (Nix terminology) //nolint:misspell
 	// so this test verifies it doesn't crash rather than actual functionality
 	assert.NotNil(t, results[0].Check.Result)
 }

@@ -359,7 +359,7 @@ om init template/ output/ --verbose
 ### Quick Start - Health Package
 
 ```go
-import "github.com/juspay/omnix/pkg/health"
+import "github.com/saberzero1/omnix/pkg/health"
 
 // Get Nix info
 info, _ := nix.GetInfo(ctx)
@@ -381,7 +381,7 @@ for _, check := range checks {
 ### Quick Start - Init Package
 
 ```go
-import "github.com/juspay/omnix/pkg/init"
+import "github.com/saberzero1/omnix/pkg/init"
 
 // Load template
 template, _ := init.LoadTemplate("./template")
@@ -393,7 +393,7 @@ err := template.Apply(ctx, "./output", replacements)
 ### Quick Start - CLI Commands
 
 ```go
-import "github.com/juspay/omnix/pkg/cli"
+import "github.com/saberzero1/omnix/pkg/cli"
 
 // Run health command
 cmd := cli.NewRootCmd()
@@ -493,7 +493,7 @@ Phase 3 has delivered a **production-ready implementation** of health checks, pr
 ---
 
 **Prepared:** 2025-11-18  
-**Packages:** `github.com/juspay/omnix/pkg/health`, `github.com/juspay/omnix/pkg/init`, `github.com/juspay/omnix/pkg/cli`  
+**Packages:** `github.com/saberzero1/omnix/pkg/health`, `github.com/saberzero1/omnix/pkg/init`, `github.com/saberzero1/omnix/pkg/cli`  
 **Version:** Phase 3 Milestone  
 **Coverage:** 43.9% average (79.4% for health)  
 **Quality:** Production Ready ✅

@@ -6,7 +6,7 @@ template:
   # https://tailwindcss.com/docs/customizing-colors#default-color-palette
   theme: fuchsia
 
-  editBaseUrl: https://github.com/juspay/omnix/edit/main/doc
+  editBaseUrl: https://github.com/saberzero1/omnix/edit/main/doc
   
   sidebar:
     collapsed: false

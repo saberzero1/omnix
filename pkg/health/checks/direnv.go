@@ -4,14 +4,14 @@ import (
 	"context"
 	"os/exec"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // Direnv checks for direnv installation
 type Direnv struct{}
 
 // Check verifies that direnv is installed
-func (d *Direnv) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
+func (d *Direnv) Check(_ context.Context, _ *nix.Info) []NamedCheck {
 	_, err := exec.LookPath("direnv")
 	hasDirenv := err == nil
 

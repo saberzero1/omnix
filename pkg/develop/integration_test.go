@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

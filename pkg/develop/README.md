@@ -16,8 +16,8 @@ The `develop` package provides development shell management for Nix projects.
 ```go
 import (
     "context"
-    "github.com/juspay/omnix/pkg/develop"
-    "github.com/juspay/omnix/pkg/nix"
+    "github.com/saberzero1/omnix/pkg/develop"
+    "github.com/saberzero1/omnix/pkg/nix"
 )
 
 // Load configuration
@@ -135,7 +135,7 @@ This package replaces the `omnix-develop` Rust crate. Key changes:
 ### Remote Flake
 
 ```go
-flake, _ := nix.ParseFlakeURL("github:juspay/omnix")
+flake, _ := nix.ParseFlakeURL("github:saberzero1/omnix")
 project, _ := develop.NewProject(ctx, flake, config)
 // project.Dir will be nil for remote flakes
 ```

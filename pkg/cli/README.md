@@ -63,7 +63,7 @@ import (
     "fmt"
     "os"
     
-    "github.com/juspay/omnix/pkg/cli"
+    "github.com/saberzero1/omnix/pkg/cli"
 )
 
 func main() {

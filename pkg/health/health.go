@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/juspay/omnix/pkg/health/checks"
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/health/checks"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // NixHealth contains all health checks for a Nix installation
@@ -65,10 +65,14 @@ func (h *NixHealth) RunAllChecks(ctx context.Context, nixInfo *nix.Info) []check
 // AllChecksResult aggregates check results and provides summary reporting
 type AllChecksResult int
 
+// Health check result constants
 const (
-	Pass         AllChecksResult = iota // All checks passed
-	PassSomeFail                        // Required checks passed, some non-required failed
-	Fail                                // Some required checks failed
+	// Pass indicates all checks passed
+	Pass AllChecksResult = iota
+	// PassSomeFail indicates required checks passed, some non-required failed
+	PassSomeFail
+	// Fail indicates some required checks failed
+	Fail
 )
 
 // RegisterFailure updates the result based on a failed check

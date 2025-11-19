@@ -166,7 +166,7 @@ You can define custom CI actions in your flake, which will be run as part of `om
 }
 ```
 
-For a real-world example of custom steps, checkout [Omnix's configuration](https://github.com/juspay/omnix/blob/5322235ce4069e72fd5eb477353ee5d1f5100243/nix/modules/om.nix#L16-L33).
+For a real-world example of custom steps, checkout [Omnix's configuration](https://github.com/saberzero1/omnix/blob/5322235ce4069e72fd5eb477353ee5d1f5100243/nix/modules/om.nix#L16-L33).
 
 ## Remote CI {#remote}
 
@@ -190,7 +190,7 @@ What this does:
 
 Some real-world examples of how `om ci` is used with specific configurations:
 
-- [omnix](https://github.com/juspay/omnix/blob/5322235ce4069e72fd5eb477353ee5d1f5100243/nix/modules/om.nix#L16-L33)
+- [omnix](https://github.com/saberzero1/omnix/blob/5322235ce4069e72fd5eb477353ee5d1f5100243/nix/modules/om.nix#L16-L33)
 - [services-flake](https://github.com/juspay/services-flake/blob/197fc1c4d07d09f4e01dd935450608c35393b102/flake.nix#L10-L24)
 - [nixos-flake](https://github.com/srid/nixos-flake/blob/4af32875e7cc6df440c5f5cf93c67af41902768b/flake.nix#L29-L45)
 - [haskell-flake](https://github.com/srid/haskell-flake/blob/d128c7329bfc73c3eeef90f6d215d0ccd7baf78c/flake.nix#L15-L67)
@@ -208,7 +208,7 @@ Some real-world examples of how `om ci` is used with specific configurations:
     - Check that `flake.lock` is up to date, if applicable.
     - Build all flake outputs, using [devour-flake](https://github.com/srid/devour-flake)[^schema]
       - Then, print the built store paths to stdout
-    - If the `flake-check` step is enabled ([example](https://github.com/juspay/omnix/pull/376/files)), run `nix flake check`
+    - If the `flake-check` step is enabled ([example](https://github.com/saberzero1/omnix/pull/376/files)), run `nix flake check`
     - Run user defined [custom steps](#custom)
 
 [^schema]: Support for [flake-schemas](https://github.com/srid/devour-flake/pull/11) is planned

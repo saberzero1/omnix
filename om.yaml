@@ -60,7 +60,7 @@ health:
   default:
     nix-version:
       supported: ">=2.16.0"
-    # TODO: Use nixos.asia attic after https://github.com/juspay/omnix/issues/474
+    # TODO: Use nixos.asia attic after https://github.com/saberzero1/omnix/issues/474
     # caches:
     #   required:
     #     - https://om.cachix.org

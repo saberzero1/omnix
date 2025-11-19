@@ -5,14 +5,14 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // Rosetta checks for Rosetta 2 on Apple Silicon Macs
 type Rosetta struct{}
 
 // Check verifies Rosetta 2 availability on macOS ARM64
-func (r *Rosetta) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
+func (r *Rosetta) Check(_ context.Context, _ *nix.Info) []NamedCheck {
 	// Only relevant for macOS on ARM64
 	if runtime.GOOS != "darwin" || runtime.GOARCH != "arm64" {
 		return []NamedCheck{}

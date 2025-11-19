@@ -1,6 +1,6 @@
 # Omnix
 
-**Omnix** aims to supplement the [Nix](https://nixos.asia/en/nix) CLI to improve developer experience. The project is developed [on Github](https://github.com/juspay/omnix).
+**Omnix** aims to supplement the [Nix](https://nixos.asia/en/nix) CLI to improve developer experience. The project is developed [on Github](https://github.com/saberzero1/omnix).
 
 <p style="text-align: center">
 <img src="favicon.svg" alt="Omnix Logo" width="32px" />
@@ -12,7 +12,7 @@ To install Omnix, [install Nix](https://nixos.asia/en/install), then run:
 
 ```sh
 # Install omnix (using om.cachix.org Nix cache)
-nix --accept-flake-config profile install github:juspay/omnix
+nix --accept-flake-config profile install github:saberzero1/omnix
 
 # Make sure that the `om` command works
 om --help
@@ -34,4 +34,4 @@ om --help
 
 ## Discussion
 
-For discussing Omnix, use [Github Discussions](https://github.com/juspay/omnix/discussions) or [Zulip](https://nixos.zulipchat.com/#narrow/stream/415454-omnix).
+For discussing Omnix, use [Github Discussions](https://github.com/saberzero1/omnix/discussions) or [Zulip](https://nixos.zulipchat.com/#narrow/stream/415454-omnix).

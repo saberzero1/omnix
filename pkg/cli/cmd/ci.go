@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/juspay/omnix/pkg/ci"
-	"github.com/juspay/omnix/pkg/common"
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/ci"
+	"github.com/saberzero1/omnix/pkg/common"
+	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -62,7 +62,7 @@ This command executes the configured CI steps from om.yaml including:
 Example:
   om ci run
   om ci run .
-  om ci run github:juspay/omnix`,
+  om ci run github:saberzero1/omnix`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/juspay/omnix/pkg/common"
+	"github.com/saberzero1/omnix/pkg/common"
 )
 
 // Param represents a template parameter

@@ -1321,8 +1321,8 @@ func TestParseFlakeUrl(t *testing.T) {
     }{
         {
             name:    "github URL",
-            input:   "github:juspay/omnix",
-            want:    "github:juspay/omnix",
+            input:   "github:saberzero1/omnix",
+            want:    "github:saberzero1/omnix",
             wantErr: false,
         },
         {
@@ -1361,7 +1361,7 @@ import (
     "context"
     "testing"
     "github.com/stretchr/testify/require"
-    "github.com/juspay/omnix/pkg/nix"
+    "github.com/saberzero1/omnix/pkg/nix"
 )
 
 func TestFlakeShow(t *testing.T) {
@@ -1370,7 +1370,7 @@ func TestFlakeShow(t *testing.T) {
     }
     
     ctx := context.Background()
-    flake, err := nix.ParseFlakeUrl("github:juspay/omnix")
+    flake, err := nix.ParseFlakeUrl("github:saberzero1/omnix")
     require.NoError(t, err)
     
     metadata, err := flake.Show(ctx)

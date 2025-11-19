@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -16,7 +16,7 @@ func TestRunBuildStep(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	flake, err := nix.ParseFlakeURL("github:juspay/omnix/main")
+	flake, err := nix.ParseFlakeURL("github:saberzero1/omnix/main")
 	require.NoError(t, err)
 
 	step := BuildStep{
@@ -39,7 +39,7 @@ func TestRunLockfileStep(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	flake, err := nix.ParseFlakeURL("github:juspay/omnix/main")
+	flake, err := nix.ParseFlakeURL("github:saberzero1/omnix/main")
 	require.NoError(t, err)
 
 	step := LockfileStep{
@@ -56,7 +56,7 @@ func TestRunFlakeCheckStep(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	flake, err := nix.ParseFlakeURL("github:juspay/omnix/main")
+	flake, err := nix.ParseFlakeURL("github:saberzero1/omnix/main")
 	require.NoError(t, err)
 
 	step := FlakeCheckStep{

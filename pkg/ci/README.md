@@ -21,8 +21,8 @@ The `ci` package provides comprehensive CI/CD automation for Nix flakes.
 ```go
 import (
     "context"
-    "github.com/juspay/omnix/pkg/ci"
-    "github.com/juspay/omnix/pkg/nix"
+    "github.com/saberzero1/omnix/pkg/ci"
+    "github.com/saberzero1/omnix/pkg/nix"
 )
 
 // Load configuration

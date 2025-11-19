@@ -12,8 +12,8 @@ type Config struct {
 	ExperimentalFeatures ConfigValue[[]string] `json:"experimental-features"`
 	// System is the current system architecture
 	System ConfigValue[string] `json:"system"`
-	// Substituters are the cache substituters
-	Substituters ConfigValue[[]string] `json:"substituters"`
+	// Substituters are the cache substituters (Nix terminology) //nolint:misspell
+	Substituters ConfigValue[[]string] `json:"substituters"` //nolint:misspell
 	// MaxJobs is the maximum number of build jobs to run in parallel
 	MaxJobs ConfigValue[int] `json:"max-jobs"`
 	// Cores is the number of CPU cores used for builds

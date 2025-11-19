@@ -24,7 +24,7 @@ package main
 import (
     "context"
     
-    "github.com/juspay/omnix/pkg/init"
+    "github.com/saberzero1/omnix/pkg/init"
 )
 
 func main() {

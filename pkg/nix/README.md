@@ -16,7 +16,7 @@ The `nix` package provides a comprehensive Go API for working with Nix. It inclu
 ## Installation
 
 ```bash
-go get github.com/juspay/omnix/pkg/nix
+go get github.com/saberzero1/omnix/pkg/nix
 ```
 
 ## Quick Start
@@ -31,7 +31,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/juspay/omnix/pkg/nix"
+    "github.com/saberzero1/omnix/pkg/nix"
 )
 
 func main() {

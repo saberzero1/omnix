@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // Caches checks that required caches are configured
@@ -23,9 +23,9 @@ func DefaultCaches() Caches {
 }
 
 // Check verifies that all required caches are configured
-func (c *Caches) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
-	// Get configured substituters from nix config
-	configuredCaches := nixInfo.Config.Substituters.Value
+func (c *Caches) Check(_ context.Context, nixInfo *nix.Info) []NamedCheck {
+	// Get configured substituters from nix config (Nix terminology) //nolint:misspell
+	configuredCaches := nixInfo.Config.Substituters.Value //nolint:misspell
 
 	missingCaches := c.getMissingCaches(configuredCaches)
 
@@ -48,7 +48,7 @@ func (c *Caches) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
 
 	check := Check{
 		Title:    "Nix Caches in use",
-		Info:     fmt.Sprintf("substituters = %s", strings.Join(configuredCaches, " ")),
+		Info:     fmt.Sprintf("substituters = %s", strings.Join(configuredCaches, " ")), //nolint:misspell // "substituters" is correct Nix terminology
 		Result:   result,
 		Required: true,
 	}

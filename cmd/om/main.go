@@ -1,10 +1,13 @@
+// Package main is the entry point for the omnix CLI tool.
+// Omnix is a companion CLI for Nix that provides commands for development,
+// CI/CD, health checks, and project initialization.
 package main
 
 import (
 	"os"
 
-	"github.com/juspay/omnix/pkg/cli"
-	"github.com/juspay/omnix/pkg/common"
+	"github.com/saberzero1/omnix/pkg/cli"
+	"github.com/saberzero1/omnix/pkg/common"
 )
 
 var (

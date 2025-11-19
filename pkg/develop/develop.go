@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/juspay/omnix/pkg/common"
-	"github.com/juspay/omnix/pkg/health/checks"
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/common"
+	"github.com/saberzero1/omnix/pkg/health/checks"
+	"github.com/saberzero1/omnix/pkg/nix"
 	"go.uber.org/zap"
 )
 
@@ -31,7 +31,7 @@ func Run(ctx context.Context, project *Project) error {
 }
 
 // RunPreShell performs health checks before entering the development shell
-func RunPreShell(ctx context.Context, project *Project) error {
+func RunPreShell(ctx context.Context, _ *Project) error {
 	logger := common.Logger()
 
 	// Get Nix info
@@ -78,7 +78,7 @@ func RunPreShell(ctx context.Context, project *Project) error {
 }
 
 // RunPostShell displays the README after shell activation
-func RunPostShell(ctx context.Context, project *Project) error {
+func RunPostShell(_ context.Context, project *Project) error {
 	logger := common.Logger()
 
 	// Get working directory

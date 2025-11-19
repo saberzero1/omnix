@@ -4,18 +4,18 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // TrustedUsers checks that the current user is in trusted-users
 type TrustedUsers struct {
 	// Enable controls whether this check runs (disabled by default for security)
-	// See https://github.com/juspay/omnix/issues/409
+	// See https://github.com/saberzero1/omnix/issues/409
 	Enable bool `yaml:"enable" json:"enable"`
 }
 
 // Check verifies that the current user is a trusted user
-func (tu *TrustedUsers) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
+func (tu *TrustedUsers) Check(_ context.Context, nixInfo *nix.Info) []NamedCheck {
 	// Skip if disabled
 	if !tu.Enable {
 		return []NamedCheck{}

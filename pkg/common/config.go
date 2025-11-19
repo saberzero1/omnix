@@ -95,7 +95,7 @@ func (t *OmConfigTree) Get(key string, result interface{}) error {
 //
 // get_sub_config_under("ci") will return `ci.default` (or default value) without a reference.
 // Otherwise, it will use the reference to find the correct sub-tree.
-func (c *OmConfig) GetSubConfigUnder(rootKey string, defaultValue interface{}, result interface{}) ([]string, error) {
+func (c *OmConfig) GetSubConfigUnder(rootKey string, _ interface{}, result interface{}) ([]string, error) {
 	// Create a map to hold the sub-config
 	subConfigMap := make(map[string]json.RawMessage)
 

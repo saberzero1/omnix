@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+const (
+	testFlakesFeature = "flakes"
+)
+
 func TestConfigValue_UnmarshalJSON(t *testing.T) {
 	jsonData := `{
 		"value": ["flakes", "nix-command"],
@@ -25,7 +29,7 @@ func TestConfigValue_UnmarshalJSON(t *testing.T) {
 		t.Errorf("ConfigValue.Value length = %d, want 2", len(cv.Value))
 	}
 
-	if cv.Value[0] != "flakes" {
+	if cv.Value[0] != testFlakesFeature {
 		t.Errorf("ConfigValue.Value[0] = %s, want flakes", cv.Value[0])
 	}
 
@@ -199,7 +203,7 @@ func TestConfig_UnmarshalJSON(t *testing.T) {
 		t.Errorf("Config.System.Value = %s, want x86_64-linux", config.System.Value)
 	}
 
-	if len(config.ExperimentalFeatures.Value) != 1 || config.ExperimentalFeatures.Value[0] != "flakes" {
+	if len(config.ExperimentalFeatures.Value) != 1 || config.ExperimentalFeatures.Value[0] != testFlakesFeature {
 		t.Errorf("Config.ExperimentalFeatures.Value = %v, want [flakes]", config.ExperimentalFeatures.Value)
 	}
 
@@ -207,7 +211,7 @@ func TestConfig_UnmarshalJSON(t *testing.T) {
 		t.Errorf("Config.MaxJobs.Value = %d, want 4", config.MaxJobs.Value)
 	}
 
-	if len(config.Substituters.Value) != 1 {
-		t.Errorf("Config.Substituters.Value length = %d, want 1", len(config.Substituters.Value))
+	if len(config.Substituters.Value) != 1 { //nolint:misspell // "Substituters" is correct Nix terminology
+		t.Errorf("Config.Substituters.Value length = %d, want 1", len(config.Substituters.Value)) //nolint:misspell // "Substituters" is correct Nix terminology
 	}
 }

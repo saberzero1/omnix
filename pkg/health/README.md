@@ -38,8 +38,8 @@ import (
     "context"
     "fmt"
     
-    "github.com/juspay/omnix/pkg/health"
-    "github.com/juspay/omnix/pkg/nix"
+    "github.com/saberzero1/omnix/pkg/health"
+    "github.com/saberzero1/omnix/pkg/nix"
 )
 
 func main() {

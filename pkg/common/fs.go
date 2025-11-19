@@ -99,7 +99,7 @@ func makeOwnerWriteable(path string) error {
 func FindPaths(dir string) ([]string, error) {
 	var paths []string
 
-	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(dir, func(path string, _ fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

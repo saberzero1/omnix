@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -143,7 +143,7 @@ func TestTrustedUsers_CheckDisabled(t *testing.T) {
 	assert.Empty(t, results)
 }
 
-func TestRosetta_CheckNonMacOS(t *testing.T) {
+func TestRosetta_CheckNonMacOS(_ *testing.T) {
 	ctx := context.Background()
 	nixInfo := &nix.Info{}
 
@@ -155,7 +155,7 @@ func TestRosetta_CheckNonMacOS(t *testing.T) {
 	// The actual behavior depends on runtime.GOOS and runtime.GOARCH
 }
 
-func TestDirenv_Check(t *testing.T) {
+func TestDirenv_Check(_ *testing.T) {
 	ctx := context.Background()
 	nixInfo := &nix.Info{}
 
@@ -165,7 +165,7 @@ func TestDirenv_Check(t *testing.T) {
 	// Just verify it doesn't panic
 }
 
-func TestHomebrew_CheckNonMacOS(t *testing.T) {
+func TestHomebrew_CheckNonMacOS(_ *testing.T) {
 	ctx := context.Background()
 	nixInfo := &nix.Info{}
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/juspay/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 // NixVersion checks that the Nix version meets minimum requirements
@@ -21,7 +21,7 @@ func DefaultNixVersion() NixVersion {
 }
 
 // Check verifies that the installed Nix version is supported
-func (nv *NixVersion) Check(ctx context.Context, nixInfo *nix.Info) []NamedCheck {
+func (nv *NixVersion) Check(_ context.Context, nixInfo *nix.Info) []NamedCheck {
 	currentVersion := nixInfo.Version
 
 	var result CheckResult

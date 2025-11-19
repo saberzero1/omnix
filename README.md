@@ -1,4 +1,4 @@
-[![project chat](https://img.shields.io/github/discussions/juspay/omnix)](https://github.com/juspay/omnix/discussions)
+[![project chat](https://img.shields.io/github/discussions/saberzero1/omnix)](https://github.com/saberzero1/omnix/discussions)
 [![Naiveté Compass of Mood](https://img.shields.io/badge/naïve-FF10F0)](https://compass.naivete.me/ "This project follows the 'Naiveté Compass of Mood'")
 
 # omnix
@@ -84,3 +84,9 @@ Begin with a release PR:
 - Pick a version
 - Update `history.md` to make sure new release header is present
 - Run [`cargo workspace publish`](https://github.com/pksunkara/cargo-workspaces?tab=readme-ov-file#publish) in devShell, using the picked version.
+
+---
+
+## Credits
+
+This project is a fork of the original [Omnix](https://github.com/juspay/omnix) created and maintained by [Juspay Technologies](https://github.com/juspay). We are grateful for their foundational work and contributions to the Nix ecosystem.

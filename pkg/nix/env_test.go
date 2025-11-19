@@ -13,8 +13,8 @@ func TestGetCurrentUser(t *testing.T) {
 	origUser := os.Getenv("USER")
 	origUsername := os.Getenv("USERNAME")
 	defer func() {
-		os.Setenv("USER", origUser)
-		os.Setenv("USERNAME", origUsername)
+		_ = os.Setenv("USER", origUser)
+		_ = os.Setenv("USERNAME", origUsername)
 	}()
 
 	tests := []struct {
@@ -51,8 +51,8 @@ func TestGetCurrentUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("USER", tt.userEnv)
-			os.Setenv("USERNAME", tt.usernameEnv)
+			_ = os.Setenv("USER", tt.userEnv)
+			_ = os.Setenv("USERNAME", tt.usernameEnv)
 
 			user := getCurrentUser()
 			if tt.wantNonEmpty && user == "" {

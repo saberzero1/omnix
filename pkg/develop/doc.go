@@ -11,8 +11,8 @@
 //
 //	import (
 //	    "context"
-//	    "github.com/juspay/omnix/pkg/develop"
-//	    "github.com/juspay/omnix/pkg/nix"
+//	    "github.com/saberzero1/omnix/pkg/develop"
+//	    "github.com/saberzero1/omnix/pkg/nix"
 //	)
 //
 //	// Create a project for development
