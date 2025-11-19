@@ -138,9 +138,7 @@ Comprehensive guide for v1.x → v2.0 users covering:
 
 # After (v2.0)
 ## Developing
-**Note:** omnix v2.0 is now written in Go. The Rust v1.x codebase 
-will be removed from this repository once the Go version is fully functional.
-Users seeking the Rust version can use juspay/omnix.
+**Note:** omnix v2.0 is now written in Go. The Rust v1.x codebase is still present in the `crates/` directory for reference and will be moved to a `v1` branch in a future cleanup.
 ```
 
 #### doc/history.md (Updated)
