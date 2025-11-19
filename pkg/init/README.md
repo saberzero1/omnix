@@ -230,8 +230,8 @@ Current implementation:
 ## Future Work
 
 - [ ] Add registry support for template discovery
-- [ ] Implement interactive parameter prompting
+- [x] ~~Implement interactive parameter prompting~~ (Completed - see prompt.go)
 - [ ] Add template test execution
 - [ ] Support for loading templates from flakes
-- [ ] Improve glob pattern matching (full globset support)
+- [x] ~~Improve glob pattern matching (full globset support)~~ (Enhanced with ** support)
 - [ ] Add more sophisticated file operation support

@@ -130,7 +130,7 @@ func (t *Template) ScaffoldAtWithResult(ctx context.Context, outDir string) (*Sc
 			Name:    param.Name,
 			Applied: param.Action.HasValue(),
 		}
-		
+
 		switch param.Action.(type) {
 		case *ReplaceAction:
 			ap.Type = "replace"
@@ -139,7 +139,7 @@ func (t *Template) ScaffoldAtWithResult(ctx context.Context, outDir string) (*Sc
 		default:
 			ap.Type = "unknown"
 		}
-		
+
 		appliedParams = append(appliedParams, ap)
 	}
 

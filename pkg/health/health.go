@@ -130,10 +130,10 @@ func PrintCheckResult(nc checks.NamedCheck) error {
 	} else {
 		md = fmt.Sprintf("### %s\n\n", nc.Check.Title)
 	}
-	
+
 	md += fmt.Sprintf("%s\n\n", nc.Check.Info)
 	md += fmt.Sprintf("**Result**: %s\n", nc.Check.Result.String())
-	
+
 	// Print without markdown rendering for now (simpler output)
 	fmt.Println(md)
 	return nil
@@ -148,10 +148,10 @@ func PrintCheckResultMarkdown(nc checks.NamedCheck) error {
 	} else {
 		md = fmt.Sprintf("### %s\n\n", nc.Check.Title)
 	}
-	
+
 	md += fmt.Sprintf("%s\n\n", nc.Check.Info)
 	md += fmt.Sprintf("**Result**: %s\n", nc.Check.Result.String())
-	
+
 	// Use common package for markdown rendering
 	// This is kept simple to avoid import cycle issues
 	fmt.Println(md)

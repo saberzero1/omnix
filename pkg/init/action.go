@@ -164,21 +164,21 @@ func matchGlob(pattern, path string) bool {
 	if strings.Contains(pattern, "**") {
 		// Split pattern into parts
 		parts := strings.Split(pattern, "**")
-		
+
 		// For simple cases like "dir/**" or "**/file.txt"
 		if len(parts) == 2 {
 			prefix := parts[0]
 			suffix := parts[1]
-			
+
 			// Remove leading/trailing slashes
 			prefix = strings.TrimSuffix(prefix, "/")
 			suffix = strings.TrimPrefix(suffix, "/")
-			
+
 			// Check prefix
 			if prefix != "" && !strings.HasPrefix(path, prefix) {
 				return false
 			}
-			
+
 			// Check suffix
 			if suffix != "" {
 				// Match the suffix as a regular glob
@@ -198,11 +198,11 @@ func matchGlob(pattern, path string) bool {
 				// Pattern is like "dir/**", match anything under dir
 				return true
 			}
-			
+
 			return false
 		}
 	}
-	
+
 	// Fall back to basic glob matching
 	matched, _ := filepath.Match(pattern, filepath.Base(path))
 	return matched

@@ -25,12 +25,12 @@ func PromptForParams(params []Param) (map[string]interface{}, error) {
 			// Prompt for string input
 			fmt.Printf("\n%s\n", param.Description)
 			fmt.Printf("Enter value for '%s': ", param.Name)
-			
+
 			input, err := reader.ReadString('\n')
 			if err != nil {
 				return nil, fmt.Errorf("failed to read input for '%s': %w", param.Name, err)
 			}
-			
+
 			value := strings.TrimSpace(input)
 			if value != "" {
 				values[param.Name] = value
@@ -40,12 +40,12 @@ func PromptForParams(params []Param) (map[string]interface{}, error) {
 			// Prompt for boolean input
 			fmt.Printf("\n%s\n", param.Description)
 			fmt.Printf("Enable '%s'? (y/n) [default: n]: ", param.Name)
-			
+
 			input, err := reader.ReadString('\n')
 			if err != nil {
 				return nil, fmt.Errorf("failed to read input for '%s': %w", param.Name, err)
 			}
-			
+
 			value := strings.TrimSpace(strings.ToLower(input))
 			if value == "y" || value == "yes" {
 				values[param.Name] = true

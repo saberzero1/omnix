@@ -126,8 +126,8 @@ Migrated from Rust `omnix-health` crate:
 
 ## Future Work
 
-- [ ] Implement full Config parsing for all check types
+- [x] ~~Implement full Config parsing for all check types~~ (Completed)
 - [ ] Add integration tests with real Nix
 - [ ] Improve test coverage to ≥80%
-- [ ] Add markdown rendering for check output
-- [ ] Support loading configuration from om.yaml
+- [x] ~~Add markdown rendering for check output~~ (Completed)
+- [x] ~~Support loading configuration from om.yaml~~ (Completed)

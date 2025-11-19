@@ -4,6 +4,32 @@ order: 100
 
 # Release history
 
+## 2.0.1 (Unreleased) {#2.0.1}
+
+**Feature Enhancements**
+
+This release implements several future work items identified in package README files:
+
+### Health Package
+- **Configuration Support**: Added `LoadConfig` to load health settings from `om.yaml`
+- **Markdown Output**: Enhanced `PrintCheckResult` with markdown formatting
+- **Flexible Configuration**: Support for customizing check parameters (min version, required caches, etc.)
+
+### Init Package
+- **Interactive Prompts**: Added `PromptForParams` for user-friendly parameter input
+- **JSON Output**: New `ScaffoldAtWithResult` function for programmatic integration
+- **Enhanced Glob Matching**: Improved pattern matching with `**` support for nested directories
+- **Parameter Validation**: Added `ValidateRequiredParams` for non-interactive mode
+
+### Develop Package
+- **Custom Health Checks**: Configurable health check selection via `om.yaml`
+- **Direnv Setup**: Automatic `.envrc` creation and direnv integration
+- **Flexible Configuration**: Control which health checks run in development environments
+
+### Documentation
+- Updated README files to reflect completed work
+- Marked implemented features as complete in future work sections
+
 ## 2.0.0-beta (2025-11-19) {#2.0.0-beta}
 
 **Major Version Release: Complete Rust → Go Rewrite** 🎉

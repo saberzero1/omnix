@@ -178,7 +178,7 @@ go test ./pkg/develop/...
 
 - [ ] Actually invoke Nix devShell (currently just shows warning)
 - [ ] Support for multiple development shells
-- [ ] Custom health check selection
-- [ ] Automatic direnv setup
+- [x] ~~Custom health check selection~~ (Completed)
+- [x] ~~Automatic direnv setup~~ (Completed)
 - [ ] Shell hook customization
 - [ ] Development environment templates

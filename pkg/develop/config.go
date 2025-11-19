@@ -80,7 +80,7 @@ func LoadConfig(path string) (Config, error) {
 	if config.Develop.Readme.File == "" {
 		config.Develop.Readme.File = "README.md"
 	}
-	
+
 	// Apply health check defaults
 	defaults := DefaultConfig()
 	if config.Develop.HealthChecks == (HealthChecksConfig{}) {
