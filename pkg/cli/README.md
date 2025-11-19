@@ -136,4 +136,4 @@ go build -o om ./cmd/om
 - [x] ~~Add interactive parameter prompting~~ (Available in pkg/init)
 - [ ] Support loading templates from flakes
 - [x] ~~Add progress indicators for long operations~~ (Completed - see pkg/common/progress.go)
-- [ ] Implement remaining commands (show, ci, develop)
+- [x] ~~Implement remaining commands (show, ci, develop)~~ (Completed - all commands implemented)

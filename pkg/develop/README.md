@@ -150,10 +150,15 @@ project, _ := develop.NewProject(ctx, flake, config)
 
 ### Custom Health Checks
 
-Future enhancement - ability to customize which health checks run:
+Custom health check selection is now supported via configuration:
 
 ```go
-// TODO: Add support for custom health check selection
+// Custom health check selection is configured in om.yaml:
+// develop:
+//   health-checks:
+//     nix-version: true
+//     rosetta: true
+//     caches: false
 ```
 
 ## Testing

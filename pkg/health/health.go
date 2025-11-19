@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/saberzero1/omnix/pkg/health/checks"
@@ -156,4 +157,75 @@ func PrintCheckResultMarkdown(nc checks.NamedCheck) error {
 	// This is kept simple to avoid import cycle issues
 	fmt.Println(md)
 	return nil
+}
+
+// ResultsToJSON converts health check results to JSON format
+func ResultsToJSON(checkList []checks.NamedCheck, result AllChecksResult, nixInfo *nix.Info) (string, error) {
+	type CheckJSON struct {
+		Name     string `json:"name"`
+		Title    string `json:"title"`
+		Info     string `json:"info"`
+		Required bool   `json:"required"`
+		Success  bool   `json:"success"`
+		Message  string `json:"message,omitempty"`
+	}
+
+	type OutputJSON struct {
+		System      string      `json:"system"`
+		NixVersion  string      `json:"nix_version"`
+		Status      string      `json:"status"`
+		ExitCode    int         `json:"exit_code"`
+		Summary     string      `json:"summary"`
+		Checks      []CheckJSON `json:"checks"`
+		PassedCount int         `json:"passed_count"`
+		FailedCount int         `json:"failed_count"`
+	}
+
+	var output OutputJSON
+	output.System = nixInfo.Env.OS.String()
+	output.NixVersion = nixInfo.Version.String()
+	output.ExitCode = result.ExitCode()
+	output.Summary = result.SummaryMessage()
+
+	switch result {
+	case Pass:
+		output.Status = "pass"
+	case PassSomeFail:
+		output.Status = "pass_with_warnings"
+	case Fail:
+		output.Status = "fail"
+	}
+
+	output.Checks = make([]CheckJSON, 0, len(checkList))
+	passedCount := 0
+	failedCount := 0
+
+	for _, nc := range checkList {
+		checkJSON := CheckJSON{
+			Name:     nc.Name,
+			Title:    nc.Check.Title,
+			Info:     nc.Check.Info,
+			Required: nc.Check.Required,
+			Success:  nc.Check.Result.IsGreen(),
+		}
+
+		if !nc.Check.Result.IsGreen() {
+			checkJSON.Message = nc.Check.Result.String()
+			failedCount++
+		} else {
+			passedCount++
+		}
+
+		output.Checks = append(output.Checks, checkJSON)
+	}
+
+	output.PassedCount = passedCount
+	output.FailedCount = failedCount
+
+	jsonBytes, err := json.MarshalIndent(output, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal JSON: %w", err)
+	}
+
+	return string(jsonBytes), nil
 }
