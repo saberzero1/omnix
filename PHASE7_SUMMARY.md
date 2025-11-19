@@ -139,7 +139,8 @@ Comprehensive guide for v1.x → v2.0 users covering:
 # After (v2.0)
 ## Developing
 **Note:** omnix v2.0 is now written in Go. The Rust v1.x codebase 
-is maintained in the v1 branch for reference.
+will be removed from this repository once the Go version is fully functional.
+Users seeking the Rust version can use juspay/omnix.
 ```
 
 #### doc/history.md (Updated)
@@ -192,10 +193,10 @@ is maintained in the v1 branch for reference.
 default = omnix-cli;
 
 # After
-default = self'.packages.omnix-go or omnix-cli;
+default = self'.packages.omnix-go;
 ```
 
-**Rationale:** Makes Go version the default while keeping Rust version accessible as `omnix-cli` for reference and comparison.
+**Rationale:** Makes Go version the default without fallback, ensuring build failures are immediately visible rather than silently falling back to Rust.
 
 **Modified:** `.gitignore`
 
@@ -263,7 +264,7 @@ From DESIGN_DOCUMENT.md Phase 7:
 
 ### New Files (Phase 7):
 ```
-nix/modules/flake/go.nix             (62 lines - Go build config)
+nix/modules/flake/go.nix             (56 lines - Go build config)
 MIGRATION_GUIDE.md                   (432 lines - User guide)
 PHASE7_SUMMARY.md                    (this document)
 ```
