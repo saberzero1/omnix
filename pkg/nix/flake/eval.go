@@ -24,12 +24,12 @@ type FlakeOptions struct {
 
 // Eval runs `nix eval <url> --json` and parses the result into the provided type.
 func Eval[T any](ctx context.Context, cmd Cmd, opts *FlakeOptions, url string) (T, error) {
-	return eval[T](ctx, cmd, opts, url, false)
+	return eval[T](ctx, cmd, opts, url)
 }
 
 // EvalMaybe is like Eval but returns nil if the attribute is missing.
 func EvalMaybe[T any](ctx context.Context, cmd Cmd, opts *FlakeOptions, url string) (*T, error) {
-	result, err := eval[T](ctx, cmd, opts, url, true)
+	result, err := eval[T](ctx, cmd, opts, url)
 	if err != nil {
 		if isMissingAttributeError(err) {
 			return nil, nil
@@ -40,7 +40,7 @@ func EvalMaybe[T any](ctx context.Context, cmd Cmd, opts *FlakeOptions, url stri
 }
 
 // eval is the internal implementation for evaluation.
-func eval[T any](ctx context.Context, cmd Cmd, opts *FlakeOptions, url string, captureStderr bool) (T, error) {
+func eval[T any](ctx context.Context, cmd Cmd, opts *FlakeOptions, url string) (T, error) {
 	var result T
 	
 	args := []string{"eval", "--json"}
