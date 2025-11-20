@@ -6,12 +6,22 @@ Go package for interacting with the Nix package manager.
 
 The `nix` package provides a comprehensive Go API for working with Nix. It includes functionality for:
 
-- **Version Detection**: Parse and compare Nix versions
+- **Version Detection**: Parse and compare Nix versions with complex requirements
 - **Command Execution**: Run Nix commands with context support
 - **Flake URLs**: Parse and manipulate Nix flake URLs
+- **Flake Evaluation**: Evaluate Nix expressions with JSON output, impure support
+- **Flake Metadata**: Retrieve metadata, manage lock files, update inputs
 - **Environment Detection**: Identify OS, user, and system configuration
 - **Configuration**: Read and parse Nix configuration
 - **Installation Info**: Aggregate system and Nix installation information
+- **Store Operations**: Work with Nix store paths, URIs (SSH support), and commands
+- **Store Commands**: Query derivers, requisites, add paths, manage GC roots
+- **System Management**: Handle Nix system types and architecture lists
+- **Flake Attributes**: Parse and manipulate flake output attributes
+- **Copy Operations**: Copy store paths to remote stores
+- **Command Arguments**: Smart argument building with subcommand filtering
+
+**Migration Status**: ✅ 100% functional parity with Rust `nix_rs` crate achieved
 
 ## Installation
 
@@ -309,6 +319,182 @@ go test ./pkg/nix
 ## Coverage
 
 The package maintains high test coverage (>75%) with comprehensive edge case testing.
+
+## Subpackages
+
+### store
+
+The `store` package provides types for working with the Nix store:
+
+- **Path**: Represent store paths (derivations vs outputs)
+- **URI**: Parse and work with store URIs (SSH support)
+
+Example:
+```go
+import "github.com/saberzero1/omnix/pkg/nix/store"
+
+// Parse a store path
+path := store.NewPath("/nix/store/abc123-hello-2.10")
+if path.IsDrv() {
+    fmt.Println("This is a derivation")
+}
+
+// Parse a store URI
+uri, _ := store.ParseURI("ssh://user@example.com?copy-inputs=true")
+if uri.IsSSH() {
+    fmt.Printf("SSH store: %s\n", uri.GetSSHURI().Host)
+}
+```
+
+### flake
+
+The `flake` package provides types for working with Nix flakes:
+
+- **System**: Platform system types (Linux, Darwin with ARM/x86_64)
+- **Attr**: Flake attribute path handling
+- **Eval**: Evaluate Nix expressions with JSON output
+- **Metadata**: Flake metadata retrieval and management
+
+Example:
+```go
+import (
+	"github.com/saberzero1/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix/flake"
+)
+
+// Parse a system
+sys := flake.ParseSystem("x86_64-linux")
+fmt.Println(sys.HumanReadable()) // Output: Linux (Intel)
+
+// Work with attributes
+attr := flake.NewAttr("packages.x86_64-linux.hello")
+parts := attr.AsList() // ["packages", "x86_64-linux", "hello"]
+
+// Evaluate a Nix expression
+cmd := nix.NewCmd()
+result, _ := flake.EvalExpr[map[string]string](ctx, cmd, `{foo = "bar";}`)
+
+// Get flake metadata
+metadata, _ := flake.GetMetadata(ctx, cmd, "github:NixOS/nixpkgs")
+fmt.Println(metadata.Description)
+```
+
+### store (Extended)
+
+The `store` package now includes advanced command operations:
+
+- **StoreCmd**: Advanced store command operations
+- **Query**: Derivers and requisites
+- **Add**: Add paths to store with GC roots
+
+Example:
+```go
+import "github.com/saberzero1/omnix/pkg/nix/store"
+
+// Create store command
+storeCmd := store.NewStoreCmd()
+
+// Query derivers
+paths := []store.Path{store.NewPath("/nix/store/abc-hello")}
+derivers, _ := storeCmd.QueryDeriver(ctx, paths)
+
+// Add file permanently with GC root
+storePath, _ := storeCmd.AddFilePermanently(ctx, "/tmp/root", "content")
+```
+
+## Advanced Flake Operations
+
+### Evaluate Nix Expressions
+
+```go
+import "github.com/saberzero1/omnix/pkg/nix/flake"
+
+cmd := nix.NewCmd()
+
+// Simple evaluation
+value, _ := flake.EvalExpr[float64](ctx, cmd, "21 + 21")
+
+// Impure evaluation
+timestamp, _ := flake.EvalImpureExpr[float64](ctx, cmd, "builtins.currentTime")
+
+// Flake evaluation with options
+opts := &flake.FlakeOptions{
+    Impure: true,
+    OverrideInputs: map[string]string{
+        "nixpkgs": "github:NixOS/nixpkgs/nixos-unstable",
+    },
+}
+result, _ := flake.Eval[interface{}](ctx, cmd, opts, ".#myAttr")
+```
+
+### Manage Flake Metadata
+
+```go
+import "github.com/saberzero1/omnix/pkg/nix/flake"
+
+cmd := nix.NewCmd()
+
+// Get metadata
+metadata, _ := flake.GetMetadata(ctx, cmd, ".")
+fmt.Printf("Revision: %s\n", metadata.Revision)
+fmt.Printf("Last Modified: %d\n", metadata.LastModified)
+
+// Lock flake
+_ = flake.Lock(ctx, cmd, ".", []string{"nixpkgs"})
+
+// Update all inputs
+_ = flake.Update(ctx, cmd, ".")
+```
+
+## Additional Features (Previously documented)
+
+### Version Requirements
+
+Parse and match complex version requirements:
+
+```go
+// Parse a version requirement
+req, _ := nix.ParseVersionReq(">=2.8, <3.0, !=2.13.4")
+
+// Check if a version matches
+version, _ := nix.ParseVersion("2.18.0")
+if req.Matches(version) {
+    fmt.Println("Version is compatible")
+}
+```
+
+### System Lists
+
+Handle Nix system architecture lists:
+
+```go
+// Parse a system list reference
+ref := nix.ParseSystemsListFlakeRef("x86_64-linux")
+
+// Load system list (uses known flakes when possible to avoid network)
+systems, _ := nix.LoadSystemsList(ctx, cmd, ref)
+for _, sys := range systems.Systems {
+    fmt.Println(sys.HumanReadable())
+}
+```
+
+### Copy Operations
+
+Copy store paths to remote stores:
+
+```go
+import "github.com/saberzero1/omnix/pkg/nix/store"
+
+// Parse destination store URI
+uri, _ := store.ParseURI("ssh://user@remote-host")
+
+// Copy paths
+options := nix.CopyOptions{
+    To: uri,
+    NoCheckSigs: false,
+}
+err := nix.Copy(ctx, cmd, options, []string{"/nix/store/abc-foo"})
+```
 
 ## Migration from Rust
 
