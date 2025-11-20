@@ -103,9 +103,14 @@ func getNonsenseOptions(subcommands []string) map[string]int {
 func removeArgument(args *[]string, arg string, argCount int) {
 	i := 0
 	for i < len(*args) {
-		if (*args)[i] == arg && i+argCount < len(*args) {
+		if (*args)[i] == arg {
+			// Calculate end index, ensuring we don't go out of bounds
+			endIdx := i + argCount + 1
+			if endIdx > len(*args) {
+				endIdx = len(*args)
+			}
 			// Remove the argument and its following arguments
-			*args = append((*args)[:i], (*args)[i+argCount+1:]...)
+			*args = append((*args)[:i], (*args)[endIdx:]...)
 		} else {
 			i++
 		}

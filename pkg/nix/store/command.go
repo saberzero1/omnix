@@ -42,7 +42,13 @@ func (s *StoreCmd) QueryDeriver(ctx context.Context, paths []Path) ([]string, er
 		return nil, err
 	}
 	
-	lines := strings.Split(strings.TrimSpace(output), "\n")
+	// Handle empty output
+	trimmed := strings.TrimSpace(output)
+	if trimmed == "" {
+		return []string{}, nil
+	}
+	
+	lines := strings.Split(trimmed, "\n")
 	
 	// Filter out "unknown-deriver"
 	var derivers []string
@@ -141,9 +147,9 @@ func (s *StoreCmd) AddFilePermanently(ctx context.Context, symlinkPath string, c
 		_ = os.RemoveAll(tempDir) // Best effort cleanup
 	}()
 	
-	// Write contents to a temporary file
+	// Write contents to a temporary file with restricted permissions
 	tempFile := filepath.Join(tempDir, "file")
-	if err := os.WriteFile(tempFile, []byte(contents), 0644); err != nil {
+	if err := os.WriteFile(tempFile, []byte(contents), 0600); err != nil {
 		return Path{}, fmt.Errorf("failed to write temp file: %w", err)
 	}
 	

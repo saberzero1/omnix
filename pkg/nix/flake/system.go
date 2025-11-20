@@ -21,8 +21,10 @@ type System struct {
 type Arch int
 
 const (
+	// ArchUnknown represents an unknown architecture
+	ArchUnknown Arch = iota
 	// ArchAarch64 represents ARM64 architecture
-	ArchAarch64 Arch = iota
+	ArchAarch64
 	// ArchX86_64 represents x86-64 (Intel/AMD) architecture
 	ArchX86_64
 )
@@ -51,8 +53,8 @@ func ParseSystem(s string) System {
 	case "aarch64-darwin":
 		return SystemDarwinAarch64
 	default:
-		// Unknown system - store as custom
-		return System{os: s, arch: ArchX86_64} // Default to x86_64 for unknown
+		// Unknown system - store as custom with unknown architecture
+		return System{os: s, arch: ArchUnknown}
 	}
 }
 

@@ -1,6 +1,7 @@
 package nix
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -33,7 +34,7 @@ func (d DetSysInstaller) String() string {
 }
 
 // DetectDetSysInstaller detects if the DetSys nix-installer is installed
-func DetectDetSysInstaller() (*DetSysInstaller, error) {
+func DetectDetSysInstaller(ctx context.Context) (*DetSysInstaller, error) {
 	installerPath := "/nix/nix-installer"
 
 	// Check if the installer exists
@@ -44,7 +45,7 @@ func DetectDetSysInstaller() (*DetSysInstaller, error) {
 	}
 
 	// Get version
-	version, err := getInstallerVersion(installerPath)
+	version, err := getInstallerVersion(ctx, installerPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get installer version: %w", err)
 	}
@@ -55,8 +56,8 @@ func DetectDetSysInstaller() (*DetSysInstaller, error) {
 }
 
 // getInstallerVersion retrieves the version from the installer executable
-func getInstallerVersion(executablePath string) (InstallerVersion, error) {
-	cmd := exec.Command(executablePath, "--version")
+func getInstallerVersion(ctx context.Context, executablePath string) (InstallerVersion, error) {
+	cmd := exec.CommandContext(ctx, executablePath, "--version")
 	output, err := cmd.Output()
 	if err != nil {
 		return InstallerVersion{}, fmt.Errorf("failed to execute installer: %w", err)

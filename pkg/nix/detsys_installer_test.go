@@ -1,6 +1,7 @@
 package nix
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -108,7 +109,8 @@ func TestDetSysInstaller_String(t *testing.T) {
 func TestDetectDetSysInstaller(t *testing.T) {
 	// This test only runs if we're in a testing environment
 	// In most cases, /nix/nix-installer won't exist
-	installer, err := DetectDetSysInstaller()
+	ctx := context.Background()
+	installer, err := DetectDetSysInstaller(ctx)
 	require.NoError(t, err)
 
 	if installer != nil {

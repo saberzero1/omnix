@@ -15,7 +15,8 @@ type Path struct {
 // NewPath creates a new store path from the given path string.
 // It automatically detects if the path is a derivation (.drv file).
 func NewPath(path string) Path {
-	isDrv := strings.HasSuffix(path, ".drv")
+	base := filepath.Base(path)
+	isDrv := strings.HasSuffix(base, ".drv")
 	return Path{
 		path:  path,
 		isDrv: isDrv,

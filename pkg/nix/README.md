@@ -352,26 +352,6 @@ The `flake` package provides types for working with Nix flakes:
 
 - **System**: Platform system types (Linux, Darwin with ARM/x86_64)
 - **Attr**: Flake attribute path handling
-
-Example:
-```go
-import "github.com/saberzero1/omnix/pkg/nix/flake"
-
-// Parse a system
-sys := flake.ParseSystem("x86_64-linux")
-fmt.Println(sys.HumanReadable()) // Output: Linux (Intel)
-
-// Work with attributes
-attr := flake.NewAttr("packages.x86_64-linux.hello")
-parts := attr.AsList() // ["packages", "x86_64-linux", "hello"]
-```
-
-### flake
-
-The `flake` package provides types for working with Nix flakes:
-
-- **System**: Platform system types (Linux, Darwin with ARM/x86_64)
-- **Attr**: Flake attribute path handling
 - **Eval**: Evaluate Nix expressions with JSON output
 - **Metadata**: Flake metadata retrieval and management
 

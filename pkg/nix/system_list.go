@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/saberzero1/omnix/pkg/nix/flake"
 )
@@ -102,12 +103,23 @@ func systemsListFromKnownFlake(ref SystemsListFlakeRef) *SystemsList {
 
 // loadSystemsListFromRemoteFlake loads a SystemsList by evaluating a flake.
 func loadSystemsListFromRemoteFlake(ctx context.Context, cmd *Cmd, ref SystemsListFlakeRef) (*SystemsList, error) {
+	// Validate the URL to prevent injection attacks
+	urlStr := ref.URL.String()
+	if strings.ContainsAny(urlStr, "\"'`$\\") {
+		return nil, fmt.Errorf("invalid characters in flake URL: %s", urlStr)
+	}
+	
 	// First get the flake path
-	flakePath, err := nixEvalImpureExpr(ctx, cmd, fmt.Sprintf(`builtins.getFlake "%s"`, ref.URL.String()))
+	flakePath, err := nixEvalImpureExpr(ctx, cmd, fmt.Sprintf(`builtins.getFlake "%s"`, urlStr))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get flake: %w", err)
 	}
 
+	// Validate flake path
+	if strings.ContainsAny(flakePath, "\"'`$\\;") {
+		return nil, fmt.Errorf("invalid characters in flake path: %s", flakePath)
+	}
+	
 	// Then import and evaluate it
 	systemsJSON, err := nixEvalImpureExpr(ctx, cmd, fmt.Sprintf("import %s", flakePath))
 	if err != nil {
