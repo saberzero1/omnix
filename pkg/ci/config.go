@@ -42,8 +42,8 @@ type StepsConfig struct {
 	// FlakeCheck controls the flake check step
 	FlakeCheck FlakeCheckStep `yaml:"flakeCheck" json:"flakeCheck"`
 
-	// Custom defines custom steps
-	Custom []CustomStep `yaml:"custom" json:"custom"`
+	// Custom defines custom steps (map of step name to CustomStep)
+	Custom map[string]CustomStep `yaml:"custom" json:"custom"`
 }
 
 // BuildStep configures the build step
@@ -67,16 +67,51 @@ type FlakeCheckStep struct {
 	Enable bool `yaml:"enable" json:"enable"`
 }
 
+// CustomStepType represents the type of custom step
+type CustomStepType string
+
+const (
+	// CustomStepTypeApp runs a flake app
+	CustomStepTypeApp CustomStepType = "app"
+	// CustomStepTypeDevShell runs a command in a devshell
+	CustomStepTypeDevShell CustomStepType = "devshell"
+)
+
 // CustomStep defines a custom CI step
 type CustomStep struct {
-	// Name of the custom step
-	Name string `yaml:"name" json:"name"`
+	// Type of the custom step (app or devshell)
+	Type CustomStepType `yaml:"type" json:"type"`
 
-	// Command to execute
-	Command []string `yaml:"command" json:"command"`
+	// Name of the app or devshell to use (defaults to "default")
+	Name string `yaml:"name,omitempty" json:"name,omitempty"`
 
-	// Enable controls whether this step is enabled
-	Enable bool `yaml:"enable" json:"enable"`
+	// Args to pass to the app (only for app type)
+	Args []string `yaml:"args,omitempty" json:"args,omitempty"`
+
+	// Command to execute in devshell (only for devshell type)
+	Command []string `yaml:"command,omitempty" json:"command,omitempty"`
+
+	// Systems is an optional whitelist of systems to run on
+	Systems []string `yaml:"systems,omitempty" json:"systems,omitempty"`
+}
+
+// CanRunOn checks if this custom step can run on any of the given systems
+func (c *CustomStep) CanRunOn(systems []string) bool {
+	// If no systems whitelist, can run on any system
+	if len(c.Systems) == 0 {
+		return true
+	}
+
+	// Check if any of the requested systems is in the whitelist
+	for _, sys := range systems {
+		for _, allowed := range c.Systems {
+			if sys == allowed {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // DefaultConfig returns the default CI configuration
@@ -97,7 +132,7 @@ func DefaultConfig() Config {
 					FlakeCheck: FlakeCheckStep{
 						Enable: true,
 					},
-					Custom: []CustomStep{},
+					Custom: make(map[string]CustomStep),
 				},
 			},
 		},
@@ -162,10 +197,9 @@ func (s *StepsConfig) GetEnabledSteps() []string {
 	if s.FlakeCheck.Enable {
 		enabled = append(enabled, "flakeCheck")
 	}
-	for _, custom := range s.Custom {
-		if custom.Enable {
-			enabled = append(enabled, "custom:"+custom.Name)
-		}
+	for name := range s.Custom {
+		// Custom steps are always enabled if they exist in the config
+		enabled = append(enabled, "custom:"+name)
 	}
 
 	return enabled

@@ -139,13 +139,13 @@ func TestRunCustomStepRemote(t *testing.T) {
 	flake, err := nix.ParseFlakeURL(".")
 	assert.NoError(t, err)
 
+	stepName := "custom-test"
 	step := CustomStep{
-		Name:    "custom-test",
+		Type:    CustomStepTypeDevShell,
 		Command: []string{"echo", "test"},
-		Enable:  true,
 	}
 
-	result := runCustomStepRemote(ctx, "user@host", flake, step)
+	result := runCustomStepRemote(ctx, "user@host", flake, stepName, step)
 
 	assert.Equal(t, "custom:custom-test", result.Name)
 	assert.Greater(t, result.Duration.Nanoseconds(), int64(0))
@@ -165,11 +165,10 @@ func TestRunWithRemoteHost(t *testing.T) {
 				Dir:  ".",
 				Steps: StepsConfig{
 					Build: BuildStep{Enable: false}, // Disable actual build
-					Custom: []CustomStep{
-						{
-							Name:    "test",
+					Custom: map[string]CustomStep{
+						"test": {
+							Type:    CustomStepTypeDevShell,
 							Command: []string{"echo", "remote-test"},
-							Enable:  true,
 						},
 					},
 				},
