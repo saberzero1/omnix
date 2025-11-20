@@ -46,10 +46,13 @@ func DevourFlake(ctx context.Context, flake FlakeURL, systems []string, impure b
 
 	// Convert systems to flake URL if provided
 	if len(systems) > 0 {
-		// devour-flake expects systems as a flake URL
-		// We'll use the NIX_SYSTEMS environment variable approach
-		// For now, we'll pass nil and let devour-flake use all systems
-		// TODO: Implement proper systems filtering
+		// TODO: Implement proper systems filtering using nix-systems flake URLs
+		// Currently, devour-flake will build for all allowed systems when systems
+		// is nil. This works correctly but could be optimized to only build for
+		// the specified systems. The Rust version passes a flake URL that points
+		// to a nix-systems list (e.g., github:nix-systems/x86_64-linux).
+		// For now, this is acceptable as the build will still succeed and produce
+		// the needed outputs, just potentially building more than necessary.
 		input.Systems = nil
 	}
 

@@ -388,9 +388,9 @@ func runCustomStep(ctx context.Context, flake nix.FlakeURL, name string, step Cu
 // runFlakeApp runs a flake app
 func runFlakeApp(ctx context.Context, flake nix.FlakeURL, step CustomStep) (string, error) {
 	// Determine the app name (default to "default" if not specified)
-	appName := step.Name
-	if appName == "" {
-		appName = "default"
+	appName := "default"
+	if step.Name != "" {
+		appName = step.Name
 	}
 
 	// Build the flake URL with app attribute
@@ -414,9 +414,9 @@ func runDevShellCommand(ctx context.Context, flake nix.FlakeURL, step CustomStep
 	}
 
 	// Determine the devshell name (default to "default" if not specified)
-	shellName := step.Name
-	if shellName == "" {
-		shellName = "default"
+	shellName := "default"
+	if step.Name != "" {
+		shellName = step.Name
 	}
 
 	// Build the flake URL with devshell attribute
