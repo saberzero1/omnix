@@ -27,6 +27,15 @@ This release implements the majority of future work items identified in package 
 - **Direnv Setup**: Automatic `.envrc` creation and direnv integration with `SetupDirenv`
 - **Flexible Configuration**: Control which health checks run in development environments
 
+### Nix Package
+- **Version Requirements**: Added `version_spec.go` for complex version matching (e.g., ">=2.8, <3.0")
+- **Command Arguments**: New `arg.go` for structured Nix argument management with smart filtering
+- **DetSys Installer**: Added `detsys_installer.go` for Determinate Systems nix-installer detection
+- **Store Operations**: New `store/` package with path types and SSH store URI support
+- **Copy Operations**: Implemented `copy.go` for nix copy with remote store support
+- **Documentation**: Added comprehensive godoc and package documentation
+- **Test Coverage**: 84.7% overall (83.5% nix, 92.9% store) with 188 tests passing
+
 ### Common Package
 - **Progress Indicators**: New progress indicator utility for long-running operations
 - **Rich CLI Feedback**: Spinner animations with start/stop/complete/fail methods
