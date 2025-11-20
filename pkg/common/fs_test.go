@@ -253,3 +253,19 @@ func TestReadWriteFile(t *testing.T) {
 		t.Errorf("ReadFile() = %q, want %q", got, content)
 	}
 }
+
+func TestReadFile_Error(t *testing.T) {
+	// Test reading non-existent file
+	_, err := ReadFile("/nonexistent/file.txt")
+	if err == nil {
+		t.Error("ReadFile() expected error for non-existent file, got nil")
+	}
+}
+
+func TestWriteFile_Error(t *testing.T) {
+	// Test writing to invalid path (directory doesn't exist)
+	err := WriteFile("/nonexistent/dir/file.txt", "content")
+	if err == nil {
+		t.Error("WriteFile() expected error for invalid path, got nil")
+	}
+}

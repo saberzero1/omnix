@@ -134,3 +134,18 @@ func TestSync(t *testing.T) {
 		t.Logf("Sync() returned error (may be expected): %v", err)
 	}
 }
+
+func TestSync_NilLogger(t *testing.T) {
+	// Save current logger
+	oldLogger := logger
+	defer func() { logger = oldLogger }()
+
+	// Set logger to nil
+	logger = nil
+
+	// Sync should not panic or error with nil logger
+	err := Sync()
+	if err != nil {
+		t.Errorf("Sync() with nil logger returned error: %v", err)
+	}
+}
