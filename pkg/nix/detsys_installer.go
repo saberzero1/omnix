@@ -35,7 +35,7 @@ func (d DetSysInstaller) String() string {
 // DetectDetSysInstaller detects if the DetSys nix-installer is installed
 func DetectDetSysInstaller() (*DetSysInstaller, error) {
 	installerPath := "/nix/nix-installer"
-	
+
 	// Check if the installer exists
 	if _, err := os.Stat(installerPath); os.IsNotExist(err) {
 		return nil, nil // Not installed, but not an error
@@ -71,7 +71,7 @@ func parseInstallerVersion(s string) (InstallerVersion, error) {
 	// Match version pattern: digits.digits.digits
 	re := regexp.MustCompile(`(\d+)\.(\d+)\.(\d+)`)
 	matches := re.FindStringSubmatch(s)
-	
+
 	if len(matches) < 4 {
 		return InstallerVersion{}, fmt.Errorf("failed to parse version from: %s", s)
 	}

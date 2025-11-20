@@ -33,12 +33,12 @@ var nixSystemsMap = map[string]string{
 // ParseSystemsListFlakeRef parses a system or flake URL into a SystemsListFlakeRef.
 func ParseSystemsListFlakeRef(s string) SystemsListFlakeRef {
 	sys := flake.ParseSystem(s)
-	
+
 	// Check if there's a known flake for this system
 	if knownURL, ok := nixSystemsMap[sys.String()]; ok {
 		return SystemsListFlakeRef{URL: NewFlakeURL(knownURL)}
 	}
-	
+
 	// Otherwise use the input as a flake URL
 	return SystemsListFlakeRef{URL: NewFlakeURL(s)}
 }
@@ -58,7 +58,7 @@ func LoadSystemsList(ctx context.Context, cmd *Cmd, ref SystemsListFlakeRef) (*S
 	if systems := systemsListFromKnownFlake(ref); systems != nil {
 		return systems, nil
 	}
-	
+
 	// Otherwise, evaluate the flake
 	return loadSystemsListFromRemoteFlake(ctx, cmd, ref)
 }
@@ -67,7 +67,7 @@ func LoadSystemsList(ctx context.Context, cmd *Cmd, ref SystemsListFlakeRef) (*S
 // without requiring network access.
 func systemsListFromKnownFlake(ref SystemsListFlakeRef) *SystemsList {
 	url := ref.URL.String()
-	
+
 	// Map known URLs to their corresponding systems
 	switch url {
 	case "github:nix-systems/aarch64-linux":
@@ -107,25 +107,25 @@ func loadSystemsListFromRemoteFlake(ctx context.Context, cmd *Cmd, ref SystemsLi
 	if err != nil {
 		return nil, fmt.Errorf("failed to get flake: %w", err)
 	}
-	
+
 	// Then import and evaluate it
 	systemsJSON, err := nixEvalImpureExpr(ctx, cmd, fmt.Sprintf("import %s", flakePath))
 	if err != nil {
 		return nil, fmt.Errorf("failed to import flake: %w", err)
 	}
-	
+
 	// Parse the JSON result
 	var systemStrings []string
 	if err := json.Unmarshal([]byte(systemsJSON), &systemStrings); err != nil {
 		return nil, fmt.Errorf("failed to parse systems: %w", err)
 	}
-	
+
 	// Convert to System objects
 	systems := make([]flake.System, len(systemStrings))
 	for i, s := range systemStrings {
 		systems[i] = flake.ParseSystem(s)
 	}
-	
+
 	return &SystemsList{Systems: systems}, nil
 }
 

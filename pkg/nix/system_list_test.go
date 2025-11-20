@@ -160,7 +160,7 @@ func TestSystemsListFromKnownFlake(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ref := SystemsListFlakeRef{URL: NewFlakeURL(tt.url)}
 			systems := systemsListFromKnownFlake(ref)
-			
+
 			if tt.wantNil {
 				assert.Nil(t, systems)
 			} else {
@@ -182,7 +182,7 @@ func TestSystemsList(t *testing.T) {
 			flake.SystemDarwinAarch64,
 		},
 	}
-	
+
 	assert.Len(t, systems.Systems, 2)
 	assert.Equal(t, "x86_64-linux", systems.Systems[0].String())
 	assert.Equal(t, "aarch64-darwin", systems.Systems[1].String())

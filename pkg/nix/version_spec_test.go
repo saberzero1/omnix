@@ -9,11 +9,11 @@ import (
 
 func TestParseVersionSpec(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		wantOp   string
-		wantVer  Version
-		wantErr  bool
+		name    string
+		input   string
+		wantOp  string
+		wantVer Version
+		wantErr bool
 	}{
 		{
 			name:    "greater than with minor",

@@ -12,20 +12,20 @@ import (
 func TestCopy(t *testing.T) {
 	// Note: These are unit tests that verify the argument construction
 	// Integration tests would require actual nix copy functionality
-	
+
 	t.Run("basic copy with to URI", func(t *testing.T) {
 		if testing.Short() {
 			t.Skip("skipping integration test in short mode")
 		}
-		
+
 		toURI, err := store.ParseURI("ssh://example.com")
 		require.NoError(t, err)
-		
+
 		cmd := NewCmd()
 		options := CopyOptions{
 			To: toURI,
 		}
-		
+
 		// This will fail because example.com doesn't exist,
 		// but we can verify the command is constructed correctly
 		err = Copy(context.Background(), cmd, options, []string{"/nix/store/test"})
@@ -74,7 +74,7 @@ func TestCopyOptions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Just verify the options can be created
 			assert.NotNil(t, tt.options)
-			
+
 			// Verify from/to URIs are valid if present
 			if tt.options.From != nil {
 				assert.NotEmpty(t, tt.options.From.String())
@@ -91,15 +91,15 @@ func TestCopyPath(t *testing.T) {
 		if testing.Short() {
 			t.Skip("skipping integration test in short mode")
 		}
-		
+
 		toURI, err := store.ParseURI("ssh://example.com")
 		require.NoError(t, err)
-		
+
 		cmd := NewCmd()
 		options := CopyOptions{
 			To: toURI,
 		}
-		
+
 		err = CopyPath(context.Background(), cmd, options, "/nix/store/test")
 		assert.Error(t, err) // Expected to fail with non-existent host
 	})

@@ -73,7 +73,7 @@ func TestArgs_ToArgs(t *testing.T) {
 func TestArgs_WithFlakes(t *testing.T) {
 	args := NewArgs()
 	result := args.WithFlakes()
-	
+
 	assert.Same(t, args, result, "WithFlakes should return the same instance")
 	assert.Contains(t, args.ExtraExperimentalFeatures, "nix-command")
 	assert.Contains(t, args.ExtraExperimentalFeatures, "flakes")
@@ -82,7 +82,7 @@ func TestArgs_WithFlakes(t *testing.T) {
 func TestArgs_WithNixCommand(t *testing.T) {
 	args := NewArgs()
 	result := args.WithNixCommand()
-	
+
 	assert.Same(t, args, result, "WithNixCommand should return the same instance")
 	assert.Contains(t, args.ExtraExperimentalFeatures, "nix-command")
 }
@@ -155,7 +155,7 @@ func TestRemoveNonsenseArgs(t *testing.T) {
 			// Make a copy to avoid modifying the test case
 			input := make([]string, len(tt.input))
 			copy(input, tt.input)
-			
+
 			removeNonsenseArgs(tt.subcommands, &input)
 			assert.Equal(t, tt.want, input)
 		})
@@ -212,7 +212,7 @@ func TestRemoveArgument(t *testing.T) {
 			// Make a copy
 			args := make([]string, len(tt.args))
 			copy(args, tt.args)
-			
+
 			removeArgument(&args, tt.arg, tt.argCount)
 			assert.Equal(t, tt.want, args)
 		})

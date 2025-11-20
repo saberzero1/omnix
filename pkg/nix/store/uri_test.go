@@ -18,27 +18,27 @@ func TestParseURI(t *testing.T) {
 		wantErr     bool
 	}{
 		{
-			name:       "ssh with user",
-			input:      "ssh://user@example.com",
-			wantScheme: "ssh",
-			wantUser:   "user",
-			wantHost:   "example.com",
+			name:        "ssh with user",
+			input:       "ssh://user@example.com",
+			wantScheme:  "ssh",
+			wantUser:    "user",
+			wantHost:    "example.com",
 			wantOptions: Options{CopyInputs: false},
 		},
 		{
-			name:       "ssh without user",
-			input:      "ssh://example.com",
-			wantScheme: "ssh",
-			wantUser:   "",
-			wantHost:   "example.com",
+			name:        "ssh without user",
+			input:       "ssh://example.com",
+			wantScheme:  "ssh",
+			wantUser:    "",
+			wantHost:    "example.com",
 			wantOptions: Options{CopyInputs: false},
 		},
 		{
-			name:       "ssh with copy-inputs option",
-			input:      "ssh://user@example.com?copy-inputs=true",
-			wantScheme: "ssh",
-			wantUser:   "user",
-			wantHost:   "example.com",
+			name:        "ssh with copy-inputs option",
+			input:       "ssh://user@example.com?copy-inputs=true",
+			wantScheme:  "ssh",
+			wantUser:    "user",
+			wantHost:    "example.com",
 			wantOptions: Options{CopyInputs: true},
 		},
 		{
@@ -119,7 +119,7 @@ func TestURI_IsSSH(t *testing.T) {
 func TestURI_GetSSHURI(t *testing.T) {
 	uri, err := ParseURI("ssh://user@example.com")
 	require.NoError(t, err)
-	
+
 	sshURI := uri.GetSSHURI()
 	require.NotNil(t, sshURI)
 	assert.Equal(t, "user", sshURI.User)

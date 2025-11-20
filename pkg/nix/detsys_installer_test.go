@@ -110,7 +110,7 @@ func TestDetectDetSysInstaller(t *testing.T) {
 	// In most cases, /nix/nix-installer won't exist
 	installer, err := DetectDetSysInstaller()
 	require.NoError(t, err)
-	
+
 	if installer != nil {
 		// If the installer is detected, verify it has a valid version
 		assert.Greater(t, installer.Version.Major, uint32(0), "Major version should be > 0")

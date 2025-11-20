@@ -11,10 +11,10 @@ import (
 type CopyOptions struct {
 	// From is the URI of the store to copy from
 	From *store.URI
-	
+
 	// To is the URI of the store to copy to
 	To *store.URI
-	
+
 	// NoCheckSigs disables signature checking
 	NoCheckSigs bool
 }
@@ -38,26 +38,26 @@ type CopyOptions struct {
 //	err := nix.Copy(ctx, cmd, options, []string{"/nix/store/abc-foo", "/nix/store/xyz-bar"})
 func Copy(ctx context.Context, cmd *Cmd, options CopyOptions, paths []string) error {
 	args := []string{"copy", "-v"}
-	
+
 	if options.From != nil {
 		args = append(args, "--from", options.From.String())
 	}
-	
+
 	if options.To != nil {
 		args = append(args, "--to", options.To.String())
 	}
-	
+
 	if options.NoCheckSigs {
 		args = append(args, "--no-check-sigs")
 	}
-	
+
 	args = append(args, paths...)
-	
+
 	_, err := cmd.Run(ctx, args...)
 	if err != nil {
 		return fmt.Errorf("nix copy failed: %w", err)
 	}
-	
+
 	return nil
 }
 

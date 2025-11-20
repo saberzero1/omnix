@@ -7,10 +7,10 @@ import "strings"
 type Args struct {
 	// ExtraExperimentalFeatures appends to the experimental-features setting of Nix
 	ExtraExperimentalFeatures []string
-	
+
 	// ExtraAccessTokens appends to the access-tokens setting of Nix
 	ExtraAccessTokens []string
-	
+
 	// ExtraNixArgs are additional arguments to pass through to `nix`
 	// Note: Arguments irrelevant to a nix subcommand will automatically be ignored
 	ExtraNixArgs []string
@@ -29,25 +29,25 @@ func NewArgs() *Args {
 // The subcommands parameter is used to filter out nonsense arguments for specific subcommands.
 func (a *Args) ToArgs(subcommands ...string) []string {
 	args := []string{}
-	
+
 	if len(a.ExtraExperimentalFeatures) > 0 {
 		args = append(args, "--extra-experimental-features")
 		args = append(args, strings.Join(a.ExtraExperimentalFeatures, " "))
 	}
-	
+
 	if len(a.ExtraAccessTokens) > 0 {
 		args = append(args, "--extra-access-tokens")
 		args = append(args, strings.Join(a.ExtraAccessTokens, " "))
 	}
-	
+
 	// Clone extra args to avoid modifying the original
 	extraArgs := make([]string, len(a.ExtraNixArgs))
 	copy(extraArgs, a.ExtraNixArgs)
-	
+
 	// Remove nonsense arguments when using specific subcommands
 	removeNonsenseArgs(subcommands, &extraArgs)
 	args = append(args, extraArgs...)
-	
+
 	return args
 }
 
@@ -80,7 +80,7 @@ func getNonsenseOptions(subcommands []string) map[string]int {
 		"--override-input": 2,
 	}
 	rebuild := map[string]int{"--rebuild": 0}
-	
+
 	key := strings.Join(subcommands, " ")
 	switch key {
 	case "eval":

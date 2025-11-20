@@ -8,7 +8,7 @@ import (
 // Path represents a path in the Nix store.
 // See: https://zero-to-nix.com/concepts/nix-store#store-paths
 type Path struct {
-	path string
+	path  string
 	isDrv bool
 }
 

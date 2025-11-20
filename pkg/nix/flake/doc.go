@@ -11,7 +11,7 @@
 //
 //	sys := flake.ParseSystem("x86_64-linux")
 //	fmt.Println(sys.HumanReadable()) // Output: Linux (Intel)
-//	
+//
 //	if sys.IsLinux() {
 //	    fmt.Println("Building for Linux")
 //	}
@@ -22,7 +22,7 @@
 //
 //	attr := flake.NewAttr("packages.x86_64-linux.hello")
 //	parts := attr.AsList() // ["packages", "x86_64-linux", "hello"]
-//	
+//
 //	// Default attribute
 //	none := flake.NoneAttr()
 //	fmt.Println(none.GetName()) // Output: default
