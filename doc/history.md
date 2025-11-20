@@ -51,6 +51,14 @@ This release implements the majority of future work items identified in package 
 - **Parallel Execution**: Confirmed fully implemented with goroutines
 - **Concurrency Control**: Support for limiting max concurrent operations
 - **Comprehensive Tests**: Parallel execution tests validate functionality
+- **devour-flake Support**: Build all flake outputs using devour-flake (not just default)
+- **Custom Step Types**: Support for `app` and `devshell` custom step types
+- **Custom Step Configuration**: Fixed custom step parsing from om.yaml (map instead of array)
+- **Systems Filtering**: Custom steps can specify system whitelists
+
+### Nix Package
+- **devour-flake Integration**: Added `devour.go` with DevourFlake function to build all outputs
+- **Comprehensive Building**: CI now builds all flake outputs, not just the default package
 
 ### Code Quality
 - **Linting**: All golangci-lint issues resolved
