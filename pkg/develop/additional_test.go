@@ -273,3 +273,108 @@ func TestConfig_FullCoverage(t *testing.T) {
 	assert.Equal(t, "test.md", config.Readme.File)
 	assert.True(t, config.Readme.Enable)
 }
+
+func TestIsDirenvEnabled(t *testing.T) {
+	tests := []struct {
+		name     string
+		setup    func(string) error
+		expected bool
+	}{
+		{
+			name: ".envrc exists",
+			setup: func(dir string) error {
+				return os.WriteFile(filepath.Join(dir, ".envrc"), []byte("use flake"), 0644)
+			},
+			expected: true,
+		},
+		{
+			name: ".envrc does not exist",
+			setup: func(dir string) error {
+				return nil
+			},
+			expected: false,
+		},
+		{
+			name: ".envrc is a directory",
+			setup: func(dir string) error {
+				return os.Mkdir(filepath.Join(dir, ".envrc"), 0755)
+			},
+			expected: true, // Stat succeeds even for directories
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			err := tt.setup(tmpDir)
+			require.NoError(t, err)
+
+			result := IsDirenvEnabled(tmpDir)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestSetupDirenv_Disabled(t *testing.T) {
+	ctx := context.Background()
+	tmpDir := t.TempDir()
+
+	config := DirenvConfig{Enable: false}
+	err := SetupDirenv(ctx, tmpDir, config)
+	require.NoError(t, err)
+
+	// .envrc should not be created
+	_, err = os.Stat(filepath.Join(tmpDir, ".envrc"))
+	assert.True(t, os.IsNotExist(err))
+}
+
+func TestSetupDirenv_CreatesEnvrc(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping test that requires direnv in short mode")
+	}
+
+	ctx := context.Background()
+	tmpDir := t.TempDir()
+
+	config := DirenvConfig{
+		Enable:             true,
+		AllowAutomatically: false,
+	}
+	
+	err := SetupDirenv(ctx, tmpDir, config)
+	require.NoError(t, err)
+
+	// .envrc should be created
+	envrcPath := filepath.Join(tmpDir, ".envrc")
+	content, err := os.ReadFile(envrcPath)
+	require.NoError(t, err)
+	assert.Contains(t, string(content), "use flake")
+}
+
+func TestSetupDirenv_ExistingEnvrc(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping test that requires direnv in short mode")
+	}
+
+	ctx := context.Background()
+	tmpDir := t.TempDir()
+
+	// Create existing .envrc
+	existingContent := "# existing content"
+	envrcPath := filepath.Join(tmpDir, ".envrc")
+	err := os.WriteFile(envrcPath, []byte(existingContent), 0644)
+	require.NoError(t, err)
+
+	config := DirenvConfig{
+		Enable:             true,
+		AllowAutomatically: false,
+	}
+	
+	err = SetupDirenv(ctx, tmpDir, config)
+	require.NoError(t, err)
+
+	// Content should be unchanged
+	content, err := os.ReadFile(envrcPath)
+	require.NoError(t, err)
+	assert.Equal(t, existingContent, string(content))
+}

@@ -262,3 +262,125 @@ func TestDetectEnvWithCanceledContext(t *testing.T) {
 		t.Logf("DetectEnv() with canceled context error = %v (expected)", err)
 	}
 }
+
+func TestEnv_CurrentUser(t *testing.T) {
+	tests := []struct {
+		name string
+		env  *Env
+		want string
+	}{
+		{
+			name: "user set",
+			env:  &Env{User: "testuser"},
+			want: "testuser",
+		},
+		{
+			name: "empty user",
+			env:  &Env{User: ""},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.env.CurrentUser()
+			if got != tt.want {
+				t.Errorf("Env.CurrentUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestEnv_CurrentUserGroups(t *testing.T) {
+	tests := []struct {
+		name string
+		env  *Env
+		want []string
+	}{
+		{
+			name: "groups set",
+			env:  &Env{Groups: []string{"group1", "group2"}},
+			want: []string{"group1", "group2"},
+		},
+		{
+			name: "empty groups",
+			env:  &Env{Groups: []string{}},
+			want: []string{},
+		},
+		{
+			name: "nil groups",
+			env:  &Env{},
+			want: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.env.CurrentUserGroups()
+			if len(got) != len(tt.want) {
+				t.Errorf("Env.CurrentUserGroups() = %v, want %v", got, tt.want)
+				return
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("Env.CurrentUserGroups()[%d] = %v, want %v", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestOSType_NixSystemConfigLabel(t *testing.T) {
+	tests := []struct {
+		name string
+		os   OSType
+		want string
+	}{
+		{
+			name: "NixOS",
+			os: OSType{
+				Type:    "linux",
+				IsNixOS: true,
+			},
+			want: "/etc/nixos/configuration.nix",
+		},
+		{
+			name: "nix-darwin",
+			os: OSType{
+				Type:        "darwin",
+				IsNixDarwin: true,
+			},
+			want: "~/.nixpkgs/darwin-configuration.nix",
+		},
+		{
+			name: "other Linux",
+			os: OSType{
+				Type: "linux",
+			},
+			want: "",
+		},
+		{
+			name: "other macOS",
+			os: OSType{
+				Type: "darwin",
+			},
+			want: "",
+		},
+		{
+			name: "unknown OS",
+			os: OSType{
+				Type: "freebsd",
+			},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.os.NixSystemConfigLabel()
+			if got != tt.want {
+				t.Errorf("OSType.NixSystemConfigLabel() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

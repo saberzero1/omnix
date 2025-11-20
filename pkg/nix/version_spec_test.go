@@ -7,6 +7,55 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNewVersionSpec(t *testing.T) {
+	tests := []struct {
+		name    string
+		op      VersionSpecType
+		version Version
+		wantOp  string
+	}{
+		{
+			name:    "greater than",
+			op:      VersionSpecGt,
+			version: Version{Major: 2, Minor: 8, Patch: 0},
+			wantOp:  ">",
+		},
+		{
+			name:    "greater than or equal",
+			op:      VersionSpecGte,
+			version: Version{Major: 2, Minor: 8, Patch: 1},
+			wantOp:  ">=",
+		},
+		{
+			name:    "less than",
+			op:      VersionSpecLt,
+			version: Version{Major: 3, Minor: 0, Patch: 0},
+			wantOp:  "<",
+		},
+		{
+			name:    "less than or equal",
+			op:      VersionSpecLte,
+			version: Version{Major: 2, Minor: 14, Patch: 0},
+			wantOp:  "<=",
+		},
+		{
+			name:    "not equal",
+			op:      VersionSpecNeq,
+			version: Version{Major: 2, Minor: 9, Patch: 0},
+			wantOp:  "!=",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := NewVersionSpec(tt.op, tt.version)
+			require.NotNil(t, spec)
+			assert.Equal(t, tt.wantOp, spec.operator)
+			assert.Equal(t, tt.version, spec.version)
+		})
+	}
+}
+
 func TestParseVersionSpec(t *testing.T) {
 	tests := []struct {
 		name    string

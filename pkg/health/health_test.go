@@ -196,3 +196,33 @@ func TestRunAllChecks(t *testing.T) {
 		assert.NotEmpty(t, nc.Check.Title)
 	}
 }
+
+func TestPrintCheckResultMarkdown(t *testing.T) {
+	// Test with a green result
+	greenCheck := checks.NamedCheck{
+		Name: "test-check",
+		Check: checks.Check{
+			Title:    "Test Check",
+			Info:     "Test info",
+			Result:   checks.GreenResult{},
+			Required: true,
+		},
+	}
+	
+	err := PrintCheckResultMarkdown(greenCheck)
+	assert.NoError(t, err)
+	
+	// Test with a red result
+	redCheck := checks.NamedCheck{
+		Name: "fail-check",
+		Check: checks.Check{
+			Title:    "Failing Check",
+			Info:     "Fail info",
+			Result:   checks.RedResult{Message: "Failed", Suggestion: "Fix it"},
+			Required: false,
+		},
+	}
+	
+	err = PrintCheckResultMarkdown(redCheck)
+	assert.NoError(t, err)
+}
