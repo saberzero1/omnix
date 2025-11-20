@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/saberzero1/omnix/pkg/common"
 	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -333,6 +334,11 @@ func TestSetupDirenv_CreatesEnvrc(t *testing.T) {
 		t.Skip("Skipping test that requires direnv in short mode")
 	}
 
+	// Skip if direnv is not installed
+	if common.WhichStrict("direnv") == "" {
+		t.Skip("direnv is not installed, skipping test")
+	}
+
 	ctx := context.Background()
 	tmpDir := t.TempDir()
 
@@ -354,6 +360,11 @@ func TestSetupDirenv_CreatesEnvrc(t *testing.T) {
 func TestSetupDirenv_ExistingEnvrc(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping test that requires direnv in short mode")
+	}
+
+	// Skip if direnv is not installed
+	if common.WhichStrict("direnv") == "" {
+		t.Skip("direnv is not installed, skipping test")
 	}
 
 	ctx := context.Background()
