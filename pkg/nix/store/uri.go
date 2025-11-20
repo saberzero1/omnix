@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+const (
+	// SchemeSSH is the SSH store URI scheme
+	SchemeSSH = "ssh"
+)
+
 // URI represents a Nix store URI.
 // Currently supports SSH stores.
 type URI struct {
@@ -38,7 +43,7 @@ func ParseURI(uriStr string) (*URI, error) {
 	}
 
 	switch u.Scheme {
-	case "ssh":
+	case SchemeSSH:
 		return parseSSHURI(u)
 	default:
 		return nil, fmt.Errorf("unsupported scheme: %s", u.Scheme)
@@ -66,7 +71,7 @@ func parseSSHURI(u *url.URL) (*URI, error) {
 	}
 
 	return &URI{
-		scheme:  "ssh",
+		scheme:  SchemeSSH,
 		sshURI:  sshURI,
 		options: opts,
 	}, nil
@@ -75,7 +80,7 @@ func parseSSHURI(u *url.URL) (*URI, error) {
 // String returns the string representation of the URI.
 func (u *URI) String() string {
 	switch u.scheme {
-	case "ssh":
+	case SchemeSSH:
 		return u.sshString()
 	default:
 		return ""
@@ -86,17 +91,17 @@ func (u *URI) sshString() string {
 	if u.sshURI == nil {
 		return ""
 	}
-	
+
 	var builder strings.Builder
 	builder.WriteString("ssh://")
-	
+
 	if u.sshURI.User != "" {
 		builder.WriteString(u.sshURI.User)
 		builder.WriteString("@")
 	}
-	
+
 	builder.WriteString(u.sshURI.Host)
-	
+
 	return builder.String()
 }
 
@@ -107,7 +112,7 @@ func (u *URI) GetOptions() Options {
 
 // IsSSH returns true if this is an SSH store URI.
 func (u *URI) IsSSH() bool {
-	return u.scheme == "ssh"
+	return u.scheme == SchemeSSH
 }
 
 // GetSSHURI returns the SSH URI details if this is an SSH store.
