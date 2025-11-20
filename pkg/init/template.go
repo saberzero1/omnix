@@ -136,6 +136,10 @@ func (t *Template) ScaffoldAtWithResult(ctx context.Context, outDir string) (*Sc
 			ap.Type = "replace"
 		case *RetainAction:
 			ap.Type = "retain"
+		case *ChmodAction:
+			ap.Type = "chmod"
+		case *MoveAction:
+			ap.Type = "move"
 		default:
 			ap.Type = "unknown"
 		}

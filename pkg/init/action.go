@@ -181,10 +181,6 @@ func matchGlob(pattern, path string) bool {
 
 			// Check suffix
 			if suffix != "" {
-				// Match the suffix as a regular glob
-				if suffix == "" {
-					return true
-				}
 				// Match any component ending with suffix
 				matched, _ := filepath.Match(suffix, filepath.Base(path))
 				if matched {

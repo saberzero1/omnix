@@ -80,7 +80,10 @@ func (p *ProgressIndicator) Stop() {
 	if p.ticker != nil {
 		p.ticker.Stop()
 	}
-	p.done <- true
+	select {
+	case p.done <- true:
+	default:
+	}
 	_, _ = fmt.Fprintf(p.writer, "\r") // Clear the line
 }
 
