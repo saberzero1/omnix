@@ -131,9 +131,9 @@ go build -o om ./cmd/om
 
 ## Future Work
 
-- [ ] Add JSON output for init command
+- [x] ~~Add JSON output for init command~~ (Completed - see ScaffoldAtWithResult)
 - [ ] Implement registry support for template discovery
-- [ ] Add interactive parameter prompting
+- [x] ~~Add interactive parameter prompting~~ (Available in pkg/init)
 - [ ] Support loading templates from flakes
-- [ ] Add progress indicators for long operations
-- [ ] Implement remaining commands (show, ci, develop)
+- [x] ~~Add progress indicators for long operations~~ (Completed - see pkg/common/progress.go)
+- [x] ~~Implement remaining commands (show, ci, develop)~~ (Completed - all commands implemented)

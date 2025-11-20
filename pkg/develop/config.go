@@ -12,6 +12,10 @@ import (
 type Config struct {
 	// Readme configures the welcome message displayed after shell activation
 	Readme ReadmeConfig `yaml:"readme" json:"readme"`
+	// HealthChecks configures which health checks to run
+	HealthChecks HealthChecksConfig `yaml:"health-checks" json:"health-checks"`
+	// Direnv configures automatic direnv setup
+	Direnv DirenvConfig `yaml:"direnv" json:"direnv"`
 }
 
 // ReadmeConfig specifies how to display README information
@@ -22,12 +26,37 @@ type ReadmeConfig struct {
 	Enable bool `yaml:"enable" json:"enable"`
 }
 
+// HealthChecksConfig specifies which health checks to run
+type HealthChecksConfig struct {
+	// NixVersion enables the Nix version check (default: true)
+	NixVersion bool `yaml:"nix-version" json:"nix-version"`
+	// Rosetta enables the Rosetta check on macOS (default: true)
+	Rosetta bool `yaml:"rosetta" json:"rosetta"`
+	// MaxJobs enables the max-jobs check (default: true)
+	MaxJobs bool `yaml:"max-jobs" json:"max-jobs"`
+	// Caches enables the cache check (default: false)
+	Caches bool `yaml:"caches" json:"caches"`
+	// FlakeEnabled enables the flake check (default: false)
+	FlakeEnabled bool `yaml:"flake-enabled" json:"flake-enabled"`
+}
+
 // DefaultConfig returns the default develop configuration
 func DefaultConfig() Config {
 	return Config{
 		Readme: ReadmeConfig{
 			File:   "README.md",
 			Enable: true,
+		},
+		HealthChecks: HealthChecksConfig{
+			NixVersion:   true,
+			Rosetta:      true,
+			MaxJobs:      true,
+			Caches:       false,
+			FlakeEnabled: false,
+		},
+		Direnv: DirenvConfig{
+			Enable:             false,
+			AllowAutomatically: false,
 		},
 	}
 }
@@ -50,6 +79,12 @@ func LoadConfig(path string) (Config, error) {
 	// Apply defaults
 	if config.Develop.Readme.File == "" {
 		config.Develop.Readme.File = "README.md"
+	}
+
+	// Apply health check defaults
+	defaults := DefaultConfig()
+	if config.Develop.HealthChecks == (HealthChecksConfig{}) {
+		config.Develop.HealthChecks = defaults.HealthChecks
 	}
 
 	return config.Develop, nil

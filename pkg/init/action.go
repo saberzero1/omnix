@@ -126,11 +126,7 @@ func (r RetainAction) Apply(_ context.Context, outDir string) error {
 	var filesToDelete []string
 	for _, file := range files {
 		for _, pattern := range r.Paths {
-			matched, err := filepath.Match(pattern, file)
-			if err != nil {
-				return fmt.Errorf("invalid glob pattern %s: %w", pattern, err)
-			}
-			if matched {
+			if matchGlob(pattern, file) {
 				filesToDelete = append(filesToDelete, file)
 				break
 			}
@@ -156,6 +152,56 @@ func (r RetainAction) Apply(_ context.Context, outDir string) error {
 	}
 
 	return nil
+}
+
+// matchGlob matches a path against a glob pattern with enhanced ** support
+func matchGlob(pattern, path string) bool {
+	// Convert backslashes to forward slashes for consistency
+	pattern = filepath.ToSlash(pattern)
+	path = filepath.ToSlash(path)
+
+	// Handle ** patterns (match zero or more directories)
+	if strings.Contains(pattern, "**") {
+		// Split pattern into parts
+		parts := strings.Split(pattern, "**")
+
+		// For simple cases like "dir/**" or "**/file.txt"
+		if len(parts) == 2 {
+			prefix := parts[0]
+			suffix := parts[1]
+
+			// Remove leading/trailing slashes
+			prefix = strings.TrimSuffix(prefix, "/")
+			suffix = strings.TrimPrefix(suffix, "/")
+
+			// Check prefix
+			if prefix != "" && !strings.HasPrefix(path, prefix) {
+				return false
+			}
+
+			// Check suffix
+			if suffix != "" {
+				// Match any component ending with suffix
+				matched, _ := filepath.Match(suffix, filepath.Base(path))
+				if matched {
+					return true
+				}
+				// Also check if the full suffix matches
+				if strings.HasSuffix(path, suffix) {
+					return true
+				}
+			} else {
+				// Pattern is like "dir/**", match anything under dir
+				return true
+			}
+
+			return false
+		}
+	}
+
+	// Fall back to basic glob matching
+	matched, _ := filepath.Match(pattern, filepath.Base(path))
+	return matched
 }
 
 // findAllPaths returns all file and directory paths relative to the root
@@ -193,7 +239,130 @@ func ActionPriority(a Action) int {
 		return 0
 	case ReplaceAction, *ReplaceAction:
 		return 1
-	default:
+	case ChmodAction, *ChmodAction:
 		return 2
+	case MoveAction, *MoveAction:
+		return 3
+	default:
+		return 4
 	}
+}
+
+// ChmodAction changes file permissions
+type ChmodAction struct {
+	Paths []string    // Glob patterns for files to change
+	Mode  os.FileMode // File permissions mode
+	Value *bool       // Enable/disable this action
+}
+
+// HasValue returns true if the chmod action has a value set
+func (c ChmodAction) HasValue() bool {
+	return c.Value != nil && *c.Value
+}
+
+func (c ChmodAction) String() string {
+	if c.Value == nil || !*c.Value {
+		return "chmod [disabled]"
+	}
+	return fmt.Sprintf("chmod [%s => %o]", strings.Join(c.Paths, ", "), c.Mode)
+}
+
+// Apply performs the chmod action on matching files
+func (c ChmodAction) Apply(_ context.Context, outDir string) error {
+	if c.Value == nil || !*c.Value {
+		return nil
+	}
+
+	// Find all files
+	files, err := findAllPaths(outDir)
+	if err != nil {
+		return fmt.Errorf("failed to find paths: %w", err)
+	}
+
+	// Match files against glob patterns
+	var filesToChmod []string
+	for _, file := range files {
+		for _, pattern := range c.Paths {
+			if matchGlob(pattern, file) {
+				filesToChmod = append(filesToChmod, file)
+				break
+			}
+		}
+	}
+
+	// Change permissions on matched files
+	for _, relPath := range filesToChmod {
+		path := filepath.Join(outDir, relPath)
+		fmt.Printf("   🔒 %s (mode: %o)\n", relPath, c.Mode)
+		if err := os.Chmod(path, c.Mode); err != nil {
+			return fmt.Errorf("failed to chmod %s: %w", path, err)
+		}
+	}
+
+	return nil
+}
+
+// MoveAction moves or renames files
+type MoveAction struct {
+	From  string // Source path pattern
+	To    string // Destination path
+	Value *bool  // Enable/disable this action
+}
+
+// HasValue returns true if the move action has a value set
+func (m MoveAction) HasValue() bool {
+	return m.Value != nil && *m.Value
+}
+
+func (m MoveAction) String() string {
+	if m.Value == nil || !*m.Value {
+		return "move [disabled]"
+	}
+	return fmt.Sprintf("move [%s => %s]", m.From, m.To)
+}
+
+// Apply performs the move action
+func (m MoveAction) Apply(_ context.Context, outDir string) error {
+	if m.Value == nil || !*m.Value {
+		return nil
+	}
+
+	// Find all files
+	files, err := findAllPaths(outDir)
+	if err != nil {
+		return fmt.Errorf("failed to find paths: %w", err)
+	}
+
+	// Match files against the pattern
+	var filesToMove []string
+	for _, file := range files {
+		if matchGlob(m.From, file) {
+			filesToMove = append(filesToMove, file)
+		}
+	}
+
+	// Validate that only one file matches for single-file moves
+	if len(filesToMove) > 1 {
+		return fmt.Errorf("move action matched %d files but only single-file moves are supported (from: %s, matches: %v)", 
+			len(filesToMove), m.From, filesToMove)
+	}
+
+	// Move each matched file
+	for _, relPath := range filesToMove {
+		srcPath := filepath.Join(outDir, relPath)
+		dstPath := filepath.Join(outDir, m.To)
+
+		// Create destination directory if needed
+		dstDir := filepath.Dir(dstPath)
+		if err := os.MkdirAll(dstDir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dstDir, err)
+		}
+
+		fmt.Printf("   📦 %s => %s\n", relPath, m.To)
+		if err := os.Rename(srcPath, dstPath); err != nil {
+			return fmt.Errorf("failed to move %s to %s: %w", srcPath, dstPath, err)
+		}
+	}
+
+	return nil
 }

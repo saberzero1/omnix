@@ -96,6 +96,77 @@ func (t *Template) applyActions(ctx context.Context, outDir string) error {
 	return nil
 }
 
+// ScaffoldResult represents the result of a scaffold operation
+type ScaffoldResult struct {
+	// OutputPath is the absolute path to the scaffolded project
+	OutputPath string `json:"output_path"`
+	// TemplatePath is the path to the source template
+	TemplatePath string `json:"template_path"`
+	// AppliedParams lists the parameters that were applied
+	AppliedParams []AppliedParam `json:"applied_params"`
+}
+
+// AppliedParam represents a parameter that was applied during scaffolding
+type AppliedParam struct {
+	// Name is the parameter name
+	Name string `json:"name"`
+	// Type is the action type (replace, retain)
+	Type string `json:"type"`
+	// Applied indicates whether the action was applied (had a value)
+	Applied bool `json:"applied"`
+}
+
+// ScaffoldAtWithResult scaffolds the template and returns detailed result information
+func (t *Template) ScaffoldAtWithResult(ctx context.Context, outDir string) (*ScaffoldResult, error) {
+	// Copy the template directory to the output directory
+	if err := common.CopyDirAll(t.Path, outDir); err != nil {
+		return nil, fmt.Errorf("unable to copy files: %w", err)
+	}
+
+	// Collect applied params
+	var appliedParams []AppliedParam
+	for _, param := range t.Params {
+		ap := AppliedParam{
+			Name:    param.Name,
+			Applied: param.Action.HasValue(),
+		}
+
+		switch param.Action.(type) {
+		case *ReplaceAction:
+			ap.Type = "replace"
+		case *RetainAction:
+			ap.Type = "retain"
+		case *ChmodAction:
+			ap.Type = "chmod"
+		case *MoveAction:
+			ap.Type = "move"
+		default:
+			ap.Type = "unknown"
+		}
+
+		appliedParams = append(appliedParams, ap)
+	}
+
+	// Apply parameter actions
+	if err := t.applyActions(ctx, outDir); err != nil {
+		return nil, err
+	}
+
+	// Canonicalize the path
+	absPath, err := filepath.Abs(outDir)
+	if err != nil {
+		return nil, fmt.Errorf("unable to canonicalize path: %w", err)
+	}
+
+	result := &ScaffoldResult{
+		OutputPath:    absPath,
+		TemplatePath:  t.Path,
+		AppliedParams: appliedParams,
+	}
+
+	return result, nil
+}
+
 // FlakeTemplate represents a template from a flake
 type FlakeTemplate struct {
 	TemplateName string

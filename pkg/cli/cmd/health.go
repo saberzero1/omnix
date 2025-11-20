@@ -74,8 +74,12 @@ func runHealth(cmd *cobra.Command, args []string) error {
 	status := health.EvaluateResults(results)
 
 	if healthJSONOnly {
-		// TODO: Implement JSON output
-		fmt.Println("{\"status\": \"not implemented\"}")
+		// Output results in JSON format
+		jsonOutput, err := health.ResultsToJSON(results, status, nixInfo)
+		if err != nil {
+			return fmt.Errorf("failed to generate JSON output: %w", err)
+		}
+		fmt.Println(jsonOutput)
 	} else {
 		fmt.Println(status.SummaryMessage())
 	}

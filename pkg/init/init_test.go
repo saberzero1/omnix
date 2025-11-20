@@ -236,3 +236,51 @@ func strPtr(s string) *string {
 func boolPtr(b bool) *bool {
 	return &b
 }
+
+func TestMatchGlob(t *testing.T) {
+	tests := []struct {
+		name    string
+		pattern string
+		path    string
+		want    bool
+	}{
+		{
+			name:    "Simple basename match",
+			pattern: "*.txt",
+			path:    "file.txt",
+			want:    true,
+		},
+		{
+			name:    "Basename no match",
+			pattern: "*.txt",
+			path:    "file.md",
+			want:    false,
+		},
+		{
+			name:    "Doublestar prefix",
+			pattern: "**/*.go",
+			path:    "pkg/main.go",
+			want:    true,
+		},
+		{
+			name:    "Doublestar suffix",
+			pattern: "src/**",
+			path:    "src/file.txt",
+			want:    true,
+		},
+		{
+			name:    "Directory match",
+			pattern: ".github/**",
+			path:    ".github/workflows/ci.yml",
+			want:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := matchGlob(tt.pattern, tt.path); got != tt.want {
+				t.Errorf("matchGlob(%q, %q) = %v, want %v", tt.pattern, tt.path, got, tt.want)
+			}
+		})
+	}
+}

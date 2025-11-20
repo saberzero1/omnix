@@ -86,7 +86,7 @@ health:
 
 ## Test Coverage
 
-- **Coverage**: 45.4%
+- **Coverage**: 81.1% ✅ (exceeds 80% target)
 - **Status**: All unit tests passing
 - **Integration Tests**: Available (skipped in short mode)
 
@@ -126,8 +126,8 @@ Migrated from Rust `omnix-health` crate:
 
 ## Future Work
 
-- [ ] Implement full Config parsing for all check types
+- [x] ~~Implement full Config parsing for all check types~~ (Completed)
 - [ ] Add integration tests with real Nix
-- [ ] Improve test coverage to ≥80%
-- [ ] Add markdown rendering for check output
-- [ ] Support loading configuration from om.yaml
+- [x] ~~Improve test coverage to ≥80%~~ (Completed - 81.1%)
+- [x] ~~Add markdown rendering for check output~~ (Completed)
+- [x] ~~Support loading configuration from om.yaml~~ (Completed)

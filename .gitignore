@@ -19,3 +19,4 @@ coverage.html
 vendor/
 result.json
 **/result.json
+/om
