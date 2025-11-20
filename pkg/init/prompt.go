@@ -36,8 +36,8 @@ func PromptForParams(params []Param) (map[string]interface{}, error) {
 				values[param.Name] = value
 			}
 
-		case *RetainAction:
-			// Prompt for boolean input
+		case *RetainAction, *ChmodAction, *MoveAction:
+			// Prompt for boolean input (enable/disable action)
 			fmt.Printf("\n%s\n", param.Description)
 			fmt.Printf("Enable '%s'? (y/n) [default: n]: ", param.Name)
 

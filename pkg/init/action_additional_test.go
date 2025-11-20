@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -160,4 +161,36 @@ func TestActionPriority_NewActions(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMoveAction_MultipleFilesError(t *testing.T) {
+tmpDir := t.TempDir()
+
+// Create multiple files that match the pattern
+if err := os.WriteFile(filepath.Join(tmpDir, "file1.txt"), []byte("content1"), 0644); err != nil {
+t.Fatalf("Failed to create test file: %v", err)
+}
+if err := os.WriteFile(filepath.Join(tmpDir, "file2.txt"), []byte("content2"), 0644); err != nil {
+t.Fatalf("Failed to create test file: %v", err)
+}
+
+// Try to move multiple files to single destination (should fail)
+trueVal := true
+action := MoveAction{
+From:  "*.txt",
+To:    "output.txt",
+Value: &trueVal,
+}
+
+ctx := context.Background()
+err := action.Apply(ctx, tmpDir)
+
+// Should get an error about multiple matches
+if err == nil {
+t.Fatal("Expected error when moving multiple files to single destination, got nil")
+}
+
+if !strings.Contains(err.Error(), "matched 2 files") {
+t.Errorf("Expected error message about 2 files, got: %v", err)
+}
 }

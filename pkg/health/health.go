@@ -141,22 +141,11 @@ func PrintCheckResult(nc checks.NamedCheck) error {
 }
 
 // PrintCheckResultMarkdown prints a single check result with rendered markdown
+// Note: This function is currently identical to PrintCheckResult.
+// Actual markdown rendering using common.RenderMarkdown would create import cycles.
+// For future enhancement, consider restructuring packages to enable proper rendering.
 func PrintCheckResultMarkdown(nc checks.NamedCheck) error {
-	// Build markdown output
-	var md string
-	if nc.Check.Required {
-		md = fmt.Sprintf("### %s (Required)\n\n", nc.Check.Title)
-	} else {
-		md = fmt.Sprintf("### %s\n\n", nc.Check.Title)
-	}
-
-	md += fmt.Sprintf("%s\n\n", nc.Check.Info)
-	md += fmt.Sprintf("**Result**: %s\n", nc.Check.Result.String())
-
-	// Use common package for markdown rendering
-	// This is kept simple to avoid import cycle issues
-	fmt.Println(md)
-	return nil
+	return PrintCheckResult(nc)
 }
 
 // ResultsToJSON converts health check results to JSON format
