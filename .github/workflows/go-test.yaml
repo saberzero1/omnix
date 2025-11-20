@@ -3,6 +3,10 @@ name: "Go Tests - Cross-Platform"
 # This workflow runs Go tests across multiple platforms
 # to ensure the Go codebase works on all supported systems
 
+permissions:
+  id-token: write
+  contents: read
+
 on:
   workflow_dispatch:
   push:

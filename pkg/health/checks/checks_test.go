@@ -218,6 +218,11 @@ func TestParseCachixURL(t *testing.T) {
 			url:       "not a url",
 			expectNil: true,
 		},
+		{
+			name:      "Invalid cachix URL (too short)",
+			url:       "https://cachix.org",
+			expectNil: true,
+		},
 	}
 
 	for _, tt := range tests {

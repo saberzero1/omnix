@@ -28,6 +28,11 @@ func TestAllChecksResult_SummaryMessage(t *testing.T) {
 			result:   Fail,
 			expected: "❌ Some required checks failed",
 		},
+		{
+			name:     "Unknown/Invalid",
+			result:   AllChecksResult(999),
+			expected: "❌ Unknown result",
+		},
 	}
 
 	for _, tt := range tests {

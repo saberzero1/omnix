@@ -214,3 +214,30 @@ func TestEmptyConfig(t *testing.T) {
 		t.Error("Get() on empty config should return nil")
 	}
 }
+
+func TestParseYAMLConfig_InvalidYAML(t *testing.T) {
+	invalidYAML := `
+ci:
+  default
+    - invalid yaml syntax
+`
+	
+	_, err := ParseYAMLConfig(invalidYAML)
+	if err == nil {
+		t.Error("ParseYAMLConfig() should return error for invalid YAML")
+	}
+}
+
+func TestParseJSONConfig_InvalidJSON(t *testing.T) {
+	invalidJSON := `{
+		"ci": {
+			"default": true
+			invalid json
+		}
+	}`
+	
+	_, err := ParseJSONConfig(invalidJSON)
+	if err == nil {
+		t.Error("ParseJSONConfig() should return error for invalid JSON")
+	}
+}

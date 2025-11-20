@@ -194,3 +194,133 @@ if !strings.Contains(err.Error(), "matched 2 files") {
 t.Errorf("Expected error message about 2 files, got: %v", err)
 }
 }
+
+func TestChmodAction_HasValue(t *testing.T) {
+	tests := []struct {
+		name     string
+		action   ChmodAction
+		expected bool
+	}{
+		{
+			name:     "nil value",
+			action:   ChmodAction{Value: nil},
+			expected: false,
+		},
+		{
+			name:     "false value",
+			action:   ChmodAction{Value: boolPtr(false)},
+			expected: false,
+		},
+		{
+			name:     "true value",
+			action:   ChmodAction{Value: boolPtr(true)},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.action.HasValue(); got != tt.expected {
+				t.Errorf("ChmodAction.HasValue() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestChmodAction_String(t *testing.T) {
+	tests := []struct {
+		name     string
+		action   ChmodAction
+		contains string
+	}{
+		{
+			name:     "disabled action (nil)",
+			action:   ChmodAction{Value: nil, Paths: []string{"*.sh"}, Mode: 0755},
+			contains: "disabled",
+		},
+		{
+			name:     "disabled action (false)",
+			action:   ChmodAction{Value: boolPtr(false), Paths: []string{"*.sh"}, Mode: 0755},
+			contains: "disabled",
+		},
+		{
+			name:     "enabled action",
+			action:   ChmodAction{Value: boolPtr(true), Paths: []string{"*.sh"}, Mode: 0755},
+			contains: "chmod",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.action.String()
+			if !strings.Contains(got, tt.contains) {
+				t.Errorf("ChmodAction.String() = %v, want to contain %v", got, tt.contains)
+			}
+		})
+	}
+}
+
+func TestMoveAction_HasValue(t *testing.T) {
+	tests := []struct {
+		name     string
+		action   MoveAction
+		expected bool
+	}{
+		{
+			name:     "nil value",
+			action:   MoveAction{Value: nil},
+			expected: false,
+		},
+		{
+			name:     "false value",
+			action:   MoveAction{Value: boolPtr(false)},
+			expected: false,
+		},
+		{
+			name:     "true value",
+			action:   MoveAction{Value: boolPtr(true)},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.action.HasValue(); got != tt.expected {
+				t.Errorf("MoveAction.HasValue() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestMoveAction_String(t *testing.T) {
+	tests := []struct {
+		name     string
+		action   MoveAction
+		contains string
+	}{
+		{
+			name:     "disabled action (nil)",
+			action:   MoveAction{Value: nil, From: "a.txt", To: "b.txt"},
+			contains: "disabled",
+		},
+		{
+			name:     "disabled action (false)",
+			action:   MoveAction{Value: boolPtr(false), From: "a.txt", To: "b.txt"},
+			contains: "disabled",
+		},
+		{
+			name:     "enabled action",
+			action:   MoveAction{Value: boolPtr(true), From: "a.txt", To: "b.txt"},
+			contains: "move",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.action.String()
+			if !strings.Contains(got, tt.contains) {
+				t.Errorf("MoveAction.String() = %v, want to contain %v", got, tt.contains)
+			}
+		})
+	}
+}

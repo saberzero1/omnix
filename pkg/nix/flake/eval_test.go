@@ -204,4 +204,20 @@ func TestEvalMaybe(t *testing.T) {
 		require.NotNil(t, result)
 		assert.Equal(t, float64(42), *result)
 	})
+	
+	t.Run("missing attribute", func(t *testing.T) {
+		cmd := &mockCmd{err: assert.AnError}
+		// Simulate a "does not provide attribute" error
+		cmd.err = &mockMissingAttrError{}
+		result, err := EvalMaybe[float64](ctx, cmd, nil, "missing.attr")
+		require.NoError(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+// mockMissingAttrError implements an error that looks like a missing attribute error
+type mockMissingAttrError struct{}
+
+func (e *mockMissingAttrError) Error() string {
+	return "does not provide attribute 'missing'"
 }

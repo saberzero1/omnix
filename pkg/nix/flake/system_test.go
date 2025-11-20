@@ -176,6 +176,11 @@ func TestArch_HumanReadable(t *testing.T) {
 			arch: ArchX86_64,
 			want: "Intel",
 		},
+		{
+			name: "Unknown",
+			arch: Arch(999), // Invalid/unknown arch
+			want: "Unknown",
+		},
 	}
 
 	for _, tt := range tests {
@@ -201,6 +206,11 @@ func TestArch_String(t *testing.T) {
 			name: "x86_64",
 			arch: ArchX86_64,
 			want: "x86_64",
+		},
+		{
+			name: "unknown",
+			arch: Arch(999), // Invalid/unknown arch
+			want: "unknown",
 		},
 	}
 
