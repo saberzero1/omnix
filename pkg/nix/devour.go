@@ -55,7 +55,7 @@ func DevourFlake(ctx context.Context, flake FlakeURL, systems []string, impure b
 
 	// Build the devour-flake command
 	devourURL := DevourFlakeURL() + "#json"
-	
+
 	args := []string{
 		"build",
 		devourURL,
@@ -109,7 +109,7 @@ func DevourFlake(ctx context.Context, flake FlakeURL, systems []string, impure b
 func uniquePaths(paths []store.Path) []store.Path {
 	seen := make(map[string]bool)
 	result := make([]store.Path, 0, len(paths))
-	
+
 	for _, path := range paths {
 		pathStr := path.String()
 		if !seen[pathStr] {
@@ -117,6 +117,6 @@ func uniquePaths(paths []store.Path) []store.Path {
 			result = append(result, path)
 		}
 	}
-	
+
 	return result
 }

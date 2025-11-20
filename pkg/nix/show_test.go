@@ -43,14 +43,14 @@ func TestFlakeOutputs_UnmarshalJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var outputs FlakeOutputs
 			err := json.Unmarshal([]byte(tt.input), &outputs)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got nil")
 				}
 				return
 			}
-			
+
 			if err != nil {
 				t.Fatalf("UnmarshalJSON() error = %v", err)
 			}
@@ -284,12 +284,12 @@ func TestFlakeMetadata_UnmarshalJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var metadata FlakeMetadata
 			err := json.Unmarshal([]byte(tt.input), &metadata)
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			
+
 			if !tt.wantErr {
 				if tt.wantOutputs && metadata.Outputs == nil {
 					t.Error("expected Outputs to be non-nil")

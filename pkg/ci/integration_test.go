@@ -57,11 +57,11 @@ func TestCustomStepExecution(t *testing.T) {
 
 	result := results[0]
 	assert.Equal(t, "test", result.Subflake)
-	
+
 	// Check that the custom step ran
 	assert.Contains(t, result.Steps, "custom:show-test")
 	stepResult := result.Steps["custom:show-test"]
-	
+
 	// The step should succeed
 	assert.True(t, stepResult.Success, "custom step should succeed")
 	assert.Empty(t, stepResult.Error, "custom step should have no error")
@@ -107,15 +107,15 @@ func TestBuildStepUsesDevourFlake(t *testing.T) {
 	require.Len(t, results, 1)
 
 	result := results[0]
-	
+
 	// Check that the build step ran
 	assert.Contains(t, result.Steps, "build")
 	stepResult := result.Steps["build"]
-	
+
 	// The build step should succeed
 	assert.True(t, stepResult.Success, "build step should succeed")
 	assert.Empty(t, stepResult.Error, "build step should have no error")
-	
+
 	// Output should mention multiple outputs (devour-flake builds all)
 	// or at least have some output
 	assert.NotEmpty(t, stepResult.Output, "build step should have output")

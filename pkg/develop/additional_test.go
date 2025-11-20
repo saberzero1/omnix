@@ -346,7 +346,7 @@ func TestSetupDirenv_CreatesEnvrc(t *testing.T) {
 		Enable:             true,
 		AllowAutomatically: false,
 	}
-	
+
 	err := SetupDirenv(ctx, tmpDir, config)
 	require.NoError(t, err)
 
@@ -380,7 +380,7 @@ func TestSetupDirenv_ExistingEnvrc(t *testing.T) {
 		Enable:             true,
 		AllowAutomatically: false,
 	}
-	
+
 	err = SetupDirenv(ctx, tmpDir, config)
 	require.NoError(t, err)
 

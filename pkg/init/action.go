@@ -343,7 +343,7 @@ func (m MoveAction) Apply(_ context.Context, outDir string) error {
 
 	// Validate that only one file matches for single-file moves
 	if len(filesToMove) > 1 {
-		return fmt.Errorf("move action matched %d files but only single-file moves are supported (from: %s, matches: %v)", 
+		return fmt.Errorf("move action matched %d files but only single-file moves are supported (from: %s, matches: %v)",
 			len(filesToMove), m.From, filesToMove)
 	}
 

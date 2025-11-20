@@ -46,7 +46,7 @@ func TestUniquePaths(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := uniquePaths(tt.input)
 			assert.Equal(t, tt.expected, len(result))
-			
+
 			// Verify no duplicates in result
 			seen := make(map[string]bool)
 			for _, path := range result {
