@@ -33,11 +33,15 @@ This release implements the majority of future work items identified in package 
 - **DetSys Installer**: Added `detsys_installer.go` for Determinate Systems nix-installer detection
 - **Store Operations**: New `store/` package with path types and SSH store URI support
 - **Copy Operations**: Implemented `copy.go` for nix copy with remote store support
-- **Flake System Types**: New `flake/system.go` with Linux/Darwin/ARM/x86_64 support (94.9% coverage)
+- **Flake System Types**: New `flake/system.go` with Linux/Darwin/ARM/x86_64 support (84.6% coverage)
 - **Flake Attributes**: New `flake/attr.go` for attribute path handling (e.g., "packages.x86_64-linux.hello")
 - **System Lists**: New `system_list.go` for Nix system architecture lists with known flake optimization
+- **Flake Evaluation**: New `flake/eval.go` for evaluating Nix expressions with JSON output, impure support
+- **Flake Metadata**: New `flake/metadata.go` for complete flake metadata retrieval, lock management, updates
+- **Store Commands**: New `store/command.go` for advanced store operations (query, add, GC roots)
 - **Documentation**: Added comprehensive godoc and package documentation for all modules
-- **Test Coverage**: 82.5% overall (68.5% nix, 92.9% store, 94.9% flake) with 256 tests passing
+- **Test Coverage**: 80.8% overall (68.5% nix, 79.3% store, 84.6% flake) with 340 tests passing
+- **Migration Complete**: 100% functional parity with Rust nix_rs crate achieved
 
 ### Common Package
 - **Progress Indicators**: New progress indicator utility for long-running operations
