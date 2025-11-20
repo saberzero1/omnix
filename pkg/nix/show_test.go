@@ -12,6 +12,7 @@ func TestFlakeOutputs_UnmarshalJSON(t *testing.T) {
 		input   string
 		wantVal bool
 		wantSet bool
+		wantErr bool
 	}{
 		{
 			name:    "terminal value",
@@ -31,12 +32,25 @@ func TestFlakeOutputs_UnmarshalJSON(t *testing.T) {
 			wantVal: false,
 			wantSet: true,
 		},
+		{
+			name:    "invalid json",
+			input:   `{invalid json}`,
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var outputs FlakeOutputs
 			err := json.Unmarshal([]byte(tt.input), &outputs)
+			
+			if tt.wantErr {
+				if err == nil {
+					t.Error("expected error but got nil")
+				}
+				return
+			}
+			
 			if err != nil {
 				t.Fatalf("UnmarshalJSON() error = %v", err)
 			}
@@ -236,5 +250,54 @@ func TestFlakeShow_Local(t *testing.T) {
 	// Just verify we can access outputs without error
 	if metadata.Outputs != nil {
 		_ = metadata.Outputs.GetByPath("packages")
+	}
+}
+
+func TestFlakeMetadata_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		wantOutputs bool
+		wantErr     bool
+	}{
+		{
+			name:        "metadata with outputs",
+			input:       `{"description":"A test flake","outputs":{"packages":{"x86_64-linux":{"default":{"type":"derivation"}}}}}`,
+			wantOutputs: true,
+			wantErr:     false,
+		},
+		{
+			name:        "metadata without outputs",
+			input:       `{"description":"A test flake"}`,
+			wantOutputs: false,
+			wantErr:     false,
+		},
+		{
+			name:        "empty metadata",
+			input:       `{}`,
+			wantOutputs: false,
+			wantErr:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var metadata FlakeMetadata
+			err := json.Unmarshal([]byte(tt.input), &metadata)
+			
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			
+			if !tt.wantErr {
+				if tt.wantOutputs && metadata.Outputs == nil {
+					t.Error("expected Outputs to be non-nil")
+				}
+				if !tt.wantOutputs && metadata.Outputs != nil {
+					t.Error("expected Outputs to be nil")
+				}
+			}
+		})
 	}
 }

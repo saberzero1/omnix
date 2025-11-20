@@ -99,6 +99,11 @@ func TestNormalizeURL(t *testing.T) {
 			url:      "https://cache.nixos.org",
 			expected: "https://cache.nixos.org",
 		},
+		{
+			name:     "Invalid URL returns as-is",
+			url:      "://invalid url with spaces",
+			expected: "://invalid url with spaces",
+		},
 	}
 
 	for _, tt := range tests {
