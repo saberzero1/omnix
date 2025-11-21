@@ -11,6 +11,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// defaultFlakeAttr is the default flake attribute name for apps and devshells
+	defaultFlakeAttr = "default"
+)
+
 // RunOptions contains options for running CI
 type RunOptions struct {
 	// Systems to build for
@@ -388,7 +393,7 @@ func runCustomStep(ctx context.Context, flake nix.FlakeURL, name string, step Cu
 // runFlakeApp runs a flake app
 func runFlakeApp(ctx context.Context, flake nix.FlakeURL, step CustomStep) (string, error) {
 	// Determine the app name (default to "default" if not specified)
-	appName := "default"
+	appName := defaultFlakeAttr
 	if step.Name != "" {
 		appName = step.Name
 	}
@@ -414,14 +419,14 @@ func runDevShellCommand(ctx context.Context, flake nix.FlakeURL, step CustomStep
 	}
 
 	// Determine the devshell name (default to "default" if not specified)
-	shellName := "default"
+	shellName := defaultFlakeAttr
 	if step.Name != "" {
 		shellName = step.Name
 	}
 
 	// Build the flake URL with devshell attribute
 	shellURL := flake.String()
-	if shellName != "default" {
+	if shellName != defaultFlakeAttr {
 		shellURL = shellURL + "#" + shellName
 	}
 
@@ -564,7 +569,7 @@ func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, n
 		// Run a flake app
 		appName := step.Name
 		if appName == "" {
-			appName = "default"
+			appName = defaultFlakeAttr
 		}
 		appURL := flake.String() + "#" + appName
 		args = []string{"nix", "run", appURL}
@@ -582,10 +587,10 @@ func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, n
 		}
 		shellName := step.Name
 		if shellName == "" {
-			shellName = "default"
+			shellName = defaultFlakeAttr
 		}
 		shellURL := flake.String()
-		if shellName != "default" {
+		if shellName != defaultFlakeAttr {
 			shellURL = shellURL + "#" + shellName
 		}
 		args = []string{"nix", "develop", shellURL, "-c"}
