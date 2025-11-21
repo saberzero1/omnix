@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/saberzero1/omnix/pkg/nix/store"
 )
@@ -39,22 +40,11 @@ type DevourFlakeOutput struct {
 
 // DevourFlake builds all outputs of a flake using devour-flake
 func DevourFlake(ctx context.Context, flake FlakeURL, systems []string, impure bool) (*DevourFlakeOutput, error) {
-	// Prepare input
-	input := DevourFlakeInput{
-		Flake: flake,
-	}
-
-	// Convert systems to flake URL if provided
-	if len(systems) > 0 {
-		// TODO: Implement proper systems filtering using nix-systems flake URLs
-		// Currently, devour-flake will build for all allowed systems when systems
-		// is nil. This works correctly but could be optimized to only build for
-		// the specified systems. The Rust version passes a flake URL that points
-		// to a nix-systems list (e.g., github:nix-systems/x86_64-linux).
-		// For now, this is acceptable as the build will still succeed and produce
-		// the needed outputs, just potentially building more than necessary.
-		input.Systems = nil
-	}
+	// NOTE: systems filtering is not currently implemented. devour-flake will build for all allowed systems.
+	// The Rust version passes a flake URL that points to a nix-systems list (e.g., github:nix-systems/x86_64-linux).
+	// For now, this is acceptable as the build will still succeed and produce the needed outputs,
+	// just potentially building more than necessary.
+	_ = systems // Unused for now - TODO: implement systems filtering
 
 	// Build the devour-flake command
 	devourURL := DevourFlakeURL() + "#json"
@@ -85,7 +75,7 @@ func DevourFlake(ctx context.Context, flake FlakeURL, systems []string, impure b
 
 	// The output is a store path containing JSON
 	// Read the JSON file
-	storePath := output
+	storePath := strings.TrimSpace(output)
 	if storePath == "" {
 		return nil, fmt.Errorf("devour-flake returned empty output")
 	}
