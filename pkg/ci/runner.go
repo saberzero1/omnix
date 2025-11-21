@@ -16,6 +16,24 @@ const (
 	defaultFlakeAttr = "default"
 )
 
+// getFlakeAttrName returns the flake attribute name, defaulting to "default" if empty
+func getFlakeAttrName(name string) string {
+	if name == "" {
+		return defaultFlakeAttr
+	}
+	return name
+}
+
+// buildFlakeURLWithAttr constructs a flake URL with an optional attribute.
+// If the attribute is "default", it returns the base URL without a fragment.
+// Otherwise, it appends "#<attr>" to the base URL.
+func buildFlakeURLWithAttr(base nix.FlakeURL, attr string) string {
+	if attr == defaultFlakeAttr {
+		return base.String()
+	}
+	return base.String() + "#" + attr
+}
+
 // RunOptions contains options for running CI
 type RunOptions struct {
 	// Systems to build for
@@ -392,13 +410,7 @@ func runCustomStep(ctx context.Context, flake nix.FlakeURL, name string, step Cu
 
 // runFlakeApp runs a flake app
 func runFlakeApp(ctx context.Context, flake nix.FlakeURL, step CustomStep) (string, error) {
-	// Determine the app name (default to "default" if not specified)
-	appName := defaultFlakeAttr
-	if step.Name != "" {
-		appName = step.Name
-	}
-
-	// Build the flake URL with app attribute
+	appName := getFlakeAttrName(step.Name)
 	appURL := flake.String() + "#" + appName
 
 	// Build nix run command
@@ -418,17 +430,8 @@ func runDevShellCommand(ctx context.Context, flake nix.FlakeURL, step CustomStep
 		return "", fmt.Errorf("devshell step has no command")
 	}
 
-	// Determine the devshell name (default to "default" if not specified)
-	shellName := defaultFlakeAttr
-	if step.Name != "" {
-		shellName = step.Name
-	}
-
-	// Build the flake URL with devshell attribute
-	shellURL := flake.String()
-	if shellName != defaultFlakeAttr {
-		shellURL = shellURL + "#" + shellName
-	}
+	shellName := getFlakeAttrName(step.Name)
+	shellURL := buildFlakeURLWithAttr(flake, shellName)
 
 	// Build nix develop command
 	args := []string{"develop", shellURL, "-c"}
@@ -567,10 +570,7 @@ func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, n
 	switch step.Type {
 	case CustomStepTypeApp:
 		// Run a flake app
-		appName := step.Name
-		if appName == "" {
-			appName = defaultFlakeAttr
-		}
+		appName := getFlakeAttrName(step.Name)
 		appURL := flake.String() + "#" + appName
 		args = []string{"nix", "run", appURL}
 		if len(step.Args) > 0 {
@@ -585,14 +585,8 @@ func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, n
 			result.Duration = time.Since(start)
 			return result
 		}
-		shellName := step.Name
-		if shellName == "" {
-			shellName = defaultFlakeAttr
-		}
-		shellURL := flake.String()
-		if shellName != defaultFlakeAttr {
-			shellURL = shellURL + "#" + shellName
-		}
+		shellName := getFlakeAttrName(step.Name)
+		shellURL := buildFlakeURLWithAttr(flake, shellName)
 		args = []string{"nix", "develop", shellURL, "-c"}
 		args = append(args, step.Command...)
 	default:

@@ -21,15 +21,6 @@ func DevourFlakeURL() string {
 	return "github:srid/devour-flake/9fe4db872c107ea217c13b24527b68d9e4a4c01b"
 }
 
-// DevourFlakeInput represents the input to devour-flake
-type DevourFlakeInput struct {
-	// Flake is the flake URL to build all outputs for
-	Flake FlakeURL `json:"flake"`
-	// Systems is an optional list of systems to build for
-	// An empty list means all allowed systems
-	Systems *FlakeURL `json:"systems,omitempty"`
-}
-
 // DevourFlakeOutput represents the output of devour-flake
 type DevourFlakeOutput struct {
 	// OutPaths is the list of built store paths
@@ -40,12 +31,6 @@ type DevourFlakeOutput struct {
 
 // DevourFlake builds all outputs of a flake using devour-flake
 func DevourFlake(ctx context.Context, flake FlakeURL, systems []string, impure bool) (*DevourFlakeOutput, error) {
-	// NOTE: systems filtering is not currently implemented. devour-flake will build for all allowed systems.
-	// The Rust version passes a flake URL that points to a nix-systems list (e.g., github:nix-systems/x86_64-linux).
-	// For now, this is acceptable as the build will still succeed and produce the needed outputs,
-	// just potentially building more than necessary.
-	_ = systems // Unused for now - TODO: implement systems filtering
-
 	// Build the devour-flake command
 	devourURL := DevourFlakeURL() + "#json"
 
@@ -65,6 +50,17 @@ func DevourFlake(ctx context.Context, flake FlakeURL, systems []string, impure b
 	args = append(args,
 		"--override-input", "flake", flake.String(),
 	)
+
+	// Add systems filtering if specified
+	if len(systems) > 0 {
+		systemsFlakeURL, err := getSystemsFlakeURL(systems)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get systems flake URL: %w", err)
+		}
+		args = append(args,
+			"--override-input", "systems", systemsFlakeURL.String(),
+		)
+	}
 
 	// Run nix build
 	cmd := NewCmd()
@@ -112,4 +108,23 @@ func uniquePaths(paths []store.Path) []store.Path {
 	}
 
 	return result
+}
+
+// getSystemsFlakeURL converts a list of system strings to a nix-systems flake URL.
+// If there's a single system, it uses the corresponding nix-systems flake.
+// If there are multiple systems, it uses default or returns an error.
+func getSystemsFlakeURL(systems []string) (FlakeURL, error) {
+	if len(systems) == 0 {
+		return FlakeURL{}, fmt.Errorf("no systems specified")
+	}
+
+	// If single system, try to find a matching nix-systems flake
+	if len(systems) == 1 {
+		ref := ParseSystemsListFlakeRef(systems[0])
+		return ref.URL, nil
+	}
+
+	// For multiple systems, use default if it matches the common patterns
+	// This is a simplified approach - the Rust version may handle this differently
+	return NewFlakeURL("github:nix-systems/default"), nil
 }

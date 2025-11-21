@@ -3,6 +3,7 @@ package ci
 import (
 	"fmt"
 	"os"
+	"sort"
 
 	"gopkg.in/yaml.v3"
 )
@@ -184,7 +185,7 @@ func (s *SubflakeConfig) CanRunOn(systems []string) bool {
 	return false
 }
 
-// GetEnabledSteps returns a list of enabled step names
+// GetEnabledSteps returns a list of enabled step names in deterministic order
 func (s *StepsConfig) GetEnabledSteps() []string {
 	var enabled []string
 
@@ -197,7 +198,15 @@ func (s *StepsConfig) GetEnabledSteps() []string {
 	if s.FlakeCheck.Enable {
 		enabled = append(enabled, "flakeCheck")
 	}
+
+	// Sort custom step names for deterministic order
+	customNames := make([]string, 0, len(s.Custom))
 	for name := range s.Custom {
+		customNames = append(customNames, name)
+	}
+	sort.Strings(customNames)
+
+	for _, name := range customNames {
 		// Custom steps are always enabled if they exist in the config
 		enabled = append(enabled, "custom:"+name)
 	}
