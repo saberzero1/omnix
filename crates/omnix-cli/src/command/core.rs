@@ -11,6 +11,8 @@ pub enum Command {
 
     CI(super::ci::CICommand),
 
+    Run(super::run::RunCommand),
+
     Health(super::health::HealthCommand),
 
     Completion(super::completion::CompletionCommand),
@@ -28,6 +30,7 @@ impl Command {
             Command::Init(cmd) => cmd.run().await,
             Command::Develop(cmd) => cmd.run().await,
             Command::CI(cmd) => cmd.run().await,
+            Command::Run(cmd) => cmd.run().await,
             Command::Health(cmd) => cmd.run().await,
             Command::Completion(cmd) => cmd.run(),
         }

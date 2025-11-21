@@ -35,6 +35,8 @@ clap_complete = { workspace = true }
 clap_complete_nushell = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+tempfile = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
