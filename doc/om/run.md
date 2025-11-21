@@ -178,6 +178,65 @@ steps:
 
 Run with: `om run update`
 
+## Error Handling
+
+`om run` validates configuration and provides clear error messages:
+
+### Type Validation
+
+All arguments and commands must be strings in YAML:
+
+```yaml
+# ❌ WRONG - numeric values not allowed
+steps:
+  bad-step:
+    type: devshell
+    command:
+      - echo
+      - 123  # Error: expected string, got int
+
+# ✅ CORRECT - all values are strings
+steps:
+  good-step:
+    type: devshell
+    command:
+      - echo
+      - "123"
+```
+
+### Step Order
+
+Steps execute in the order they appear in the YAML file. This is guaranteed and deterministic:
+
+```yaml
+steps:
+  first:   # Runs first
+    type: devshell
+    command: [echo, "1"]
+  second:  # Runs second
+    type: devshell
+    command: [echo, "2"]
+  third:   # Runs third
+    type: devshell
+    command: [echo, "3"]
+```
+
+### Working Directory
+
+The `dir` field sets the working directory for all steps:
+
+```yaml
+dir: ./my-project
+steps:
+  build:
+    type: devshell
+    command:
+      - cargo
+      - build
+```
+
+If `dir` is not specified, it defaults to `.` (current directory).
+
 ## See Also
 
 - [[ci]] - Full CI pipeline configuration
