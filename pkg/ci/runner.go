@@ -509,9 +509,13 @@ func runBuildStepRemote(ctx context.Context, host string, flake nix.FlakeURL, st
 	// Add systems filtering if specified
 	if len(opts.Systems) > 0 {
 		systemsFlakeURL, err := nix.GetSystemsFlakeURL(opts.Systems)
-		if err == nil {
-			args = append(args, "--override-input", "systems", systemsFlakeURL.String())
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Sprintf("failed to get systems flake URL: %v", err)
+			result.Duration = time.Since(start)
+			return result
 		}
+		args = append(args, "--override-input", "systems", systemsFlakeURL.String())
 	}
 
 	output, err := executeRemoteCommand(ctx, host, args)
