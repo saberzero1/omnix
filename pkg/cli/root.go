@@ -44,6 +44,7 @@ It provides various commands to make working with Nix easier:
   - om show: Display flake information
   - om ci: Run CI for Nix projects
   - om develop: Manage development shells
+  - om run: Run tasks from om/ directory
   - om completion: Generate shell completions`,
 	// Version will be set by SetVersion()
 	Version: "",
@@ -77,5 +78,6 @@ func init() {
 	rootCmd.AddCommand(cmd.NewShowCmd())
 	rootCmd.AddCommand(cmd.NewCICmd())
 	rootCmd.AddCommand(cmd.NewDevelopCmd())
+	rootCmd.AddCommand(cmd.NewRunCmd())
 	rootCmd.AddCommand(cmd.NewCompletionCmd())
 }

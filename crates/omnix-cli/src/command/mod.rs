@@ -4,5 +4,4 @@ pub mod core;
 pub mod develop;
 pub mod health;
 pub mod init;
-pub mod run;
 pub mod show;
