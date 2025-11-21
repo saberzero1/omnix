@@ -108,7 +108,7 @@ func loadSystemsListFromRemoteFlake(ctx context.Context, cmd *Cmd, ref SystemsLi
 	if strings.ContainsAny(urlStr, "\"'`$\\") {
 		return nil, fmt.Errorf("invalid characters in flake URL: %s", urlStr)
 	}
-	
+
 	// First get the flake path
 	flakePath, err := nixEvalImpureExpr(ctx, cmd, fmt.Sprintf(`builtins.getFlake "%s"`, urlStr))
 	if err != nil {
@@ -119,7 +119,7 @@ func loadSystemsListFromRemoteFlake(ctx context.Context, cmd *Cmd, ref SystemsLi
 	if strings.ContainsAny(flakePath, "\"'`$\\;") {
 		return nil, fmt.Errorf("invalid characters in flake path: %s", flakePath)
 	}
-	
+
 	// Then import and evaluate it
 	systemsJSON, err := nixEvalImpureExpr(ctx, cmd, fmt.Sprintf("import %s", flakePath))
 	if err != nil {

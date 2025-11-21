@@ -18,11 +18,11 @@ func TestMetadata_JSONParsing(t *testing.T) {
 		"revision": "abc123",
 		"revCount": 42
 	}`
-	
+
 	var metadata Metadata
 	err := json.Unmarshal([]byte(testJSON), &metadata)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, "Test flake", metadata.Description)
 	assert.Equal(t, int64(1234567890), metadata.LastModified)
 	assert.Equal(t, "github:owner/repo", metadata.URL)
@@ -40,11 +40,11 @@ func TestLockedMetadata_JSONParsing(t *testing.T) {
 		"rev": "abc123def",
 		"type": "github"
 	}`
-	
+
 	var locked LockedMetadata
 	err := json.Unmarshal([]byte(testJSON), &locked)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, int64(1234567890), locked.LastModified)
 	assert.Equal(t, "sha256-abc123", locked.NarHash)
 	assert.Equal(t, "testowner", locked.Owner)
@@ -60,11 +60,11 @@ func TestFlakeRef_JSONParsing(t *testing.T) {
 		"type": "github",
 		"ref": "nixos-unstable"
 	}`
-	
+
 	var ref FlakeRef
 	err := json.Unmarshal([]byte(testJSON), &ref)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, "NixOS", ref.Owner)
 	assert.Equal(t, "nixpkgs", ref.Repo)
 	assert.Equal(t, "github", ref.Type)
@@ -96,11 +96,11 @@ func TestMetadata_CompleteStructure(t *testing.T) {
 		"url": "github:test/test",
 		"path": "/nix/store/test"
 	}`
-	
+
 	var metadata Metadata
 	err := json.Unmarshal([]byte(testJSON), &metadata)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, "Complete test", metadata.Description)
 	assert.NotNil(t, metadata.Locked)
 	assert.NotNil(t, metadata.Original)
@@ -112,14 +112,14 @@ func TestMetadata_CompleteStructure(t *testing.T) {
 func TestGetMetadata_APIStructure(t *testing.T) {
 	// Test that the API is correctly structured
 	ctx := context.Background()
-	
+
 	t.Run("GetMetadata exists", func(t *testing.T) {
 		cmd := &mockCmd{output: `{"description":"test"}`}
 		metadata, err := GetMetadata(ctx, cmd, ".")
 		require.NoError(t, err)
 		assert.NotNil(t, metadata)
 	})
-	
+
 	t.Run("GetMetadataWithOptions exists", func(t *testing.T) {
 		cmd := &mockCmd{output: `{"description":"test"}`}
 		opts := &FlakeOptions{
@@ -133,13 +133,13 @@ func TestGetMetadata_APIStructure(t *testing.T) {
 
 func TestLock_APIStructure(t *testing.T) {
 	ctx := context.Background()
-	
+
 	t.Run("Lock with no updates", func(t *testing.T) {
 		cmd := &mockCmd{output: ""}
 		err := Lock(ctx, cmd, ".", []string{})
 		require.NoError(t, err)
 	})
-	
+
 	t.Run("Lock with updates", func(t *testing.T) {
 		cmd := &mockCmd{output: ""}
 		err := Lock(ctx, cmd, ".", []string{"nixpkgs"})
@@ -149,7 +149,7 @@ func TestLock_APIStructure(t *testing.T) {
 
 func TestUpdate_APIStructure(t *testing.T) {
 	ctx := context.Background()
-	
+
 	cmd := &mockCmd{output: ""}
 	err := Update(ctx, cmd, ".")
 	require.NoError(t, err)
@@ -160,7 +160,7 @@ func TestMetadataInput(t *testing.T) {
 		FlakeURL:      "github:NixOS/nixpkgs",
 		IncludeInputs: true,
 	}
-	
+
 	assert.Equal(t, "github:NixOS/nixpkgs", input.FlakeURL)
 	assert.True(t, input.IncludeInputs)
 }
@@ -172,7 +172,7 @@ func TestFlakeOptions_WithMetadata(t *testing.T) {
 			"nixpkgs": "github:NixOS/nixpkgs/nixos-unstable",
 		},
 	}
-	
+
 	assert.True(t, opts.Refresh)
 	assert.Len(t, opts.OverrideInputs, 1)
 	assert.Equal(t, "github:NixOS/nixpkgs/nixos-unstable", opts.OverrideInputs["nixpkgs"])

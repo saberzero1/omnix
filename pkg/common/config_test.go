@@ -221,7 +221,7 @@ ci:
   default
     - invalid yaml syntax
 `
-	
+
 	_, err := ParseYAMLConfig(invalidYAML)
 	if err == nil {
 		t.Error("ParseYAMLConfig() should return error for invalid YAML")
@@ -235,7 +235,7 @@ func TestParseJSONConfig_InvalidJSON(t *testing.T) {
 			invalid json
 		}
 	}`
-	
+
 	_, err := ParseJSONConfig(invalidJSON)
 	if err == nil {
 		t.Error("ParseJSONConfig() should return error for invalid JSON")

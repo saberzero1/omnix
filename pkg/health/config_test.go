@@ -140,12 +140,12 @@ func TestNewFromConfig(t *testing.T) {
 
 func TestDefaultCachesConfig(t *testing.T) {
 	caches := DefaultCachesConfig()
-	
+
 	// Verify it returns the expected default caches
 	if len(caches) != 1 {
 		t.Errorf("Expected 1 default cache, got %d", len(caches))
 	}
-	
+
 	if len(caches) > 0 && caches[0] != "https://cache.nixos.org" {
 		t.Errorf("Expected default cache to be 'https://cache.nixos.org', got '%s'", caches[0])
 	}

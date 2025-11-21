@@ -74,6 +74,7 @@ func TestRunCustomStep(t *testing.T) {
 
 	tests := []struct {
 		name          string
+		stepName      string
 		step          CustomStep
 		expectedName  string
 		expectedError bool
@@ -82,10 +83,10 @@ func TestRunCustomStep(t *testing.T) {
 		{
 			name: "empty command",
 			step: CustomStep{
-				Name:    "test",
+				Type:    CustomStepTypeDevShell,
 				Command: []string{},
-				Enable:  true,
 			},
+			stepName:      "test",
 			expectedName:  "custom:test",
 			expectedError: true,
 			errorContains: "no command",
@@ -93,10 +94,10 @@ func TestRunCustomStep(t *testing.T) {
 		{
 			name: "echo command",
 			step: CustomStep{
-				Name:    "echo-test",
+				Type:    CustomStepTypeDevShell,
 				Command: []string{"echo", "hello"},
-				Enable:  true,
 			},
+			stepName:      "echo-test",
 			expectedName:  "custom:echo-test",
 			expectedError: false,
 		},
@@ -104,7 +105,7 @@ func TestRunCustomStep(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := runCustomStep(ctx, flake, tt.step)
+			result := runCustomStep(ctx, flake, tt.stepName, tt.step)
 			assert.Equal(t, tt.expectedName, result.Name)
 
 			if tt.expectedError {

@@ -208,10 +208,10 @@ func TestPrintCheckResultMarkdown(t *testing.T) {
 			Required: true,
 		},
 	}
-	
+
 	err := PrintCheckResultMarkdown(greenCheck)
 	assert.NoError(t, err)
-	
+
 	// Test with a red result
 	redCheck := checks.NamedCheck{
 		Name: "fail-check",
@@ -222,7 +222,7 @@ func TestPrintCheckResultMarkdown(t *testing.T) {
 			Required: false,
 		},
 	}
-	
+
 	err = PrintCheckResultMarkdown(redCheck)
 	assert.NoError(t, err)
 }

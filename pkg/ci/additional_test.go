@@ -175,7 +175,7 @@ func TestCustomStep_DefaultValues(t *testing.T) {
 	step := CustomStep{}
 	assert.Empty(t, step.Name)
 	assert.Empty(t, step.Command)
-	assert.False(t, step.Enable)
+	assert.Empty(t, step.Type)
 }
 
 func TestStepsConfig_NoStepsEnabled(t *testing.T) {
@@ -183,7 +183,7 @@ func TestStepsConfig_NoStepsEnabled(t *testing.T) {
 		Build:      BuildStep{Enable: false},
 		Lockfile:   LockfileStep{Enable: false},
 		FlakeCheck: FlakeCheckStep{Enable: false},
-		Custom:     []CustomStep{},
+		Custom:     make(map[string]CustomStep),
 	}
 
 	enabled := config.GetEnabledSteps()
@@ -195,15 +195,16 @@ func TestStepsConfig_MultipleCustomSteps(t *testing.T) {
 		Build:      BuildStep{Enable: false},
 		Lockfile:   LockfileStep{Enable: false},
 		FlakeCheck: FlakeCheckStep{Enable: false},
-		Custom: []CustomStep{
-			{Name: "test1", Enable: true},
-			{Name: "test2", Enable: false},
-			{Name: "test3", Enable: true},
+		Custom: map[string]CustomStep{
+			"test1": {Type: CustomStepTypeApp},
+			"test2": {Type: CustomStepTypeDevShell},
+			"test3": {Type: CustomStepTypeApp},
 		},
 	}
 
 	enabled := config.GetEnabledSteps()
-	assert.Equal(t, []string{"custom:test1", "custom:test3"}, enabled)
+	// Custom steps are sorted alphabetically for deterministic order
+	assert.Equal(t, []string{"custom:test1", "custom:test2", "custom:test3"}, enabled)
 }
 
 func TestGitHubMatrix_EmptyInclude(t *testing.T) {

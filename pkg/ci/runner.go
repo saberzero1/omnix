@@ -11,6 +11,29 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// defaultFlakeAttr is the default flake attribute name for apps and devshells
+	defaultFlakeAttr = "default"
+)
+
+// getFlakeAttrName returns the flake attribute name, defaulting to "default" if empty
+func getFlakeAttrName(name string) string {
+	if name == "" {
+		return defaultFlakeAttr
+	}
+	return name
+}
+
+// buildFlakeURLWithAttr constructs a flake URL with an optional attribute.
+// If the attribute is "default", it returns the base URL without a fragment.
+// Otherwise, it appends "#<attr>" to the base URL.
+func buildFlakeURLWithAttr(base nix.FlakeURL, attr string) string {
+	if attr == defaultFlakeAttr {
+		return base.String()
+	}
+	return base.String() + "#" + attr
+}
+
 // RunOptions contains options for running CI
 type RunOptions struct {
 	// Systems to build for
@@ -258,18 +281,21 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 	}
 
 	// Run custom steps
-	for _, customStep := range subflake.Steps.Custom {
-		if customStep.Enable {
-			var stepResult StepResult
-			if opts.RemoteHost != "" {
-				stepResult = runCustomStepRemote(ctx, opts.RemoteHost, subflakeURL, customStep)
-			} else {
-				stepResult = runCustomStep(ctx, subflakeURL, customStep)
-			}
-			result.Steps["custom:"+customStep.Name] = stepResult
-			if !stepResult.Success {
-				result.Success = false
-			}
+	for name, customStep := range subflake.Steps.Custom {
+		// Check if this step can run on current systems
+		if !customStep.CanRunOn(opts.Systems) {
+			continue
+		}
+
+		var stepResult StepResult
+		if opts.RemoteHost != "" {
+			stepResult = runCustomStepRemote(ctx, opts.RemoteHost, subflakeURL, name, customStep)
+		} else {
+			stepResult = runCustomStep(ctx, subflakeURL, name, customStep)
+		}
+		result.Steps["custom:"+name] = stepResult
+		if !stepResult.Success {
+			result.Success = false
 		}
 	}
 
@@ -277,27 +303,29 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 	return result, nil
 }
 
-// runBuildStep executes the build step
-func runBuildStep(ctx context.Context, flake nix.FlakeURL, step BuildStep, _ RunOptions) StepResult {
+// runBuildStep executes the build step using devour-flake
+func runBuildStep(ctx context.Context, flake nix.FlakeURL, step BuildStep, opts RunOptions) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "build",
 		Success: true,
 	}
 
-	// Build the flake
-	args := []string{"build", flake.String(), "--no-link", "--print-out-paths"}
-	if step.Impure {
-		args = append(args, "--impure")
-	}
-
-	cmd := nix.NewCmd()
-	output, err := cmd.Run(ctx, args...)
+	// Use devour-flake to build all outputs
+	output, err := nix.DevourFlake(ctx, flake, opts.Systems, step.Impure)
 	if err != nil {
 		result.Success = false
 		result.Error = err.Error()
+		result.Duration = time.Since(start)
+		return result
 	}
-	result.Output = output
+
+	// Format output paths as string
+	var outPaths []string
+	for _, path := range output.OutPaths {
+		outPaths = append(outPaths, path.String())
+	}
+	result.Output = fmt.Sprintf("Built %d outputs:\n%s", len(outPaths), strings.Join(outPaths, "\n"))
 	result.Duration = time.Since(start)
 
 	return result
@@ -346,33 +374,28 @@ func runFlakeCheckStep(ctx context.Context, flake nix.FlakeURL, _ FlakeCheckStep
 }
 
 // runCustomStep executes a custom step
-func runCustomStep(ctx context.Context, flake nix.FlakeURL, step CustomStep) StepResult {
+func runCustomStep(ctx context.Context, flake nix.FlakeURL, name string, step CustomStep) StepResult {
 	start := time.Now()
 	result := StepResult{
-		Name:    "custom:" + step.Name,
+		Name:    "custom:" + name,
 		Success: true,
 	}
 
-	if len(step.Command) == 0 {
-		result.Success = false
-		result.Error = "custom step has no command"
-		result.Duration = time.Since(start)
-		return result
-	}
-
-	// Use nix.Cmd for nix commands, exec.Command for others
 	var output string
 	var err error
 
-	if step.Command[0] == "nix" {
-		cmd := nix.NewCmd()
-		output, err = cmd.Run(ctx, step.Command[1:]...)
-	} else {
-		// For non-nix commands, use exec.Command directly
-		execCmd := exec.CommandContext(ctx, step.Command[0], step.Command[1:]...)
-		outputBytes, execErr := execCmd.CombinedOutput()
-		output = string(outputBytes)
-		err = execErr
+	switch step.Type {
+	case CustomStepTypeApp:
+		// Run a flake app
+		output, err = runFlakeApp(ctx, flake, step)
+	case CustomStepTypeDevShell:
+		// Run a command in a devshell
+		output, err = runDevShellCommand(ctx, flake, step)
+	default:
+		result.Success = false
+		result.Error = fmt.Sprintf("unknown custom step type: %s", step.Type)
+		result.Duration = time.Since(start)
+		return result
 	}
 
 	if err != nil {
@@ -383,6 +406,39 @@ func runCustomStep(ctx context.Context, flake nix.FlakeURL, step CustomStep) Ste
 	result.Duration = time.Since(start)
 
 	return result
+}
+
+// runFlakeApp runs a flake app
+func runFlakeApp(ctx context.Context, flake nix.FlakeURL, step CustomStep) (string, error) {
+	appName := getFlakeAttrName(step.Name)
+	appURL := buildFlakeURLWithAttr(flake, appName)
+
+	// Build nix run command
+	args := []string{"run", appURL}
+	if len(step.Args) > 0 {
+		args = append(args, "--")
+		args = append(args, step.Args...)
+	}
+
+	cmd := nix.NewCmd()
+	return cmd.Run(ctx, args...)
+}
+
+// runDevShellCommand runs a command in a devshell
+func runDevShellCommand(ctx context.Context, flake nix.FlakeURL, step CustomStep) (string, error) {
+	if len(step.Command) == 0 {
+		return "", fmt.Errorf("devshell step has no command")
+	}
+
+	shellName := getFlakeAttrName(step.Name)
+	shellURL := buildFlakeURLWithAttr(flake, shellName)
+
+	// Build nix develop command
+	args := []string{"develop", shellURL, "-c"}
+	args = append(args, step.Command...)
+
+	cmd := nix.NewCmd()
+	return cmd.Run(ctx, args...)
 }
 
 // LogResult logs the CI result using the logger
@@ -434,7 +490,7 @@ func executeRemoteCommand(ctx context.Context, host string, command []string) (s
 	return string(output), err
 }
 
-// runBuildStepRemote executes the build step on a remote host
+// runBuildStepRemote executes the build step on a remote host using devour-flake
 func runBuildStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step BuildStep, opts RunOptions) StepResult {
 	start := time.Now()
 	result := StepResult{
@@ -442,10 +498,24 @@ func runBuildStepRemote(ctx context.Context, host string, flake nix.FlakeURL, st
 		Success: true,
 	}
 
-	// Build the command
-	args := []string{"nix", "build", flake.String(), "--no-link", "--print-out-paths"}
+	// Build the devour-flake command
+	devourURL := nix.DevourFlakeURL() + "#json"
+	args := []string{"nix", "build", devourURL, "-L", "--no-link", "--print-out-paths"}
 	if step.Impure {
 		args = append(args, "--impure")
+	}
+	args = append(args, "--override-input", "flake", flake.String())
+
+	// Add systems filtering if specified
+	if len(opts.Systems) > 0 {
+		systemsFlakeURL, err := nix.GetSystemsFlakeURL(opts.Systems)
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Sprintf("failed to get systems flake URL: %v", err)
+			result.Duration = time.Since(start)
+			return result
+		}
+		args = append(args, "--override-input", "systems", systemsFlakeURL.String())
 	}
 
 	output, err := executeRemoteCommand(ctx, host, args)
@@ -500,14 +570,45 @@ func runFlakeCheckStepRemote(ctx context.Context, host string, flake nix.FlakeUR
 }
 
 // runCustomStepRemote executes a custom step on a remote host
-func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step CustomStep) StepResult {
+func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, name string, step CustomStep) StepResult {
 	start := time.Now()
 	result := StepResult{
-		Name:    "custom:" + step.Name,
+		Name:    "custom:" + name,
 		Success: true,
 	}
 
-	output, err := executeRemoteCommand(ctx, host, step.Command)
+	var args []string
+
+	switch step.Type {
+	case CustomStepTypeApp:
+		// Run a flake app
+		appName := getFlakeAttrName(step.Name)
+		appURL := buildFlakeURLWithAttr(flake, appName)
+		args = []string{"nix", "run", appURL}
+		if len(step.Args) > 0 {
+			args = append(args, "--")
+			args = append(args, step.Args...)
+		}
+	case CustomStepTypeDevShell:
+		// Run a command in a devshell
+		if len(step.Command) == 0 {
+			result.Success = false
+			result.Error = "devshell step has no command"
+			result.Duration = time.Since(start)
+			return result
+		}
+		shellName := getFlakeAttrName(step.Name)
+		shellURL := buildFlakeURLWithAttr(flake, shellName)
+		args = []string{"nix", "develop", shellURL, "-c"}
+		args = append(args, step.Command...)
+	default:
+		result.Success = false
+		result.Error = fmt.Sprintf("unknown custom step type: %s", step.Type)
+		result.Duration = time.Since(start)
+		return result
+	}
+
+	output, err := executeRemoteCommand(ctx, host, args)
 	if err != nil {
 		result.Success = false
 		result.Error = fmt.Sprintf("custom step failed: %v", err)

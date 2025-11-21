@@ -60,7 +60,7 @@ func TestEvalExpr(t *testing.T) {
 			cmd := &mockCmd{output: tt.mockOutput}
 			var result interface{}
 			result, err := EvalExpr[interface{}](ctx, cmd, tt.expr)
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -204,7 +204,7 @@ func TestEvalMaybe(t *testing.T) {
 		require.NotNil(t, result)
 		assert.Equal(t, float64(42), *result)
 	})
-	
+
 	t.Run("missing attribute", func(t *testing.T) {
 		cmd := &mockCmd{err: assert.AnError}
 		// Simulate a "does not provide attribute" error

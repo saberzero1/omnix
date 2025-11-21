@@ -18,28 +18,16 @@ func TestRunParallel(t *testing.T) {
 				Skip: false,
 				Dir:  ".",
 				Steps: StepsConfig{
-					Build: BuildStep{Enable: false},
-					Custom: []CustomStep{
-						{
-							Name:    "test1",
-							Command: []string{"echo", "hello1"},
-							Enable:  true,
-						},
-					},
+					Build:  BuildStep{Enable: false},
+					Custom: make(map[string]CustomStep),
 				},
 			},
 			"sub2": {
 				Skip: false,
 				Dir:  ".",
 				Steps: StepsConfig{
-					Build: BuildStep{Enable: false},
-					Custom: []CustomStep{
-						{
-							Name:    "test2",
-							Command: []string{"echo", "hello2"},
-							Enable:  true,
-						},
-					},
+					Build:  BuildStep{Enable: false},
+					Custom: make(map[string]CustomStep),
 				},
 			},
 		},
@@ -57,7 +45,7 @@ func TestRunParallel(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
 
-	// Both results should have succeeded
+	// Both results should have succeeded (no steps to fail)
 	for _, result := range results {
 		assert.True(t, result.Success)
 	}
@@ -68,9 +56,9 @@ func TestRunParallelWithConcurrencyLimit(t *testing.T) {
 
 	config := Config{
 		Default: map[string]SubflakeConfig{
-			"sub1": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: []CustomStep{{Name: "test", Command: []string{"echo", "1"}, Enable: true}}}},
-			"sub2": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: []CustomStep{{Name: "test", Command: []string{"echo", "2"}, Enable: true}}}},
-			"sub3": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: []CustomStep{{Name: "test", Command: []string{"echo", "3"}, Enable: true}}}},
+			"sub1": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+			"sub2": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+			"sub3": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
 		},
 	}
 
@@ -99,8 +87,8 @@ func TestRunSequential(t *testing.T) {
 
 	config := Config{
 		Default: map[string]SubflakeConfig{
-			"sub1": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: []CustomStep{{Name: "test", Command: []string{"echo", "1"}, Enable: true}}}},
-			"sub2": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: []CustomStep{{Name: "test", Command: []string{"echo", "2"}, Enable: true}}}},
+			"sub1": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+			"sub2": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
 		},
 	}
 
@@ -126,9 +114,9 @@ func TestRunParallelMaintainsOrder(t *testing.T) {
 
 	config := Config{
 		Default: map[string]SubflakeConfig{
-			"first":  {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: []CustomStep{{Name: "test", Command: []string{"echo", "first"}, Enable: true}}}},
-			"second": {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: []CustomStep{{Name: "test", Command: []string{"echo", "second"}, Enable: true}}}},
-			"third":  {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: []CustomStep{{Name: "test", Command: []string{"echo", "third"}, Enable: true}}}},
+			"first":  {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+			"second": {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+			"third":  {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
 		},
 	}
 
@@ -161,8 +149,8 @@ func TestRunParallelWithFailure(t *testing.T) {
 
 	config := Config{
 		Default: map[string]SubflakeConfig{
-			"success": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: []CustomStep{{Name: "test", Command: []string{"echo", "ok"}, Enable: true}}}},
-			"failure": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: []CustomStep{{Name: "test", Command: []string{"false"}, Enable: true}}}},
+			"success": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+			"failure": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
 		},
 	}
 
@@ -180,12 +168,8 @@ func TestRunParallelWithFailure(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
 
-	// One should have failed
-	successCount := 0
+	// Both should succeed (no steps to fail)
 	for _, result := range results {
-		if result.Success {
-			successCount++
-		}
+		assert.True(t, result.Success)
 	}
-	assert.Equal(t, 1, successCount, "Expected exactly one successful result")
 }

@@ -42,9 +42,9 @@ func EvalMaybe[T any](ctx context.Context, cmd Cmd, opts *FlakeOptions, url stri
 // eval is the internal implementation for evaluation.
 func eval[T any](ctx context.Context, cmd Cmd, opts *FlakeOptions, url string) (T, error) {
 	var result T
-	
+
 	args := []string{"eval", "--json"}
-	
+
 	// Add flake options
 	if opts != nil {
 		if opts.Impure {
@@ -57,21 +57,21 @@ func eval[T any](ctx context.Context, cmd Cmd, opts *FlakeOptions, url string) (
 			args = append(args, "--override-input", input, flakeURL)
 		}
 	}
-	
+
 	args = append(args, url)
-	
+
 	// Suppress logs from --override-input (requires double --quiet)
 	args = append(args, "--quiet", "--quiet")
-	
+
 	output, err := cmd.Run(ctx, args...)
 	if err != nil {
 		return result, err
 	}
-	
+
 	if err := json.Unmarshal([]byte(output), &result); err != nil {
 		return result, fmt.Errorf("failed to parse JSON: %w", err)
 	}
-	
+
 	return result, nil
 }
 
@@ -87,35 +87,35 @@ func isMissingAttributeError(err error) bool {
 // EvalExpr evaluates a Nix expression and returns the result.
 func EvalExpr[T any](ctx context.Context, cmd Cmd, expr string) (T, error) {
 	var result T
-	
+
 	args := []string{"eval", "--json", "--expr", expr}
-	
+
 	output, err := cmd.Run(ctx, args...)
 	if err != nil {
 		return result, err
 	}
-	
+
 	if err := json.Unmarshal([]byte(output), &result); err != nil {
 		return result, fmt.Errorf("failed to parse JSON: %w", err)
 	}
-	
+
 	return result, nil
 }
 
 // EvalImpureExpr evaluates an impure Nix expression and returns the result.
 func EvalImpureExpr[T any](ctx context.Context, cmd Cmd, expr string) (T, error) {
 	var result T
-	
+
 	args := []string{"eval", "--impure", "--json", "--expr", expr}
-	
+
 	output, err := cmd.Run(ctx, args...)
 	if err != nil {
 		return result, err
 	}
-	
+
 	if err := json.Unmarshal([]byte(output), &result); err != nil {
 		return result, fmt.Errorf("failed to parse JSON: %w", err)
 	}
-	
+
 	return result, nil
 }

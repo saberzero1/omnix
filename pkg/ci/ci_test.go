@@ -148,7 +148,7 @@ func TestStepsConfig_GetEnabledSteps(t *testing.T) {
 				Build:      BuildStep{Enable: true},
 				Lockfile:   LockfileStep{Enable: true},
 				FlakeCheck: FlakeCheckStep{Enable: true},
-				Custom:     []CustomStep{},
+				Custom:     make(map[string]CustomStep),
 			},
 			expected: []string{"build", "lockfile", "flakeCheck"},
 		},
@@ -158,7 +158,7 @@ func TestStepsConfig_GetEnabledSteps(t *testing.T) {
 				Build:      BuildStep{Enable: true},
 				Lockfile:   LockfileStep{Enable: false},
 				FlakeCheck: FlakeCheckStep{Enable: false},
-				Custom:     []CustomStep{},
+				Custom:     make(map[string]CustomStep),
 			},
 			expected: []string{"build"},
 		},
@@ -168,9 +168,8 @@ func TestStepsConfig_GetEnabledSteps(t *testing.T) {
 				Build:      BuildStep{Enable: true},
 				Lockfile:   LockfileStep{Enable: false},
 				FlakeCheck: FlakeCheckStep{Enable: false},
-				Custom: []CustomStep{
-					{Name: "test", Enable: true},
-					{Name: "lint", Enable: false},
+				Custom: map[string]CustomStep{
+					"test": {Type: CustomStepTypeApp},
 				},
 			},
 			expected: []string{"build", "custom:test"},
@@ -181,7 +180,7 @@ func TestStepsConfig_GetEnabledSteps(t *testing.T) {
 				Build:      BuildStep{Enable: false},
 				Lockfile:   LockfileStep{Enable: false},
 				FlakeCheck: FlakeCheckStep{Enable: false},
-				Custom:     []CustomStep{},
+				Custom:     make(map[string]CustomStep),
 			},
 			expected: nil,
 		},
@@ -309,7 +308,7 @@ func TestRunSubflake_DisabledSteps(t *testing.T) {
 			Build:      BuildStep{Enable: false},
 			Lockfile:   LockfileStep{Enable: false},
 			FlakeCheck: FlakeCheckStep{Enable: false},
-			Custom:     []CustomStep{},
+			Custom:     make(map[string]CustomStep),
 		},
 	}
 

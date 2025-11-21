@@ -36,20 +36,20 @@ func (s *StoreCmd) QueryDeriver(ctx context.Context, paths []Path) ([]string, er
 	for _, p := range paths {
 		args = append(args, p.String())
 	}
-	
+
 	output, err := runNixStore(ctx, args...)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Handle empty output
 	trimmed := strings.TrimSpace(output)
 	if trimmed == "" {
 		return []string{}, nil
 	}
-	
+
 	lines := strings.Split(trimmed, "\n")
-	
+
 	// Filter out "unknown-deriver"
 	var derivers []string
 	for _, line := range lines {
@@ -58,12 +58,12 @@ func (s *StoreCmd) QueryDeriver(ctx context.Context, paths []Path) ([]string, er
 			derivers = append(derivers, line)
 		}
 	}
-	
+
 	if len(derivers) == 0 && len(lines) > 0 {
 		// All derivers were unknown
 		return nil, fmt.Errorf("unknown deriver for provided paths")
 	}
-	
+
 	return derivers, nil
 }
 
@@ -74,12 +74,12 @@ func (s *StoreCmd) QueryRequisites(ctx context.Context, drvPaths []string, inclu
 		args = append(args, "--include-outputs")
 	}
 	args = append(args, drvPaths...)
-	
+
 	output, err := runNixStore(ctx, args...)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	var paths []Path
 	for _, line := range lines {
@@ -88,7 +88,7 @@ func (s *StoreCmd) QueryRequisites(ctx context.Context, drvPaths []string, inclu
 			paths = append(paths, NewPath(line))
 		}
 	}
-	
+
 	return paths, nil
 }
 
@@ -99,17 +99,17 @@ func (s *StoreCmd) FetchAllDeps(ctx context.Context, outPaths []Path) ([]Path, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to query derivers: %w", err)
 	}
-	
+
 	if len(derivers) == 0 {
 		return []Path{}, nil
 	}
-	
+
 	// Then get all requisites with outputs
 	allDeps, err := s.QueryRequisites(ctx, derivers, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query requisites: %w", err)
 	}
-	
+
 	return allDeps, nil
 }
 
@@ -119,7 +119,7 @@ func (s *StoreCmd) Add(ctx context.Context, path string) (Path, error) {
 	if err != nil {
 		return Path{}, err
 	}
-	
+
 	storePath := strings.TrimSpace(output)
 	return NewPath(storePath), nil
 }
@@ -131,7 +131,7 @@ func (s *StoreCmd) AddRoot(ctx context.Context, symlink string, paths []Path) er
 			return fmt.Errorf("failed to add root for %s: %w", path, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -146,23 +146,23 @@ func (s *StoreCmd) AddFilePermanently(ctx context.Context, symlinkPath string, c
 	defer func() {
 		_ = os.RemoveAll(tempDir) // Best effort cleanup
 	}()
-	
+
 	// Write contents to a temporary file with restricted permissions
 	tempFile := filepath.Join(tempDir, "file")
 	if err := os.WriteFile(tempFile, []byte(contents), 0600); err != nil {
 		return Path{}, fmt.Errorf("failed to write temp file: %w", err)
 	}
-	
+
 	// Add to store
 	storePath, err := s.Add(ctx, tempFile)
 	if err != nil {
 		return Path{}, fmt.Errorf("failed to add to store: %w", err)
 	}
-	
+
 	// Create GC root
 	if err := s.AddRoot(ctx, symlinkPath, []Path{storePath}); err != nil {
 		return Path{}, fmt.Errorf("failed to add root: %w", err)
 	}
-	
+
 	return storePath, nil
 }
