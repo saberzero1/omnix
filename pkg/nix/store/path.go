@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 )
@@ -51,4 +52,21 @@ func (p Path) Base() string {
 // Dir returns the directory containing the path.
 func (p Path) Dir() string {
 	return filepath.Dir(p.path)
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+// It marshals the Path as a JSON string containing the path.
+func (p Path) MarshalJSON() ([]byte, error) {
+	return json.Marshal(p.path)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+// It unmarshals a JSON string into a Path.
+func (p *Path) UnmarshalJSON(data []byte) error {
+	var pathStr string
+	if err := json.Unmarshal(data, &pathStr); err != nil {
+		return err
+	}
+	*p = NewPath(pathStr)
+	return nil
 }
