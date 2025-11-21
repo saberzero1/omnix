@@ -15,7 +15,8 @@ This release implements the majority of future work items identified in package 
   - Simplified YAML config format compared to `om ci run`
   - Uses `om/default.yaml` by default, or `om/{name}.yaml` when name is provided
   - Disables `lockfile`, `build`, and `flakeCheck` steps by default for faster execution
-  - Supports all standard options: `--systems`, `--out-link`, `--no-link`, etc.
+  - Steps execute in the order they appear in the YAML file
+  - The `dir` field controls working directory for step execution
   - Example: `om run` (runs om/default.yaml), `om run test` (runs om/test.yaml)
 
 ### Bug Fixes

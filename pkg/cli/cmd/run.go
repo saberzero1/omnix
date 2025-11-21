@@ -37,10 +37,7 @@ Example om/default.yaml:
   steps:
     activate-configuration:
       type: app
-      name: activate
-  caches:
-    required:
-      - https://cache.nixos.org`,
+      name: activate`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: runRun,
 	}
@@ -50,16 +47,8 @@ Example om/default.yaml:
 
 // RunConfig represents the simplified config format for om run
 type RunConfig struct {
-	Dir            string                 `yaml:"dir"`
-	Steps          map[string]interface{} `yaml:"steps"`
-	Caches         *CachesConfig          `yaml:"caches,omitempty"`
-	OverrideInputs map[string]string      `yaml:"overrideInputs,omitempty"`
-	Systems        []string               `yaml:"systems,omitempty"`
-}
-
-// CachesConfig represents cache configuration
-type CachesConfig struct {
-	Required []string `yaml:"required"`
+	Dir   string    `yaml:"dir"`
+	Steps yaml.Node `yaml:"steps"`
 }
 
 func runRun(cmd *cobra.Command, args []string) error {
@@ -99,11 +88,22 @@ func runRun(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nSystem: %s\n", nixInfo.Env.OS.String())
 	fmt.Printf("Nix Version: %s\n\n", nixInfo.Version.String())
 
-	// Run custom steps
+	// Run custom steps in order
 	logger.Info("Running task", zap.String("task", taskName), zap.String("flake", flakeRef))
 
-	if runConfig.Steps != nil {
-		for stepName, stepConfig := range runConfig.Steps {
+	if runConfig.Steps.Kind == yaml.MappingNode {
+		// Iterate through steps in the order they appear in YAML
+		// Content is a flat list: [key1, value1, key2, value2, ...]
+		for i := 0; i < len(runConfig.Steps.Content); i += 2 {
+			stepName := runConfig.Steps.Content[i].Value
+			stepConfigNode := runConfig.Steps.Content[i+1]
+
+			// Decode the step config
+			var stepConfig map[string]interface{}
+			if err := stepConfigNode.Decode(&stepConfig); err != nil {
+				return fmt.Errorf("failed to decode step %s: %w", stepName, err)
+			}
+
 			if err := runCustomStep(ctx, stepName, stepConfig, runConfig.Dir, flakeRef); err != nil {
 				return fmt.Errorf("step %s failed: %w", stepName, err)
 			}
@@ -162,10 +162,10 @@ func runAppStep(ctx context.Context, stepName string, stepMap map[string]interfa
 		}
 	}
 
-	logger.Debug("Running nix command", zap.Strings("args", args))
+	logger.Debug("Running nix command", zap.Strings("args", args), zap.String("dir", dir))
 
 	// Run with output passthrough
-	return runNixWithPassthrough(ctx, args)
+	return runNixWithPassthrough(ctx, args, dir)
 }
 
 // runDevshellStep runs a devshell-type step
@@ -198,18 +198,23 @@ func runDevshellStep(ctx context.Context, stepName string, stepMap map[string]in
 	args := []string{"develop", fmt.Sprintf("%s#default", flakeRef), "-c"}
 	args = append(args, command...)
 
-	logger.Debug("Running nix command", zap.Strings("args", args))
+	logger.Debug("Running nix command", zap.Strings("args", args), zap.String("dir", dir))
 
 	// Run with output passthrough
-	return runNixWithPassthrough(ctx, args)
+	return runNixWithPassthrough(ctx, args, dir)
 }
 
 // runNixWithPassthrough runs a nix command with stdout/stderr passed through to the user
-func runNixWithPassthrough(ctx context.Context, args []string) error {
+func runNixWithPassthrough(ctx context.Context, args []string, dir string) error {
 	logger := common.Logger()
 
 	// Create the command
 	cmd := exec.CommandContext(ctx, "nix", args...)
+
+	// Set working directory if specified
+	if dir != "" && dir != "." {
+		cmd.Dir = dir
+	}
 
 	// Pass through stdout and stderr
 	cmd.Stdout = os.Stdout
@@ -226,7 +231,8 @@ func runNixWithPassthrough(ctx context.Context, args []string) error {
 
 		logger.Error("nix command failed",
 			zap.Strings("args", args),
-			zap.Int("exitCode", exitCode))
+			zap.Int("exitCode", exitCode),
+			zap.String("dir", dir))
 
 		return fmt.Errorf("nix command failed (exit %d): %w", exitCode, err)
 	}

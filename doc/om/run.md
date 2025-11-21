@@ -21,15 +21,6 @@ om run
 
 # Run a specific task (om/update.yaml)
 om run update
-
-# Run with custom output link
-om run --out-link my-result
-
-# Run without creating symlink
-om run --no-link
-
-# Run for specific systems
-om run --systems "x86_64-linux,aarch64-linux"
 ```
 
 ## Configuration Format
@@ -44,9 +35,6 @@ steps:
   activate-configuration:
     type: app
     name: activate
-caches:
-  required:
-    - https://cache.nixos.org
 ```
 
 This is equivalent to the following in `om.yaml` for `om ci run`:
@@ -67,9 +55,6 @@ ci:
           activate-configuration:
             type: app
             name: activate
-      caches:
-        required:
-          - https://cache.nixos.org
 ```
 
 ### Configuration Fields
@@ -79,10 +64,8 @@ ci:
   - `type`: Either `app` (run a flake app) or `devshell` (run in dev shell)
   - For apps: `name` and optionally `args`
   - For devshells: `command` (array of command and arguments)
-- **`caches`**: Optional cache configuration
-  - `required`: List of required cache URLs
-- **`overrideInputs`**: Optional input overrides (map of input names to URLs)
-- **`systems`**: Optional whitelist of systems to build on
+
+Note: Steps execute in the order they appear in the YAML file.
 
 ### Example: DevShell Task
 
