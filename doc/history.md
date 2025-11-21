@@ -10,6 +10,13 @@ order: 100
 
 This release implements the majority of future work items identified in package README files, significantly expanding functionality and improving code quality.
 
+### Bug Fixes
+- **devour-flake JSON Parsing**: Fixed parsing error for devour-flake output
+  - Added JSON marshaling/unmarshaling support to `store.Path` type
+  - Error was "json: cannot unmarshal string into Go struct field DevourFlakeOutput.byName of type store.Path"
+  - Now correctly parses devour-flake JSON output with string paths
+  - Comprehensive test coverage for JSON serialization (100% coverage of new methods)
+
 ### Health Package
 - **Configuration Support**: Added `LoadConfig` to load health settings from `om.yaml`
 - **Markdown Output**: Enhanced `PrintCheckResult` with markdown formatting
