@@ -411,7 +411,7 @@ func runCustomStep(ctx context.Context, flake nix.FlakeURL, name string, step Cu
 // runFlakeApp runs a flake app
 func runFlakeApp(ctx context.Context, flake nix.FlakeURL, step CustomStep) (string, error) {
 	appName := getFlakeAttrName(step.Name)
-	appURL := flake.String() + "#" + appName
+	appURL := buildFlakeURLWithAttr(flake, appName)
 
 	// Build nix run command
 	args := []string{"run", appURL}
@@ -506,6 +506,14 @@ func runBuildStepRemote(ctx context.Context, host string, flake nix.FlakeURL, st
 	}
 	args = append(args, "--override-input", "flake", flake.String())
 
+	// Add systems filtering if specified
+	if len(opts.Systems) > 0 {
+		systemsFlakeURL, err := nix.GetSystemsFlakeURL(opts.Systems)
+		if err == nil {
+			args = append(args, "--override-input", "systems", systemsFlakeURL.String())
+		}
+	}
+
 	output, err := executeRemoteCommand(ctx, host, args)
 	if err != nil {
 		result.Success = false
@@ -571,7 +579,7 @@ func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, n
 	case CustomStepTypeApp:
 		// Run a flake app
 		appName := getFlakeAttrName(step.Name)
-		appURL := flake.String() + "#" + appName
+		appURL := buildFlakeURLWithAttr(flake, appName)
 		args = []string{"nix", "run", appURL}
 		if len(step.Args) > 0 {
 			args = append(args, "--")

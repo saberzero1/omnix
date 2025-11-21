@@ -53,7 +53,7 @@ func DevourFlake(ctx context.Context, flake FlakeURL, systems []string, impure b
 
 	// Add systems filtering if specified
 	if len(systems) > 0 {
-		systemsFlakeURL, err := getSystemsFlakeURL(systems)
+		systemsFlakeURL, err := GetSystemsFlakeURL(systems)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get systems flake URL: %w", err)
 		}
@@ -110,10 +110,10 @@ func uniquePaths(paths []store.Path) []store.Path {
 	return result
 }
 
-// getSystemsFlakeURL converts a list of system strings to a nix-systems flake URL.
+// GetSystemsFlakeURL converts a list of system strings to a nix-systems flake URL.
 // If there's a single system, it uses the corresponding nix-systems flake.
 // If there are multiple systems, it uses default or returns an error.
-func getSystemsFlakeURL(systems []string) (FlakeURL, error) {
+func GetSystemsFlakeURL(systems []string) (FlakeURL, error) {
 	if len(systems) == 0 {
 		return FlakeURL{}, fmt.Errorf("no systems specified")
 	}

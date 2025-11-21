@@ -203,11 +203,8 @@ func TestStepsConfig_MultipleCustomSteps(t *testing.T) {
 	}
 
 	enabled := config.GetEnabledSteps()
-	// Note: map iteration order is not guaranteed, so we check length and membership
-	assert.Len(t, enabled, 3)
-	assert.Contains(t, enabled, "custom:test1")
-	assert.Contains(t, enabled, "custom:test2")
-	assert.Contains(t, enabled, "custom:test3")
+	// Custom steps are sorted alphabetically for deterministic order
+	assert.Equal(t, []string{"custom:test1", "custom:test2", "custom:test3"}, enabled)
 }
 
 func TestGitHubMatrix_EmptyInclude(t *testing.T) {
