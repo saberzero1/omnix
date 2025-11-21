@@ -155,9 +155,11 @@ func runAppStep(ctx context.Context, stepName string, stepMap map[string]interfa
 	if argsRaw, ok := stepMap["args"]; ok {
 		if argsList, ok := argsRaw.([]interface{}); ok {
 			for _, arg := range argsList {
-				if argStr, ok := arg.(string); ok {
-					args = append(args, argStr)
+				argStr, ok := arg.(string)
+				if !ok {
+					return fmt.Errorf("invalid argument in app step %s: expected string, got %T (%v)", stepName, arg, arg)
 				}
+				args = append(args, argStr)
 			}
 		}
 	}
@@ -189,9 +191,11 @@ func runDevshellStep(ctx context.Context, stepName string, stepMap map[string]in
 	// Convert to string slice
 	command := make([]string, 0, len(commandList))
 	for _, item := range commandList {
-		if str, ok := item.(string); ok {
-			command = append(command, str)
+		str, ok := item.(string)
+		if !ok {
+			return fmt.Errorf("invalid command argument in devshell step %s: expected string, got %T (%v)", stepName, item, item)
 		}
+		command = append(command, str)
 	}
 
 	// Build nix develop command

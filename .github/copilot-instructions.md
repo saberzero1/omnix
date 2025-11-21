@@ -11,7 +11,7 @@ Omnix is a Nix companion CLI tool implemented in Go. The repository contains **b
 - 🔄 **Rust is Legacy**: Being phased out according to `DESIGN_DOCUMENT.md`
 - 📋 **Migration Progress**: Phase 1 complete (`pkg/common` migrated), Phase 2+ in progress
 
-**Commands:** `om ci` (CI builds), `om health` (environment checks), `om develop` (dev envs), `om show` (flake inspection), `om init` (project scaffolding). 
+**Commands:** `om ci` (CI builds), `om health` (environment checks), `om develop` (dev envs), `om show` (flake inspection), `om init` (project scaffolding), `om run` (task execution). 
 
 **Build Systems:** 
 - **Go (Primary)**: Go modules + Nix buildGoModule - Use this for new features
