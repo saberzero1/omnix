@@ -10,6 +10,14 @@ order: 100
 
 This release implements the majority of future work items identified in package README files, significantly expanding functionality and improving code quality.
 
+### New Commands
+- **om run**: New command for running tasks from `om/` directory
+  - Simplified YAML config format compared to `om ci run`
+  - Uses `om/default.yaml` by default, or `om/{name}.yaml` when name is provided
+  - Disables `lockfile`, `build`, and `flakeCheck` steps by default for faster execution
+  - Supports all standard options: `--systems`, `--out-link`, `--no-link`, etc.
+  - Example: `om run` (runs om/default.yaml), `om run test` (runs om/test.yaml)
+
 ### Bug Fixes
 - **devour-flake JSON Parsing**: Fixed parsing error for devour-flake output
   - Added JSON marshaling/unmarshaling support to `store.Path` type
