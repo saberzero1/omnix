@@ -125,7 +125,6 @@ steps:
 | Config structure | Simplified (direct steps) | Nested under `ci` key |
 | Lockfile check | Disabled by default | Enabled by default |
 | Build step | Disabled by default | Enabled by default |
-| Flake check | Disabled by default | Disabled by default |
 | Use case | Quick tasks, scripts | Full CI pipeline |
 
 ## Common Use Cases
