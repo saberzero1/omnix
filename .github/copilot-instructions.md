@@ -2,61 +2,40 @@
 
 ## Overview
 
-**⚠️ PROJECT IN TRANSITION: Rust → Go Migration (Phase 1 Complete)**
+**✨ DEFAULT LANGUAGE: Go** (Rust is legacy, being phased out)
 
-Omnix is a Nix companion CLI tool currently being migrated from Rust to Go according to `DESIGN_DOCUMENT.md`. The repository contains **both Rust and Go code** during this transition period.
+Omnix is a Nix companion CLI tool implemented in Go. The repository contains **both Go and Rust code** during the migration period, but **all new features should be implemented in Go**.
 
 **Current Status:**
-- ✅ **Phase 1 Complete**: Go foundation established, `pkg/common` migrated (80.6% test coverage)
-- 🔄 **Active**: Both Rust (8 crates, 117 .rs files) and Go (11 .go files) implementations coexist
-- 📋 **Next**: Phase 2 - Core Nix Integration (`nix_rs` → `pkg/nix`)
+- ✅ **Go is Production**: New commands and features go in `pkg/` and `cmd/om/`
+- 🔄 **Rust is Legacy**: Being phased out according to `DESIGN_DOCUMENT.md`
+- 📋 **Migration Progress**: Phase 1 complete (`pkg/common` migrated), Phase 2+ in progress
 
-**Commands:** `om ci` (CI builds), `om health` (environment checks), `om develop` (dev envs), `om show` (flake inspection), `om init` (project scaffolding). 
+**Commands:** `om ci` (CI builds), `om health` (environment checks), `om develop` (dev envs), `om show` (flake inspection), `om init` (project scaffolding), `om run` (task execution). 
 
 **Build Systems:** 
-- Rust: Nix flakes + Cargo workspace (production, being phased out)
-- Go: Go modules + Nix buildGoModule (in development, future production)
+- **Go (Primary)**: Go modules + Nix buildGoModule - Use this for new features
+- Rust (Legacy): Nix flakes + Cargo workspace - Being deprecated
 
 **Platforms:** x86_64/aarch64 Linux/Darwin
 
 ## Critical Setup Requirements
 
-### For Rust Code: Nix is Mandatory
+### For Go Code (Primary): Standard Go Toolchain
 
-**DO NOT use plain `cargo build/test`** for Rust code - it will fail. Rust compilation requires Nix with flakes enabled. Build environment variables (`TRUE_FLAKE`, `FALSE_FLAKE`, `FLAKE_METADATA`, `DEFAULT_FLAKE_SCHEMAS`, `INSPECT_FLAKE`, `NIX_SYSTEMS`, etc.) are defined in `nix/envs/default.nix` and injected by Nix during compilation.
+**Use Go for all new features.** Go code can be built with standard Go tools (`go build`, `go test`). Nix development shell is recommended for consistency and access to all development tools.
 
-### For Go Code: Standard Go Toolchain
+**Setup**: Install Nix with flakes, setup direnv, run `direnv allow` in repo root. The `.envrc` activates Nix devShell automatically, providing both Go and Rust toolchains.
 
-Go code can be built with standard Go tools (`go build`, `go test`) but Nix development shell is recommended for consistency and access to all development tools.
+### For Rust Code (Legacy): Nix is Mandatory
 
-**Setup**: Install Nix with flakes, setup direnv, run `direnv allow` in repo root. The `.envrc` activates Nix devShell automatically, providing both Rust and Go toolchains.
+**Only modify Rust code for bug fixes or maintenance.** Rust compilation requires Nix with flakes enabled. Build environment variables (`TRUE_FLAKE`, `FALSE_FLAKE`, etc.) are defined in `nix/envs/default.nix` and injected by Nix during compilation.
 
 ## Build Commands
 
 **Verify devShell active**: `echo $OMNIX_SOURCE` (should show Nix store path). If not: `nix develop --accept-flake-config`
 
-### Rust Build Commands (Production - Requires Nix DevShell)
-
-**Build**:
-- `nix build --accept-flake-config` - Full Rust build (5-10 min first run, <1 min incremental)
-- `nix run --accept-flake-config` - Build and run Rust version
-- `just watch` (or `just w`) - Development with live reload using bacon; pass args: `just w show`
-
-**Test**:
-- `just cargo-test` or `cargo test --release --all-features --workspace` (2-5 min)
-- Per-crate: `cargo test -p omnix-cli --release --all-features`
-- Tests **require** devShell environment variables
-
-**Lint** (always before committing):
-- `just pca` - Auto-format all code (pre-commit: nixpkgs-fmt + rustfmt + gofmt)
-- `just clippy` - Strict Rust lint (treats warnings as errors)
-- `just cargo-doc` - Build Rust docs
-
-**CI**:
-- `just ci` - Full local CI (10-20 min first run, uses `nix run . ci`)
-- `just ci-cargo` - Faster iteration using cargo in devShell
-
-### Go Build Commands (Development - Phase 1 Complete)
+### Go Build Commands (Primary - Use for New Features)
 
 **Build**:
 - `just go-build` - Build Go binary to `bin/om`
@@ -78,42 +57,57 @@ Go code can be built with standard Go tools (`go build`, `go test`) but Nix deve
 **Full Go CI**:
 - `just go-ci` - Complete Go CI pipeline (format, lint, test with coverage, build)
 
+### Rust Build Commands (Legacy - Maintenance Only)
+
+**Build**:
+- `nix build --accept-flake-config` - Full Rust build (5-10 min first run, <1 min incremental)
+- `nix run --accept-flake-config` - Build and run Rust version
+- `just watch` (or `just w`) - Development with live reload using bacon; pass args: `just w show`
+
+**Test**:
+- `just cargo-test` or `cargo test --release --all-features --workspace` (2-5 min)
+- Per-crate: `cargo test -p omnix-cli --release --all-features`
+- Tests **require** devShell environment variables
+
+**Lint** (always before committing):
+- `just pca` - Auto-format all code (pre-commit: nixpkgs-fmt + rustfmt + gofmt)
+- `just clippy` - Strict Rust lint (treats warnings as errors)
+- `just cargo-doc` - Build Rust docs
+
+**CI**:
+- `just ci` - Full local CI (10-20 min first run, uses `nix run . ci`)
+- `just ci-cargo` - Faster iteration using cargo in devShell
+
 ## Project Structure
 
-### Rust Crates (in `crates/`, Cargo workspace - being phased out)
-- `omnix-cli`: Main CLI entry, command dispatching. Entry: `src/main.rs`, commands: `src/command/*.rs`
-- `omnix-ci`: CI command, builds all flake outputs
-- `omnix-health`: Health checks for Nix environment
-- `omnix-develop`: Development environment setup
-- `omnix-init`: Project scaffolding with templates (registry: `crates/omnix-init/registry/`)
-- `omnix-common`: Shared utilities, logging (**✅ Migrated to Go: `pkg/common`**)
-- `nix_rs`: Core Nix interaction library. Key: `src/flake/` (URL parsing, metadata, schema), `src/flake/functions/` (Rust+Nix FFI) (**🔄 Next migration target: `pkg/nix`**)
-- `omnix-gui`: Dioxus-based GUI (experimental, migration TBD)
-
-### Go Packages (in `pkg/`, Go modules - Phase 1 complete)
+### Go Packages (in `pkg/`, Go modules - Primary for New Features)
 
 **Current Structure:**
 ```
 omnix/
-├── cmd/om/              # Go CLI entry point (placeholder)
+├── cmd/om/              # Go CLI entry point - ADD NEW COMMANDS HERE
 │   └── main.go
-├── pkg/common/          # ✅ MIGRATED from omnix-common (551 LOC, 80.6% coverage)
-│   ├── logging.go       # Structured logging (zap)
-│   ├── check.go         # Binary existence checks
-│   ├── fs.go            # Filesystem utilities
-│   ├── config.go        # Config parsing (JSON/YAML)
-│   ├── markdown.go      # Markdown rendering (glamour)
-│   └── *_test.go        # Comprehensive test suite
-└── internal/            # Private packages (future)
+├── pkg/
+│   ├── cli/             # CLI framework with cobra (commands in pkg/cli/cmd/)
+│   ├── common/          # ✅ Migrated utilities (551 LOC, 80.6% coverage)
+│   ├── health/          # ✅ Health checks
+│   ├── init/            # ✅ Project initialization
+│   ├── ci/              # ✅ CI functionality
+│   ├── develop/         # ✅ Dev shells
+│   ├── nix/             # ✅ Nix interaction
+│   └── show/            # (future)
+└── internal/            # Private packages
 ```
 
-**Planned Packages (per DESIGN_DOCUMENT.md):**
-- `pkg/nix/` - Nix interaction (replaces `nix_rs`) - **Phase 2**
-- `pkg/health/` - Health checks (replaces `omnix-health`) - **Phase 3**
-- `pkg/init/` - Project initialization (replaces `omnix-init`) - **Phase 3**
-- `pkg/ci/` - CI functionality (replaces `omnix-ci`) - **Phase 4**
-- `pkg/develop/` - Dev shells (replaces `omnix-develop`) - **Phase 4**
-- `pkg/cli/` - CLI framework - **Phase 5**
+### Rust Crates (in `crates/`, Cargo workspace - LEGACY, Maintenance Only)
+- `omnix-cli`: Main CLI entry, command dispatching. Entry: `src/main.rs`, commands: `src/command/*.rs`
+- `omnix-ci`: CI command, builds all flake outputs  
+- `omnix-health`: Health checks for Nix environment
+- `omnix-develop`: Development environment setup
+- `omnix-init`: Project scaffolding with templates (registry: `crates/omnix-init/registry/`)
+- `omnix-common`: Shared utilities, logging (**✅ Migrated to Go: `pkg/common`**)
+- `nix_rs`: Core Nix interaction library (**✅ Migrated to Go: `pkg/nix`**)
+- `omnix-gui`: Dioxus-based GUI (experimental, migration TBD)
 
 ### Config Files
 - **Go**: `go.mod`, `go.sum`, `.golangci.yml` (linter config)
@@ -169,7 +163,25 @@ omnix/
 
 ## Development Workflows
 
-### Working on Rust Code (Production)
+### Working on Go Code (Primary - Use for All New Features)
+
+1. Activate: `direnv allow` (or use standard Go toolchain)
+2. Edit Go sources in `cmd/` or `pkg/`
+3. Test frequently: `just go-test` or `go test ./...`
+4. Format: `just go-fmt` (gofmt + goimports)
+5. Lint: `just go-lint` (golangci-lint)
+6. Build: `just go-build`
+7. Full CI: `just go-ci`
+8. **Update `doc/history.md`** (required for all changes)
+
+**Code requirements**: 
+- golangci-lint must pass (0 issues)
+- Test coverage ≥80% for new packages
+- All public functions documented with godoc comments
+- Table-driven tests for multiple scenarios
+- Use `testify` for assertions
+
+### Working on Rust Code (Legacy - Maintenance Only)
 
 1. Activate: `direnv allow` (or `nix develop --accept-flake-config`)
 2. Edit Rust sources in `crates/`
@@ -182,26 +194,17 @@ omnix/
 
 **Code requirements**: Clippy with `--deny warnings`, nixpkgs-fmt for Nix. Add tests in `crates/*/tests/` or `src/`. CLI integration tests in `crates/omnix-cli/tests/command/`. Use `#[tokio::test]` for async.
 
-### Working on Go Code (Migration in Progress)
+### Adding New Commands (Go)
 
-1. Activate: `direnv allow` (or use standard Go toolchain)
-2. Edit Go sources in `cmd/` or `pkg/`
-3. Test frequently: `just go-test` or `go test ./...`
-4. Format: `just go-fmt` (gofmt + goimports)
-5. Lint: `just go-lint` (golangci-lint)
-6. Build: `just go-build`
-7. Full CI: `just go-ci`
-8. **Update migration docs**: `GO_MIGRATION.md`, `PHASE*_SUMMARY.md` as appropriate
-9. **Update `doc/history.md`** (required for all changes)
+To add a new command like `om run`:
+1. Create command file in `pkg/cli/cmd/run.go`
+2. Implement `NewRunCmd()` function returning `*cobra.Command`
+3. Register in `pkg/cli/root.go` init function: `rootCmd.AddCommand(cmd.NewRunCmd())`
+4. Add tests in `pkg/cli/cmd/run_test.go`
+5. Update `doc/om/run.md` with documentation
+6. Update `doc/history.md` with release notes
 
-**Code requirements**: 
-- golangci-lint must pass (0 issues)
-- Test coverage ≥80% for new packages
-- All public functions documented with godoc comments
-- Table-driven tests for multiple scenarios
-- Use `testify` for assertions
-
-### Migration Guidelines (Rust → Go)
+### Migration Guidelines (Rust → Go - For Reference Only)
 
 When migrating a Rust crate to Go:
 1. Read `DESIGN_DOCUMENT.md` for the migration plan
@@ -224,7 +227,18 @@ When migrating a Rust crate to Go:
 
 ## Quick Reference
 
-### Rust (Production)
+### Go (Primary - Use for All New Work)
+**Essential commands**: `just go-test`, `just go-lint`, `just go-fmt`, `just go-build`, `just go-ci`
+
+**Key files**:
+- Main entry: `cmd/om/main.go`
+- CLI root: `pkg/cli/root.go`
+- Commands: `pkg/cli/cmd/*.go`
+- Packages: `pkg/{common,nix,health,init,ci,develop}/*.go`
+- Tests: `pkg/**/*_test.go`
+- Config: `go.mod`, `.golangci.yml`
+
+### Rust (Legacy - Maintenance Only)
 **Essential commands**: `just watch`, `just pca`, `just clippy`, `just cargo-test`, `nix build`, `just ci`
 
 **Key files**: 
@@ -233,30 +247,12 @@ When migrating a Rust crate to Go:
 - Nix FFI: `crates/nix_rs/src/`
 - Env vars: `nix/envs/default.nix`
 
-### Go (Development - Phase 1)
-**Essential commands**: `just go-test`, `just go-lint`, `just go-fmt`, `just go-build`, `just go-ci`
-
-**Key files**:
-- Main entry: `cmd/om/main.go` (placeholder)
-- Common utilities: `pkg/common/*.go`
-- Tests: `pkg/common/*_test.go`
-- Config: `go.mod`, `.golangci.yml`
-
-### Both
+### Configuration & Docs
 **Config**: `om.yaml` (omnix config)
-**Docs**: `doc/*.md`, `DESIGN_DOCUMENT.md`, `GO_MIGRATION.md`
 **Debug**: 
-- Rust devShell: `echo $OMNIX_SOURCE` (verify devShell)
-- Go version: `go version`
+- Go version: `go version` (should be 1.22+)
+- Rust devShell: `echo $OMNIX_SOURCE` (verify devShell for Rust work)
 - Nix: `nix --version` (>=2.16.0)
 - Just: `just --list` (all recipes)
 
-### Migration Status Tracking
-- **Completed**: `pkg/common` (✅ Phase 1)
-- **In Progress**: None (awaiting Phase 2 start)
-- **Next**: `pkg/nix` (replaces `nix_rs` crate)
-- **Future**: `pkg/health`, `pkg/init`, `pkg/ci`, `pkg/develop`, `pkg/cli`
-
-See `DESIGN_DOCUMENT.md` Section 3.2 for detailed phase breakdown.
-
-**Trust these instructions**: Only search if info incomplete/incorrect. For Rust: Nix is mandatory - no workarounds. For Go: standard toolchain works but Nix devShell recommended. License: AGPL-3.0.
+**Trust these instructions**: All new features go in Go (`pkg/` and `cmd/om/`). Rust is legacy maintenance only. License: AGPL-3.0.
