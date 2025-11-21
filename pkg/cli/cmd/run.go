@@ -4,21 +4,15 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
 	"github.com/saberzero1/omnix/pkg/common"
 	"github.com/saberzero1/omnix/pkg/nix"
-)
-
-var (
-	runSystems  string
-	runOutLink  string
-	runNoLink   bool
-	runGHOutput bool
 )
 
 // NewRunCmd creates the run command
@@ -51,11 +45,6 @@ Example om/default.yaml:
 		RunE: runRun,
 	}
 
-	cmd.Flags().StringVar(&runSystems, "systems", "", "Systems to build for (comma-separated)")
-	cmd.Flags().StringVarP(&runOutLink, "out-link", "o", "result", "Symlink to build results (as JSON)")
-	cmd.Flags().BoolVar(&runNoLink, "no-link", false, "Do not create a symlink to build results JSON")
-	cmd.Flags().BoolVar(&runGHOutput, "github-output", os.Getenv("GITHUB_ACTION") != "", "Print Github Actions log groups")
-
 	return cmd
 }
 
@@ -86,13 +75,13 @@ func runRun(cmd *cobra.Command, args []string) error {
 	// Determine flake reference (default to current directory)
 	flakeRef := "."
 
-	logger.Info("Reading run config from om/ directory")
-
 	// Get config path
 	configPath, err := getConfigPath(flakeRef, taskName)
 	if err != nil {
 		return fmt.Errorf("failed to get config path: %w", err)
 	}
+
+	logger.Info("Reading run config", zap.String("path", configPath))
 
 	// Load the simplified config
 	runConfig, err := loadRunConfig(configPath)
@@ -111,7 +100,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Nix Version: %s\n\n", nixInfo.Version.String())
 
 	// Run custom steps
-	logger.Info(fmt.Sprintf("Running task '%s' for %s", taskName, flakeRef))
+	logger.Info("Running task", zap.String("task", taskName), zap.String("flake", flakeRef))
 
 	if runConfig.Steps != nil {
 		for stepName, stepConfig := range runConfig.Steps {
@@ -128,7 +117,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 // runCustomStep executes a single custom step
 func runCustomStep(ctx context.Context, name string, stepConfig interface{}, dir, flakeRef string) error {
 	logger := common.Logger()
-	logger.Info(fmt.Sprintf("Running custom step: %s", name))
+	logger.Info("Running custom step", zap.String("step", name))
 
 	// Parse step config
 	stepMap, ok := stepConfig.(map[string]interface{})
@@ -173,10 +162,10 @@ func runAppStep(ctx context.Context, stepName string, stepMap map[string]interfa
 		}
 	}
 
-	logger.Debug(fmt.Sprintf("Running: nix %s", strings.Join(args, " ")))
-	cmd := nix.NewCmd()
-	_, err := cmd.Run(ctx, args...)
-	return err
+	logger.Debug("Running nix command", zap.Strings("args", args))
+
+	// Run with output passthrough
+	return runNixWithPassthrough(ctx, args)
 }
 
 // runDevshellStep runs a devshell-type step
@@ -209,10 +198,40 @@ func runDevshellStep(ctx context.Context, stepName string, stepMap map[string]in
 	args := []string{"develop", fmt.Sprintf("%s#default", flakeRef), "-c"}
 	args = append(args, command...)
 
-	logger.Debug(fmt.Sprintf("Running: nix %s", strings.Join(args, " ")))
-	cmd := nix.NewCmd()
-	_, err := cmd.Run(ctx, args...)
-	return err
+	logger.Debug("Running nix command", zap.Strings("args", args))
+
+	// Run with output passthrough
+	return runNixWithPassthrough(ctx, args)
+}
+
+// runNixWithPassthrough runs a nix command with stdout/stderr passed through to the user
+func runNixWithPassthrough(ctx context.Context, args []string) error {
+	logger := common.Logger()
+
+	// Create the command
+	cmd := exec.CommandContext(ctx, "nix", args...)
+
+	// Pass through stdout and stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	// Run the command
+	err := cmd.Run()
+	if err != nil {
+		exitCode := -1
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			exitCode = exitErr.ExitCode()
+		}
+
+		logger.Error("nix command failed",
+			zap.Strings("args", args),
+			zap.Int("exitCode", exitCode))
+
+		return fmt.Errorf("nix command failed (exit %d): %w", exitCode, err)
+	}
+
+	return nil
 }
 
 // getConfigPath returns the path to the config file
