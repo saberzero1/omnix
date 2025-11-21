@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -48,7 +49,9 @@ func TestGetConfigPath_Default(t *testing.T) {
 	// Change to temp dir
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() {
+		_ = os.Chdir(origDir)
+	}()
 	require.NoError(t, os.Chdir(tmpDir))
 
 	// Test
@@ -69,7 +72,9 @@ func TestGetConfigPath_Named(t *testing.T) {
 	// Change to temp dir
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() {
+		_ = os.Chdir(origDir)
+	}()
 	require.NoError(t, os.Chdir(tmpDir))
 
 	// Test
@@ -85,7 +90,9 @@ func TestGetConfigPath_NotFound(t *testing.T) {
 	// Change to temp dir
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() {
+		_ = os.Chdir(origDir)
+	}()
 	require.NoError(t, os.Chdir(tmpDir))
 
 	// Test
@@ -160,7 +167,7 @@ func TestRunAppStep_InvalidName(t *testing.T) {
 		"type": "app",
 	}
 
-	err := runAppStep(nil, "test-step", stepMap, ".", ".")
+	err := runAppStep(context.TODO(), "test-step", stepMap, ".", ".")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing or invalid 'name'")
 }
@@ -176,7 +183,7 @@ func TestRunAppStep_InvalidArgs(t *testing.T) {
 		},
 	}
 
-	err := runAppStep(nil, "test-step", stepMap, ".", ".")
+	err := runAppStep(context.TODO(), "test-step", stepMap, ".", ".")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid argument")
 	assert.Contains(t, err.Error(), "expected string")
@@ -192,7 +199,7 @@ func TestRunDevshellStep_InvalidCommand(t *testing.T) {
 		},
 	}
 
-	err := runDevshellStep(nil, "test-step", stepMap, ".", ".")
+	err := runDevshellStep(context.TODO(), "test-step", stepMap, ".", ".")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid command argument")
 	assert.Contains(t, err.Error(), "expected string")
@@ -204,7 +211,7 @@ func TestRunDevshellStep_MissingCommand(t *testing.T) {
 		"type": "devshell",
 	}
 
-	err := runDevshellStep(nil, "test-step", stepMap, ".", ".")
+	err := runDevshellStep(context.TODO(), "test-step", stepMap, ".", ".")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing 'command'")
 }
@@ -216,7 +223,7 @@ func TestRunDevshellStep_EmptyCommand(t *testing.T) {
 		"command": []interface{}{},
 	}
 
-	err := runDevshellStep(nil, "test-step", stepMap, ".", ".")
+	err := runDevshellStep(context.TODO(), "test-step", stepMap, ".", ".")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "empty 'command'")
 }
@@ -227,7 +234,7 @@ func TestRunCustomStep_UnknownType(t *testing.T) {
 		"type": "unknown-type",
 	}
 
-	err := runCustomStep(nil, "test-step", stepConfig, ".", ".")
+	err := runCustomStep(context.TODO(), "test-step", stepConfig, ".", ".")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown step type")
 }
@@ -238,7 +245,7 @@ func TestRunCustomStep_MissingType(t *testing.T) {
 		"name": "test",
 	}
 
-	err := runCustomStep(nil, "test-step", stepConfig, ".", ".")
+	err := runCustomStep(context.TODO(), "test-step", stepConfig, ".", ".")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing or invalid 'type'")
 }
@@ -247,7 +254,7 @@ func TestRunCustomStep_InvalidConfig(t *testing.T) {
 	// Test with invalid step config (not a map)
 	stepConfig := "invalid-config-string"
 
-	err := runCustomStep(nil, "test-step", stepConfig, ".", ".")
+	err := runCustomStep(context.TODO(), "test-step", stepConfig, ".", ".")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid step config")
 }
@@ -266,7 +273,9 @@ func TestRunCommand_MissingConfig(t *testing.T) {
 	// Change to temp dir
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() {
+		_ = os.Chdir(origDir)
+	}()
 	require.NoError(t, os.Chdir(tmpDir))
 
 	// Capture output
