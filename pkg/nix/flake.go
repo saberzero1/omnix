@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/saberzero1/omnix/pkg/nix/flake"
 )
 
 // FlakeURL represents a Nix flake URL.
@@ -76,6 +78,46 @@ func (f FlakeURL) SplitAttr() (string, string) {
 		return f.url[:idx], f.url[idx+1:]
 	}
 	return f.url, ""
+}
+
+// GetAttr returns the Attr part of the FlakeURL.
+func (f FlakeURL) GetAttr() flake.Attr {
+	_, attrStr := f.SplitAttr()
+	if attrStr == "" {
+		return flake.NoneAttr()
+	}
+	return flake.NewAttr(attrStr)
+}
+
+// WithoutAttr returns a new FlakeURL without the attribute part.
+func (f FlakeURL) WithoutAttr() FlakeURL {
+	base, _ := f.SplitAttr()
+	return FlakeURL{url: base}
+}
+
+// SubFlakeURL returns a FlakeURL pointing to a sub-flake at the given directory.
+// For local paths, it joins the directory path.
+// For non-local URLs, it appends a "?dir=" query parameter.
+// If dir is ".", returns the current FlakeURL unchanged.
+func (f FlakeURL) SubFlakeURL(dir string) FlakeURL {
+	if dir == "." {
+		return f
+	}
+
+	if localPath := f.AsLocalPath(); localPath != "" {
+		// Local path: join the directory
+		joined := filepath.Join(localPath, dir)
+		return FlakeURL{url: joined}
+	}
+
+	// Non-path URL: append dir query parameter
+	url := f.url
+	if strings.Contains(url, "?") {
+		url += "&dir=" + dir
+	} else {
+		url += "?dir=" + dir
+	}
+	return FlakeURL{url: url}
 }
 
 // Clean returns a cleaned version of the flake URL.
