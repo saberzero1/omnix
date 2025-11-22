@@ -288,6 +288,7 @@ func (m *Model) renderHeader() string {
 	}
 
 	headerStyle := lipgloss.NewStyle().
+		Width(m.width).
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderBottom(true).
 		BorderForeground(lipgloss.Color("240")).
@@ -306,6 +307,7 @@ func (m *Model) renderHeader() string {
 // renderFooter renders the footer with keyboard shortcuts
 func (m *Model) renderFooter() string {
 	footerStyle := lipgloss.NewStyle().
+		Width(m.width).
 		Foreground(lipgloss.Color("241")).
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderTop(true).
