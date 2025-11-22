@@ -20,7 +20,7 @@
           src = lib.cleanSource inputs.self;
 
           # vendorHash computed by Nix (set to lib.fakeHash, build, then use reported hash)
-          vendorHash = "sha256-fw5op35m+fp0PGR60tqXuU6t0f4KMKw19ip3RTCiibc=";
+          vendorHash = "sha256-e39nRpxxkZPFafUNRJmklJeRq1fZLTOzq1CoB/MFSCQ=";
 
           # Disable CGO for static linking
           CGO_ENABLED = 0;
