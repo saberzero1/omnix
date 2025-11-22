@@ -313,3 +313,146 @@ func TestParseFlakeURL(t *testing.T) {
 		})
 	}
 }
+
+func TestFlakeURL_GetAttr(t *testing.T) {
+	tests := []struct {
+		name     string
+		url      string
+		wantNone bool
+		wantName string
+	}{
+		{
+			name:     "no attribute",
+			url:      "github:srid/nixci",
+			wantNone: true,
+			wantName: "default",
+		},
+		{
+			name:     "simple attribute",
+			url:      "github:srid/nixci#extra-tests",
+			wantNone: false,
+			wantName: "extra-tests",
+		},
+		{
+			name:     "nested attribute",
+			url:      ".#foo.bar.qux",
+			wantNone: false,
+			wantName: "foo.bar.qux",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := NewFlakeURL(tt.url)
+			attr := f.GetAttr()
+			if attr.IsNone() != tt.wantNone {
+				t.Errorf("GetAttr().IsNone() = %v, want %v", attr.IsNone(), tt.wantNone)
+			}
+			if attr.GetName() != tt.wantName {
+				t.Errorf("GetAttr().GetName() = %v, want %v", attr.GetName(), tt.wantName)
+			}
+		})
+	}
+}
+
+func TestFlakeURL_WithoutAttr(t *testing.T) {
+	tests := []struct {
+		name string
+		url  string
+		want string
+	}{
+		{
+			name: "URL with attribute",
+			url:  "github:srid/nixci#extra-tests",
+			want: "github:srid/nixci",
+		},
+		{
+			name: "URL without attribute",
+			url:  "github:srid/nixci",
+			want: "github:srid/nixci",
+		},
+		{
+			name: "local path with attribute",
+			url:  ".#foo",
+			want: ".",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := NewFlakeURL(tt.url)
+			got := f.WithoutAttr()
+			if got.String() != tt.want {
+				t.Errorf("WithoutAttr() = %v, want %v", got.String(), tt.want)
+			}
+		})
+	}
+}
+
+func TestFlakeURL_SubFlakeURL(t *testing.T) {
+	tests := []struct {
+		name string
+		url  string
+		dir  string
+		want string
+	}{
+		{
+			name: "local path with current dir",
+			url:  ".",
+			dir:  ".",
+			want: ".",
+		},
+		{
+			name: "local path with subdirectory",
+			url:  ".",
+			dir:  "sub",
+			want: "sub",
+		},
+		{
+			name: "absolute local path",
+			url:  "/project",
+			dir:  "sub",
+			want: "/project/sub",
+		},
+		{
+			name: "github URL with current dir",
+			url:  "github:srid/nixci",
+			dir:  ".",
+			want: "github:srid/nixci",
+		},
+		{
+			name: "github URL with subdirectory",
+			url:  "github:srid/nixci",
+			dir:  "dev",
+			want: "github:srid/nixci?dir=dev",
+		},
+		{
+			name: "URL with existing query parameter",
+			url:  "git+https://example.org/my/repo?ref=master",
+			dir:  "dev",
+			want: "git+https://example.org/my/repo?ref=master&dir=dev",
+		},
+		{
+			name: "URL with attribute (fragment should come after query)",
+			url:  "github:srid/nixci#extra-tests",
+			dir:  "dev",
+			want: "github:srid/nixci?dir=dev#extra-tests",
+		},
+		{
+			name: "URL with query and attribute",
+			url:  "git+https://example.org/my/repo?ref=master#test",
+			dir:  "dev",
+			want: "git+https://example.org/my/repo?ref=master&dir=dev#test",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := NewFlakeURL(tt.url)
+			got := f.SubFlakeURL(tt.dir)
+			if got.String() != tt.want {
+				t.Errorf("SubFlakeURL() = %v, want %v", got.String(), tt.want)
+			}
+		})
+	}
+}

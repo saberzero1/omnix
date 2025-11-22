@@ -26,6 +26,45 @@ This release implements the majority of future work items identified in package 
   - Now correctly parses devour-flake JSON output with string paths
   - Comprehensive test coverage for JSON serialization (100% coverage of new methods)
 
+### Flake Package Migration (Rust → Go)
+- **FlakeURL Enhancements**: Added missing methods to FlakeURL type
+  - `GetAttr()` - Extract flake attribute from URL
+  - `WithoutAttr()` - Remove attribute from URL
+  - `SubFlakeURL()` - Generate sub-flake URLs with `?dir=` parameter support
+  - Full compatibility with Rust FlakeURL implementation
+- **FlakeOutputs**: Complete implementation of flake output tree
+  - `FlakeOutputs` type supporting both terminal values and nested attrsets
+  - `Val` type with derivation metadata (name, description, type)
+  - `Type` enum for all flake output types (package, devShell, check, app, etc.) with emoji icons
+  - `GetByPath()` for navigating output trees (e.g., `["packages", "x86_64-linux", "default"]`)
+  - `GetAttrsetOfVal()` for extracting all terminal values from an attrset
+- **Flake Commands**: Core flake operations now available in Go
+  - `Run()` - Execute apps with `nix run`
+  - `Develop()` - Enter development shells with `nix develop`
+  - `Build()` - Build derivations with JSON output parsing
+  - `FlakeLock()` - Lock flake inputs with advanced options
+  - `Check()` - Run flake checks
+  - `Show()` - Display flake outputs
+  - `CommandOptions` for consistent option handling across commands
+- **Flake Type**: Main flake structure with URL and outputs
+- **Nix Build Environment Integration**: ✨ NEW
+  - Go build now receives compile-time environment variables from Nix
+  - `GetDefaultFlakeSchemas()` - Access to flake-schemas path
+  - `GetInspectFlake()` - Access to inspect flake path
+  - `HasNixBuildEnvironment()` - Check if binary was built with Nix
+  - Environment variables injected via ldflags in `nix/modules/flake/go.nix`
+  - Development shell exports these variables for runtime use
+- **FlakeSchemas and FromNix()**: ✨ NEW
+  - `FlakeSchemas` type for representing flake schema inventory
+  - `InventoryItem` enum (Leaf or Attrset) for tree-like output structure
+  - `Leaf` type supporting both Val (output metadata) and Doc (documentation)
+  - JSON marshaling/unmarshaling with automatic type detection
+  - `GetFlakeSchemas()` - Fetch schemas using inspect-flake
+  - `FromNix()` - Construct Flake from URL with automatic output discovery
+  - Conversion from FlakeSchemas to FlakeOutputs with "children" unwrapping
+  - Filters documentation strings to only include actual outputs
+  - Test coverage: 83.1% ✅
+
 ### Health Package
 - **Configuration Support**: Added `LoadConfig` to load health settings from `om.yaml`
 - **Markdown Output**: Enhanced `PrintCheckResult` with markdown formatting

@@ -20,6 +20,8 @@ type FlakeOptions struct {
 	Impure bool
 	// Refresh refreshes cached flake data
 	Refresh bool
+	// NoWriteLockFile passes --no-write-lock-file
+	NoWriteLockFile bool
 }
 
 // Eval runs `nix eval <url> --json` and parses the result into the provided type.
@@ -52,6 +54,9 @@ func eval[T any](ctx context.Context, cmd Cmd, opts *FlakeOptions, url string) (
 		}
 		if opts.Refresh {
 			args = append(args, "--refresh")
+		}
+		if opts.NoWriteLockFile {
+			args = append(args, "--no-write-lock-file")
 		}
 		for input, flakeURL := range opts.OverrideInputs {
 			args = append(args, "--override-input", input, flakeURL)
