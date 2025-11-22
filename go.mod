@@ -1,6 +1,8 @@
 module github.com/saberzero1/omnix
 
-go 1.23.0
+go 1.24.0
+
+toolchain go1.24.10
 
 require (
 	github.com/charmbracelet/bubbles v0.21.0
@@ -58,5 +60,3 @@ require (
 	golang.org/x/term v0.31.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 )
-
-replace golang.org/x/sys => golang.org/x/sys v0.20.0
