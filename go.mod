@@ -59,4 +59,7 @@ require (
 	golang.org/x/text v0.24.0 // indirect
 )
 
+// Pin golang.org/x/sys to v0.20.0 for compatibility with Go 1.23.0 and Nix buildGo123Module.
+// Required for integration test fixes with TUI dependencies (bubbletea v1.3.4).
+// This replace directive can be removed once nixpkgs provides buildGo124Module or later.
 replace golang.org/x/sys => golang.org/x/sys v0.20.0

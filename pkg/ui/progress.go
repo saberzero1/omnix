@@ -18,9 +18,13 @@ type ProgressModel struct {
 	err      error
 }
 
-// NewProgress creates a new progress bar model
+// NewProgress creates a new progress bar model.
+// Total must be greater than 0 to avoid division by zero errors.
 func NewProgress(message string, total int) ProgressModel {
 	p := progress.New(progress.WithDefaultGradient())
+	if total <= 0 {
+		total = 1 // Prevent division by zero
+	}
 	return ProgressModel{
 		progress: p,
 		message:  message,
@@ -62,17 +66,20 @@ func (m ProgressModel) View() string {
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Render(fmt.Sprintf("✓ %s (%d/%d)", m.message, m.total, m.total))
 	}
 
+	if m.total == 0 {
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("226")).Render(fmt.Sprintf("%s (no work to do)", m.message))
+	}
+
 	percent := float64(m.current) / float64(m.total)
-	return fmt.Sprintf("%s %s %d/%d\n%s",
+	return fmt.Sprintf("%s %s %d/%d",
 		m.message,
 		m.progress.ViewAs(percent),
 		m.current,
 		m.total,
-		"",
 	)
 }
 
-// ProgressMsg updates the progress
+// ProgressMsg signals a progress update with the current step count.
 type ProgressMsg struct {
 	Current int
 }

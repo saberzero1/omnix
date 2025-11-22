@@ -63,20 +63,16 @@ func (m SpinnerModel) View() string {
 	return fmt.Sprintf("%s %s", m.spinner.View(), m.message)
 }
 
-// DoneMsg signals completion
-type DoneMsg struct{}
-
-// ErrorMsg signals an error
-type ErrorMsg struct {
-	Err error
-}
-
-// RunWithSpinner runs a function with a spinner display
+// RunWithSpinner runs a function with a spinner display.
+// A short delay allows the spinner to start rendering before the operation begins,
+// ensuring visual feedback for both fast and slow operations.
 func RunWithSpinner(message string, fn func() error) error {
 	p := tea.NewProgram(NewSpinner(message))
-	
+
 	go func() {
-		time.Sleep(100 * time.Millisecond) // Give spinner time to start
+		// Give spinner time to start rendering before executing the function.
+		// This ensures users see the spinner even for fast operations.
+		time.Sleep(100 * time.Millisecond)
 		err := fn()
 		if err != nil {
 			p.Send(ErrorMsg{Err: err})
