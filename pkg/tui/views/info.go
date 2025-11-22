@@ -148,4 +148,3 @@ func (s *SystemInfo) SetData(info *nix.Info) {
 	s.info = info
 	s.loading = false
 }
-
