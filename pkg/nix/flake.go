@@ -110,12 +110,20 @@ func (f FlakeURL) SubFlakeURL(dir string) FlakeURL {
 		return FlakeURL{url: joined}
 	}
 
-	// Non-path URL: append dir query parameter
+	// Non-path URL: append dir query parameter before any fragment (#)
 	url := f.url
+	fragment := ""
+	if idx := strings.Index(url, "#"); idx != -1 {
+		fragment = url[idx:]
+		url = url[:idx]
+	}
 	if strings.Contains(url, "?") {
 		url += "&dir=" + dir
 	} else {
 		url += "?dir=" + dir
+	}
+	if fragment != "" {
+		url += fragment
 	}
 	return FlakeURL{url: url}
 }

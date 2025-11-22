@@ -432,6 +432,18 @@ func TestFlakeURL_SubFlakeURL(t *testing.T) {
 			dir:  "dev",
 			want: "git+https://example.org/my/repo?ref=master&dir=dev",
 		},
+		{
+			name: "URL with attribute (fragment should come after query)",
+			url:  "github:srid/nixci#extra-tests",
+			dir:  "dev",
+			want: "github:srid/nixci?dir=dev#extra-tests",
+		},
+		{
+			name: "URL with query and attribute",
+			url:  "git+https://example.org/my/repo?ref=master#test",
+			dir:  "dev",
+			want: "git+https://example.org/my/repo?ref=master&dir=dev#test",
+		},
 	}
 
 	for _, tt := range tests {

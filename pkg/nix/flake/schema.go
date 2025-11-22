@@ -167,7 +167,7 @@ func FromNix(ctx context.Context, cmd Cmd, flakeURL string, system System) (*Fla
 }
 
 // GetFlakeSchemas retrieves the FlakeSchemas for a given flake URL.
-// This uses INSPECT_FLAKE and DEFAULT_FLAKE_SCHEMAS environment variables.
+// This uses the inspect flake and default flake-schemas paths injected at build time.
 func GetFlakeSchemas(ctx context.Context, cmd Cmd, flakeURL string, system System) (*FlakeSchemas, error) {
 	// Check if we have the necessary environment
 	if !HasNixBuildEnvironment() {

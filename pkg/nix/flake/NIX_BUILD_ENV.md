@@ -53,14 +53,23 @@ echo $DEFAULT_FLAKE_SCHEMAS
 echo $INSPECT_FLAKE
 ```
 
-This allows Go code to use these values at runtime when needed.
+This allows developers to inspect these values for debugging purposes.
 
-## Future Work
+## Implemented Features
 
-The `FromNix()` method on the `Flake` type can now be implemented using:
-1. `GetInspectFlake()` to get the inspect flake path
-2. `GetDefaultFlakeSchemas()` to get the flake-schemas path
-3. The existing `Eval()` function to query the inspect flake
-4. Parse the results into `FlakeOutputs`
+The following features are now fully implemented:
 
-This requires implementing the FlakeSchemas parsing logic, which involves handling the inventory format returned by the inspect flake.
+1. **FlakeSchemas** (`pkg/nix/flake/schema.go`):
+   - Complete schema inventory representation
+   - Custom JSON marshaling/unmarshaling
+   - Conversion to FlakeOutputs with "children" unwrapping
+
+2. **GetFlakeSchemas()**:
+   - Fetches schemas using inspect-flake
+   - Uses compile-time paths from Nix build
+   - Supports all known systems
+
+3. **FromNix()**:
+   - Constructs complete Flake from URL automatically
+   - Single function call for full flake analysis
+   - Example: `flake.FromNix(ctx, cmd, ".", flake.SystemLinuxX86_64)`
