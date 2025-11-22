@@ -174,11 +174,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		// Update all views with new size
-		m.dashboard.SetSize(msg.Width, msg.Height-4) // Reserve space for header/footer
-		m.healthView.SetSize(msg.Width, msg.Height-4)
-		m.infoView.SetSize(msg.Width, msg.Height-4)
-		m.flakeView.SetSize(msg.Width, msg.Height-4)
-		m.helpView.SetSize(msg.Width, msg.Height-4)
+		// Reserve 3 lines for header (2) and footer (1)
+		contentHeight := msg.Height - 3
+		m.dashboard.SetSize(msg.Width, contentHeight)
+		m.healthView.SetSize(msg.Width, contentHeight)
+		m.infoView.SetSize(msg.Width, contentHeight)
+		m.flakeView.SetSize(msg.Width, contentHeight)
+		m.helpView.SetSize(msg.Width, contentHeight)
 		return m, nil
 
 	case healthDataMsg:
@@ -239,10 +241,21 @@ func (m *Model) View() string {
 	header := m.renderHeader()
 	footer := m.renderFooter()
 
+	// Calculate remaining space for content
+	headerHeight := lipgloss.Height(header)
+	footerHeight := lipgloss.Height(footer)
+	contentHeight := m.height - headerHeight - footerHeight
+
+	// Ensure content fills the available space
+	contentStyle := lipgloss.NewStyle().
+		Height(contentHeight)
+	
+	paddedContent := contentStyle.Render(content)
+
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		header,
-		content,
+		paddedContent,
 		footer,
 	)
 }
