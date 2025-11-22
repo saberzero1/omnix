@@ -29,6 +29,8 @@ func TestNewFlake(t *testing.T) {
 }
 
 func TestFlake_Structure(t *testing.T) {
+	const helloPkgName = "hello"
+	
 	// Test that we can create a complete flake structure
 	name1 := "my-dev-shell"
 	desc1 := "Development environment"
@@ -38,7 +40,7 @@ func TestFlake_Structure(t *testing.T) {
 		ShortDescription: &desc1,
 	})
 
-	name2 := "hello"
+	name2 := helloPkgName
 	desc2 := "Hello world program"
 	defaultPkg := NewValOutput(Val{
 		Type_:            TypePackage,
@@ -71,5 +73,5 @@ func TestFlake_Structure(t *testing.T) {
 	pkgResult := flake.Outputs.GetByPath([]string{"packages", "x86_64-linux", "default"})
 	assert.NotNil(t, pkgResult)
 	assert.Equal(t, TypePackage, pkgResult.GetVal().Type_)
-	assert.Equal(t, "hello", *pkgResult.GetVal().DerivationName)
+	assert.Equal(t, helloPkgName, *pkgResult.GetVal().DerivationName)
 }

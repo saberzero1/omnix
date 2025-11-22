@@ -54,7 +54,16 @@ This release implements the majority of future work items identified in package 
   - `HasNixBuildEnvironment()` - Check if binary was built with Nix
   - Environment variables injected via ldflags in `nix/modules/flake/go.nix`
   - Development shell exports these variables for runtime use
-  - Enables future implementation of `FromNix()` method for flake analysis
+- **FlakeSchemas and FromNix()**: ✨ NEW
+  - `FlakeSchemas` type for representing flake schema inventory
+  - `InventoryItem` enum (Leaf or Attrset) for tree-like output structure
+  - `Leaf` type supporting both Val (output metadata) and Doc (documentation)
+  - JSON marshaling/unmarshaling with automatic type detection
+  - `GetFlakeSchemas()` - Fetch schemas using inspect-flake
+  - `FromNix()` - Construct Flake from URL with automatic output discovery
+  - Conversion from FlakeSchemas to FlakeOutputs with "children" unwrapping
+  - Filters documentation strings to only include actual outputs
+  - Test coverage: 83.1% ✅
 
 ### Health Package
 - **Configuration Support**: Added `LoadConfig` to load health settings from `om.yaml`
