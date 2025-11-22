@@ -45,6 +45,7 @@ It provides various commands to make working with Nix easier:
   - om ci: Run CI for Nix projects
   - om develop: Manage development shells
   - om run: Run tasks from om/ directory
+  - om tui: Launch terminal user interface
   - om completion: Generate shell completions`,
 	// Version will be set by SetVersion()
 	Version: "",
@@ -79,5 +80,6 @@ func init() {
 	rootCmd.AddCommand(cmd.NewCICmd())
 	rootCmd.AddCommand(cmd.NewDevelopCmd())
 	rootCmd.AddCommand(cmd.NewRunCmd())
+	rootCmd.AddCommand(cmd.NewTUICmd())
 	rootCmd.AddCommand(cmd.NewCompletionCmd())
 }
