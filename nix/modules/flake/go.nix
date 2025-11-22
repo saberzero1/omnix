@@ -14,14 +14,13 @@
     {
       packages = {
         # Go version of omnix (v2.0.0)
-        # Using buildGo123Module - it can build Go 1.24 code
         omnix-go = pkgs.buildGo123Module rec {
           pname = "omnix";
           version = "2.0.0-beta";
           src = lib.cleanSource inputs.self;
 
           # vendorHash computed by Nix (set to lib.fakeHash, build, then use reported hash)
-          vendorHash = "sha256-2s+udvbpT1usAJT39DiwuSQB1ZCMVJXoB83Ax04I8GI=";
+          vendorHash = "sha256-3MnvLADYS4vDYMDNAOzg/vfJtPKBgYgVl1H2uiq9lkU=";
 
           # Disable CGO for static linking
           CGO_ENABLED = 0;
