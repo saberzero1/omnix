@@ -17,10 +17,20 @@ func NewFlake(url string, outputs *FlakeOutputs) *Flake {
 }
 
 // Note: FromNix method to construct a Flake from a URL using inspect-flake
-// is not implemented yet as it requires:
-// 1. Environment variables DEFAULT_FLAKE_SCHEMAS and INSPECT_FLAKE (set during Nix build)
-// 2. FlakeSchemas implementation with inventory parsing
-// 3. Integration with the flake-schemas ecosystem
+// can now be implemented using the environment variables available via:
+// - GetDefaultFlakeSchemas() - returns path to flake-schemas
+// - GetInspectFlake() - returns path to inspect flake
+// - HasNixBuildEnvironment() - checks if these are available
 //
-// This will be added in a future migration phase when the Nix build environment
-// setup is complete in Go.
+// These values are injected at build time when building with Nix.
+// When building with `go build`, they will be empty and HasNixBuildEnvironment()
+// will return false.
+//
+// Example implementation would:
+// 1. Check HasNixBuildEnvironment() - if false, return error
+// 2. Use GetInspectFlake() to construct the inspect flake URL
+// 3. Use Eval() to call the inspect function with appropriate inputs
+// 4. Parse the result into FlakeSchemas and convert to FlakeOutputs
+//
+// This implementation requires integration with the nix eval functionality
+// and proper handling of the flake-schemas inventory format.

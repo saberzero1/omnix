@@ -47,7 +47,14 @@ This release implements the majority of future work items identified in package 
   - `Show()` - Display flake outputs
   - `CommandOptions` for consistent option handling across commands
 - **Flake Type**: Main flake structure with URL and outputs
-  - Note: `FromNix()` method using flake-schemas will be added in future phase
+- **Nix Build Environment Integration**: ✨ NEW
+  - Go build now receives compile-time environment variables from Nix
+  - `GetDefaultFlakeSchemas()` - Access to flake-schemas path
+  - `GetInspectFlake()` - Access to inspect flake path
+  - `HasNixBuildEnvironment()` - Check if binary was built with Nix
+  - Environment variables injected via ldflags in `nix/modules/flake/go.nix`
+  - Development shell exports these variables for runtime use
+  - Enables future implementation of `FromNix()` method for flake analysis
 
 ### Health Package
 - **Configuration Support**: Added `LoadConfig` to load health settings from `om.yaml`
