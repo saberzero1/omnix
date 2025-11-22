@@ -368,8 +368,9 @@ func (m *Model) loadSystemInfo() tea.Cmd {
 
 // loadFlakeData loads flake data
 func (m *Model) loadFlakeData() tea.Cmd {
+	// TODO: Implement flake data loading when flake browser view is enhanced
+	// This will load and parse flake metadata for interactive browsing
 	return func() tea.Msg {
-		// TODO: Implement flake data loading
 		return nil
 	}
 }
