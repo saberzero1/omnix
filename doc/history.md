@@ -26,6 +26,29 @@ This release implements the majority of future work items identified in package 
   - Now correctly parses devour-flake JSON output with string paths
   - Comprehensive test coverage for JSON serialization (100% coverage of new methods)
 
+### Flake Package Migration (Rust → Go)
+- **FlakeURL Enhancements**: Added missing methods to FlakeURL type
+  - `GetAttr()` - Extract flake attribute from URL
+  - `WithoutAttr()` - Remove attribute from URL
+  - `SubFlakeURL()` - Generate sub-flake URLs with `?dir=` parameter support
+  - Full compatibility with Rust FlakeURL implementation
+- **FlakeOutputs**: Complete implementation of flake output tree
+  - `FlakeOutputs` type supporting both terminal values and nested attrsets
+  - `Val` type with derivation metadata (name, description, type)
+  - `Type` enum for all flake output types (package, devShell, check, app, etc.) with emoji icons
+  - `GetByPath()` for navigating output trees (e.g., `["packages", "x86_64-linux", "default"]`)
+  - `GetAttrsetOfVal()` for extracting all terminal values from an attrset
+- **Flake Commands**: Core flake operations now available in Go
+  - `Run()` - Execute apps with `nix run`
+  - `Develop()` - Enter development shells with `nix develop`
+  - `Build()` - Build derivations with JSON output parsing
+  - `FlakeLock()` - Lock flake inputs with advanced options
+  - `Check()` - Run flake checks
+  - `Show()` - Display flake outputs
+  - `CommandOptions` for consistent option handling across commands
+- **Flake Type**: Main flake structure with URL and outputs
+  - Note: `FromNix()` method using flake-schemas will be added in future phase
+
 ### Health Package
 - **Configuration Support**: Added `LoadConfig` to load health settings from `om.yaml`
 - **Markdown Output**: Enhanced `PrintCheckResult` with markdown formatting

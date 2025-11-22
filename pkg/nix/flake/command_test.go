@@ -107,12 +107,12 @@ func TestRun(t *testing.T) {
 			wantErr:     false,
 		},
 		{
-			name:        "run with error",
-			opts:        nil,
-			url:         "nixpkgs#hello",
-			appArgs:     []string{},
-			mockError:   errors.New("command failed"),
-			wantErr:     true,
+			name:      "run with error",
+			opts:      nil,
+			url:       "nixpkgs#hello",
+			appArgs:   []string{},
+			mockError: errors.New("command failed"),
+			wantErr:   true,
 		},
 	}
 
@@ -429,7 +429,7 @@ func TestApplyOptions(t *testing.T) {
 			args: []string{"build"},
 			opts: &CommandOptions{
 				OverrideInputs: map[string]string{
-					"nixpkgs": "github:NixOS/nixpkgs",
+					"nixpkgs":     "github:NixOS/nixpkgs",
 					"flake-utils": "github:numtide/flake-utils",
 				},
 				NoWriteLockFile: true,
