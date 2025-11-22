@@ -28,11 +28,6 @@ func (f *FlakeBrowser) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the flake browser view
 func (f *FlakeBrowser) View() string {
-	style := lipgloss.NewStyle().
-		Padding(2).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("63"))
-
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("86"))
@@ -43,11 +38,16 @@ func (f *FlakeBrowser) View() string {
 			"This will allow you to explore Nix flake outputs,\n" +
 			"including packages, devShells, apps, and more.\n")
 
-	return style.Render(lipgloss.JoinVertical(
+	combined := lipgloss.JoinVertical(
 		lipgloss.Left,
 		titleStyle.Render("Flake Browser"),
 		content,
-	))
+	)
+
+	return lipgloss.NewStyle().
+		Width(f.width).
+		Padding(2).
+		Render(combined)
 }
 
 // SetSize sets the size of the view

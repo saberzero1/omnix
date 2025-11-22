@@ -28,11 +28,6 @@ func (d *Dashboard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the dashboard
 func (d *Dashboard) View() string {
-	style := lipgloss.NewStyle().
-		Padding(2).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("63"))
-
 	title := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("86")).
@@ -50,7 +45,13 @@ func (d *Dashboard) View() string {
 			"  ? - Toggle help\n" +
 			"  q - Quit\n")
 
-	return style.Render(lipgloss.JoinVertical(lipgloss.Left, title, content))
+	combined := lipgloss.JoinVertical(lipgloss.Left, title, content)
+
+	// Use full width with minimal padding
+	return lipgloss.NewStyle().
+		Width(d.width).
+		Padding(2).
+		Render(combined)
 }
 
 // SetSize sets the size of the dashboard

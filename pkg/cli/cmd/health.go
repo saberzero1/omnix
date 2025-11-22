@@ -8,6 +8,7 @@ import (
 
 	"github.com/saberzero1/omnix/pkg/health"
 	"github.com/saberzero1/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/ui"
 )
 
 var (
@@ -61,13 +62,8 @@ func runHealth(cmd *cobra.Command, args []string) error {
 		fmt.Printf("System: %s\n", nixInfo.Env.OS.String())
 		fmt.Printf("Nix Version: %s\n\n", nixInfo.Version.String())
 
-		// Print each check result
-		for _, result := range results {
-			if err := health.PrintCheckResult(result); err != nil {
-				return fmt.Errorf("failed to print check result: %w", err)
-			}
-			fmt.Println()
-		}
+		// Use the fancy TUI rendering
+		fmt.Println(ui.RenderHealthChecks(results, 0))
 	}
 
 	// Evaluate results and get exit code

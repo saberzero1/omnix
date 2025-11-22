@@ -107,6 +107,7 @@ func (h *Help) View() string {
 	content.WriteString(valueStyle.Render("Built with Bubble Tea (https://github.com/charmbracelet/bubbletea)\n"))
 
 	return lipgloss.NewStyle().
+		Width(h.width).
 		Padding(1, 2).
 		Render(content.String())
 }

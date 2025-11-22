@@ -39,6 +39,7 @@ func (s *SystemInfo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (s *SystemInfo) View() string {
 	if s.loading && s.info == nil {
 		return lipgloss.NewStyle().
+			Width(s.width).
 			Padding(2).
 			Render("Loading system information...")
 	}
@@ -133,6 +134,7 @@ func (s *SystemInfo) View() string {
 	}
 
 	return lipgloss.NewStyle().
+		Width(s.width).
 		Padding(1, 2).
 		Render(content.String())
 }
