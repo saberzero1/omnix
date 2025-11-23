@@ -34,17 +34,21 @@ func SetupLogging(verbosity LogLevel, bare bool) error {
 	config.OutputPaths = []string{"stderr"}
 	config.ErrorOutputPaths = []string{"stderr"}
 
-	// Set encoding based on bare flag
-	if bare {
-		config.Encoding = "console"
+	// Set encoding to console for prettier output
+	config.Encoding = "console"
+
+	// Hide metadata (timestamp, level, caller) unless in debug/trace mode
+	// This makes output cleaner by default
+	if bare || verbosity < DebugLevel {
 		config.EncoderConfig.TimeKey = ""
 		config.EncoderConfig.LevelKey = ""
-		config.EncoderConfig.NameKey = ""
 		config.EncoderConfig.CallerKey = ""
+		config.EncoderConfig.StacktraceKey = ""
 	} else {
-		config.Encoding = "console"
+		// In debug/trace mode, show full metadata
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+		config.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
 	}
 
 	// Configure log level
