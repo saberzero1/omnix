@@ -10,6 +10,12 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	// maxOutputDisplayLength is the maximum length of output to display in the UI
+	// Longer output will be truncated with a "... (truncated)" message
+	maxOutputDisplayLength = 500
+)
+
 // CIRunnerModel manages the UI for CI runs
 type CIRunnerModel struct {
 	flake         string
@@ -327,8 +333,8 @@ func (m CIRunnerModel) renderStep(step StepProgress) string {
 
 		// Limit output length for display
 		output := step.Output
-		if len(output) > 500 {
-			output = output[:500] + "... (truncated)"
+		if len(output) > maxOutputDisplayLength {
+			output = output[:maxOutputDisplayLength] + "... (truncated)"
 		}
 		b.WriteString(outputStyle.Render(output))
 		b.WriteString("\n")
@@ -369,38 +375,4 @@ func (m CIRunnerModel) getStatusStyle(status StepStatus) lipgloss.Style {
 	default:
 		return lipgloss.NewStyle()
 	}
-}
-
-// Message types for CI runner
-
-// SubflakeStartMsg signals the start of a subflake run
-type SubflakeStartMsg struct {
-	Index int
-	Name  string
-}
-
-// SubflakeCompleteMsg signals the completion of a subflake run
-type SubflakeCompleteMsg struct {
-	Index int
-	Error string
-}
-
-// StepStartMsg signals the start of a CI step
-type StepStartMsg struct {
-	SubflakeIndex int
-	StepName      string
-}
-
-// StepCompleteMsg signals the completion of a CI step
-type StepCompleteMsg struct {
-	SubflakeIndex int
-	Output        string
-	Error         string
-}
-
-// StepSkipMsg signals that a step was skipped
-type StepSkipMsg struct {
-	SubflakeIndex int
-	StepName      string
-	Reason        string
 }
