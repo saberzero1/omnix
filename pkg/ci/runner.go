@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/saberzero1/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix/store"
 	"go.uber.org/zap"
 )
 
@@ -242,9 +243,9 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 	if subflake.Steps.Build.Enable {
 		var stepResult StepResult
 		if opts.RemoteHost != "" {
-			stepResult = runBuildStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.Build, opts)
+			stepResult = runBuildStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.Build, opts, subflake)
 		} else {
-			stepResult = runBuildStep(ctx, subflakeURL, subflake.Steps.Build, opts)
+			stepResult = runBuildStep(ctx, subflakeURL, subflake.Steps.Build, opts, subflake)
 		}
 		result.Steps["build"] = stepResult
 		if !stepResult.Success {
@@ -256,9 +257,9 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 	if subflake.Steps.Lockfile.Enable {
 		var stepResult StepResult
 		if opts.RemoteHost != "" {
-			stepResult = runLockfileStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.Lockfile)
+			stepResult = runLockfileStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.Lockfile, subflake)
 		} else {
-			stepResult = runLockfileStep(ctx, subflakeURL, subflake.Steps.Lockfile)
+			stepResult = runLockfileStep(ctx, subflakeURL, subflake.Steps.Lockfile, subflake)
 		}
 		result.Steps["lockfile"] = stepResult
 		if !stepResult.Success {
@@ -270,9 +271,9 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 	if subflake.Steps.FlakeCheck.Enable {
 		var stepResult StepResult
 		if opts.RemoteHost != "" {
-			stepResult = runFlakeCheckStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.FlakeCheck)
+			stepResult = runFlakeCheckStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.FlakeCheck, subflake)
 		} else {
-			stepResult = runFlakeCheckStep(ctx, subflakeURL, subflake.Steps.FlakeCheck)
+			stepResult = runFlakeCheckStep(ctx, subflakeURL, subflake.Steps.FlakeCheck, subflake)
 		}
 		result.Steps["flakeCheck"] = stepResult
 		if !stepResult.Success {
@@ -289,9 +290,9 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 
 		var stepResult StepResult
 		if opts.RemoteHost != "" {
-			stepResult = runCustomStepRemote(ctx, opts.RemoteHost, subflakeURL, name, customStep)
+			stepResult = runCustomStepRemote(ctx, opts.RemoteHost, subflakeURL, name, customStep, subflake)
 		} else {
-			stepResult = runCustomStep(ctx, subflakeURL, name, customStep)
+			stepResult = runCustomStep(ctx, subflakeURL, name, customStep, subflake)
 		}
 		result.Steps["custom:"+name] = stepResult
 		if !stepResult.Success {
@@ -304,15 +305,15 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 }
 
 // runBuildStep executes the build step using devour-flake
-func runBuildStep(ctx context.Context, flake nix.FlakeURL, step BuildStep, opts RunOptions) StepResult {
+func runBuildStep(ctx context.Context, flake nix.FlakeURL, step BuildStep, opts RunOptions, subflake SubflakeConfig) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "build",
 		Success: true,
 	}
 
-	// Use devour-flake to build all outputs
-	output, err := nix.DevourFlake(ctx, flake, opts.Systems, step.Impure)
+	// Use devour-flake to build all outputs with override inputs
+	output, err := nix.DevourFlakeWithOverrides(ctx, flake, opts.Systems, step.Impure, subflake.OverrideInputs)
 	if err != nil {
 		result.Success = false
 		result.Error = err.Error()
@@ -326,17 +327,42 @@ func runBuildStep(ctx context.Context, flake nix.FlakeURL, step BuildStep, opts 
 		outPaths = append(outPaths, path.String())
 	}
 	result.Output = fmt.Sprintf("Built %d outputs:\n%s", len(outPaths), strings.Join(outPaths, "\n"))
+
+	// If requested, fetch all dependencies
+	if opts.IncludeAllDependencies && len(output.OutPaths) > 0 {
+		allDeps, err := fetchAllDependencies(ctx, output.OutPaths)
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Sprintf("failed to fetch dependencies: %v", err)
+		} else {
+			result.Output += fmt.Sprintf("\n\nTotal dependencies: %d", len(allDeps))
+		}
+	}
+
 	result.Duration = time.Since(start)
 
 	return result
 }
 
+// fetchAllDependencies fetches all build and runtime dependencies for the given paths
+func fetchAllDependencies(ctx context.Context, paths []store.Path) ([]store.Path, error) {
+	cmd := store.NewCmd()
+	return cmd.FetchAllDeps(ctx, paths)
+}
+
 // runLockfileStep executes the lockfile check step
-func runLockfileStep(ctx context.Context, flake nix.FlakeURL, _ LockfileStep) StepResult {
+func runLockfileStep(ctx context.Context, flake nix.FlakeURL, step LockfileStep, subflake SubflakeConfig) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "lockfile",
 		Success: true,
+	}
+
+	// Skip lockfile check if there are override inputs (like Rust version)
+	if len(subflake.OverrideInputs) > 0 {
+		result.Output = "Skipped (has override inputs)"
+		result.Duration = time.Since(start)
+		return result
 	}
 
 	// Check if flake.lock is up to date
@@ -353,16 +379,24 @@ func runLockfileStep(ctx context.Context, flake nix.FlakeURL, _ LockfileStep) St
 }
 
 // runFlakeCheckStep executes the flake check step
-func runFlakeCheckStep(ctx context.Context, flake nix.FlakeURL, _ FlakeCheckStep) StepResult {
+func runFlakeCheckStep(ctx context.Context, flake nix.FlakeURL, step FlakeCheckStep, subflake SubflakeConfig) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "flakeCheck",
 		Success: true,
 	}
 
+	// Build nix flake check command with override inputs
+	args := []string{"flake", "check", flake.String()}
+
+	// Add override inputs if specified
+	for inputName, inputURL := range subflake.OverrideInputs {
+		args = append(args, "--override-input", inputName, inputURL)
+	}
+
 	// Run nix flake check
 	cmd := nix.NewCmd()
-	output, err := cmd.Run(ctx, "flake", "check", flake.String())
+	output, err := cmd.Run(ctx, args...)
 	if err != nil {
 		result.Success = false
 		result.Error = err.Error()
@@ -374,7 +408,7 @@ func runFlakeCheckStep(ctx context.Context, flake nix.FlakeURL, _ FlakeCheckStep
 }
 
 // runCustomStep executes a custom step
-func runCustomStep(ctx context.Context, flake nix.FlakeURL, name string, step CustomStep) StepResult {
+func runCustomStep(ctx context.Context, flake nix.FlakeURL, name string, step CustomStep, subflake SubflakeConfig) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "custom:" + name,
@@ -387,10 +421,10 @@ func runCustomStep(ctx context.Context, flake nix.FlakeURL, name string, step Cu
 	switch step.Type {
 	case CustomStepTypeApp:
 		// Run a flake app
-		output, err = runFlakeApp(ctx, flake, step)
+		output, err = runFlakeApp(ctx, flake, step, subflake)
 	case CustomStepTypeDevShell:
 		// Run a command in a devshell
-		output, err = runDevShellCommand(ctx, flake, step)
+		output, err = runDevShellCommand(ctx, flake, step, subflake)
 	default:
 		result.Success = false
 		result.Error = fmt.Sprintf("unknown custom step type: %s", step.Type)
@@ -409,12 +443,18 @@ func runCustomStep(ctx context.Context, flake nix.FlakeURL, name string, step Cu
 }
 
 // runFlakeApp runs a flake app
-func runFlakeApp(ctx context.Context, flake nix.FlakeURL, step CustomStep) (string, error) {
+func runFlakeApp(ctx context.Context, flake nix.FlakeURL, step CustomStep, subflake SubflakeConfig) (string, error) {
 	appName := getFlakeAttrName(step.Name)
 	appURL := buildFlakeURLWithAttr(flake, appName)
 
 	// Build nix run command
 	args := []string{"run", appURL}
+
+	// Add override inputs if specified
+	for inputName, inputURL := range subflake.OverrideInputs {
+		args = append(args, "--override-input", inputName, inputURL)
+	}
+
 	if len(step.Args) > 0 {
 		args = append(args, "--")
 		args = append(args, step.Args...)
@@ -425,7 +465,7 @@ func runFlakeApp(ctx context.Context, flake nix.FlakeURL, step CustomStep) (stri
 }
 
 // runDevShellCommand runs a command in a devshell
-func runDevShellCommand(ctx context.Context, flake nix.FlakeURL, step CustomStep) (string, error) {
+func runDevShellCommand(ctx context.Context, flake nix.FlakeURL, step CustomStep, subflake SubflakeConfig) (string, error) {
 	if len(step.Command) == 0 {
 		return "", fmt.Errorf("devshell step has no command")
 	}
@@ -434,7 +474,14 @@ func runDevShellCommand(ctx context.Context, flake nix.FlakeURL, step CustomStep
 	shellURL := buildFlakeURLWithAttr(flake, shellName)
 
 	// Build nix develop command
-	args := []string{"develop", shellURL, "-c"}
+	args := []string{"develop", shellURL}
+
+	// Add override inputs if specified
+	for inputName, inputURL := range subflake.OverrideInputs {
+		args = append(args, "--override-input", inputName, inputURL)
+	}
+
+	args = append(args, "-c")
 	args = append(args, step.Command...)
 
 	cmd := nix.NewCmd()
@@ -491,7 +538,7 @@ func executeRemoteCommand(ctx context.Context, host string, command []string) (s
 }
 
 // runBuildStepRemote executes the build step on a remote host using devour-flake
-func runBuildStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step BuildStep, opts RunOptions) StepResult {
+func runBuildStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step BuildStep, opts RunOptions, subflake SubflakeConfig) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "build",
@@ -518,6 +565,11 @@ func runBuildStepRemote(ctx context.Context, host string, flake nix.FlakeURL, st
 		args = append(args, "--override-input", "systems", systemsFlakeURL.String())
 	}
 
+	// Add override inputs from subflake config
+	for inputName, inputURL := range subflake.OverrideInputs {
+		args = append(args, "--override-input", inputName, inputURL)
+	}
+
 	output, err := executeRemoteCommand(ctx, host, args)
 	if err != nil {
 		result.Success = false
@@ -530,11 +582,18 @@ func runBuildStepRemote(ctx context.Context, host string, flake nix.FlakeURL, st
 }
 
 // runLockfileStepRemote executes the lockfile check step on a remote host
-func runLockfileStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step LockfileStep) StepResult {
+func runLockfileStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step LockfileStep, subflake SubflakeConfig) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "lockfile",
 		Success: true,
+	}
+
+	// Skip lockfile check if there are override inputs (like Rust version)
+	if len(subflake.OverrideInputs) > 0 {
+		result.Output = "Skipped (has override inputs)"
+		result.Duration = time.Since(start)
+		return result
 	}
 
 	args := []string{"nix", "flake", "lock", "--no-update-lock-file", flake.String()}
@@ -550,7 +609,7 @@ func runLockfileStepRemote(ctx context.Context, host string, flake nix.FlakeURL,
 }
 
 // runFlakeCheckStepRemote executes the flake check step on a remote host
-func runFlakeCheckStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step FlakeCheckStep) StepResult {
+func runFlakeCheckStepRemote(ctx context.Context, host string, flake nix.FlakeURL, step FlakeCheckStep, subflake SubflakeConfig) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "flakeCheck",
@@ -558,6 +617,12 @@ func runFlakeCheckStepRemote(ctx context.Context, host string, flake nix.FlakeUR
 	}
 
 	args := []string{"nix", "flake", "check", flake.String()}
+
+	// Add override inputs if specified
+	for inputName, inputURL := range subflake.OverrideInputs {
+		args = append(args, "--override-input", inputName, inputURL)
+	}
+
 	output, err := executeRemoteCommand(ctx, host, args)
 	if err != nil {
 		result.Success = false
@@ -570,7 +635,7 @@ func runFlakeCheckStepRemote(ctx context.Context, host string, flake nix.FlakeUR
 }
 
 // runCustomStepRemote executes a custom step on a remote host
-func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, name string, step CustomStep) StepResult {
+func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, name string, step CustomStep, subflake SubflakeConfig) StepResult {
 	start := time.Now()
 	result := StepResult{
 		Name:    "custom:" + name,
@@ -585,6 +650,12 @@ func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, n
 		appName := getFlakeAttrName(step.Name)
 		appURL := buildFlakeURLWithAttr(flake, appName)
 		args = []string{"nix", "run", appURL}
+
+		// Add override inputs if specified
+		for inputName, inputURL := range subflake.OverrideInputs {
+			args = append(args, "--override-input", inputName, inputURL)
+		}
+
 		if len(step.Args) > 0 {
 			args = append(args, "--")
 			args = append(args, step.Args...)
@@ -599,7 +670,14 @@ func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, n
 		}
 		shellName := getFlakeAttrName(step.Name)
 		shellURL := buildFlakeURLWithAttr(flake, shellName)
-		args = []string{"nix", "develop", shellURL, "-c"}
+		args = []string{"nix", "develop", shellURL}
+
+		// Add override inputs if specified
+		for inputName, inputURL := range subflake.OverrideInputs {
+			args = append(args, "--override-input", inputName, inputURL)
+		}
+
+		args = append(args, "-c")
 		args = append(args, step.Command...)
 	default:
 		result.Success = false

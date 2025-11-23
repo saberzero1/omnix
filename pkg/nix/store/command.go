@@ -12,6 +12,11 @@ import (
 // StoreCmd represents the nix-store command.
 type StoreCmd struct{}
 
+// NewCmd creates a new StoreCmd instance.
+func NewCmd() *StoreCmd {
+	return &StoreCmd{}
+}
+
 // NewStoreCmd creates a new StoreCmd instance.
 func NewStoreCmd() *StoreCmd {
 	return &StoreCmd{}

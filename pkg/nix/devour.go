@@ -31,6 +31,11 @@ type DevourFlakeOutput struct {
 
 // DevourFlake builds all outputs of a flake using devour-flake
 func DevourFlake(ctx context.Context, flake FlakeURL, systems []string, impure bool) (*DevourFlakeOutput, error) {
+	return DevourFlakeWithOverrides(ctx, flake, systems, impure, nil)
+}
+
+// DevourFlakeWithOverrides builds all outputs of a flake using devour-flake with override inputs
+func DevourFlakeWithOverrides(ctx context.Context, flake FlakeURL, systems []string, impure bool, overrideInputs map[string]string) (*DevourFlakeOutput, error) {
 	// Build the devour-flake command
 	devourURL := DevourFlakeURL() + "#json"
 
@@ -59,6 +64,13 @@ func DevourFlake(ctx context.Context, flake FlakeURL, systems []string, impure b
 		}
 		args = append(args,
 			"--override-input", "systems", systemsFlakeURL.String(),
+		)
+	}
+
+	// Add additional override inputs
+	for inputName, inputURL := range overrideInputs {
+		args = append(args,
+			"--override-input", inputName, inputURL,
 		)
 	}
 
