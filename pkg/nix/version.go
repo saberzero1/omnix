@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // Version represents a Nix version parsed from `nix --version`.
@@ -51,7 +52,7 @@ func ParseVersion(s string) (Version, error) {
 	}
 
 	// Check if this is Determinate Nix
-	isDeterminate := regexp.MustCompile(`Determinate Nix`).MatchString(s)
+	isDeterminate := strings.Contains(s, "Determinate Nix")
 
 	return Version{
 		Major:          uint32(major),
