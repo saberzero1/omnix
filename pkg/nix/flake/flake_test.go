@@ -30,7 +30,7 @@ func TestNewFlake(t *testing.T) {
 
 func TestFlake_Structure(t *testing.T) {
 	const helloPkgName = "hello"
-	
+
 	// Test that we can create a complete flake structure
 	name1 := "my-dev-shell"
 	desc1 := "Development environment"

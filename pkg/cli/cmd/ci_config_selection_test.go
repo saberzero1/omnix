@@ -17,7 +17,7 @@ import (
 func TestCIRun_FlakeAttributeHandling(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	
+
 	// Create an om.yaml with multiple configs
 	configPath := filepath.Join(tmpDir, "om.yaml")
 	configContent := `
@@ -64,39 +64,39 @@ ci:
 	require.NoError(t, err)
 
 	tests := []struct {
-		name           string
-		flakeURL       string
-		expectedConfig string
+		name              string
+		flakeURL          string
+		expectedConfig    string
 		expectedSubflakes []string
-		expectError    bool
+		expectError       bool
 	}{
 		{
-			name:           "no attribute - defaults to 'default' config",
-			flakeURL:       ".",
-			expectedConfig: "",  // Empty means default
+			name:              "no attribute - defaults to 'default' config",
+			flakeURL:          ".",
+			expectedConfig:    "", // Empty means default
 			expectedSubflakes: []string{"main"},
-			expectError:    false,
+			expectError:       false,
 		},
 		{
-			name:           "explicit default attribute",
-			flakeURL:       ".#default",
-			expectedConfig: "default",
+			name:              "explicit default attribute",
+			flakeURL:          ".#default",
+			expectedConfig:    "default",
 			expectedSubflakes: []string{"main"},
-			expectError:    false,
+			expectError:       false,
 		},
 		{
-			name:           "switch config via attribute",
-			flakeURL:       ".#switch",
-			expectedConfig: "switch",
+			name:              "switch config via attribute",
+			flakeURL:          ".#switch",
+			expectedConfig:    "switch",
 			expectedSubflakes: []string{"custom"},
-			expectError:    false,
+			expectError:       false,
 		},
 		{
-			name:           "production config via attribute",
-			flakeURL:       ".#production",
-			expectedConfig: "production",
+			name:              "production config via attribute",
+			flakeURL:          ".#production",
+			expectedConfig:    "production",
 			expectedSubflakes: []string{"prod-main"},
-			expectError:    false,
+			expectError:       false,
 		},
 		{
 			name:           "non-existent config",
@@ -131,7 +131,7 @@ ci:
 				assert.Contains(t, err.Error(), "not found")
 			} else {
 				require.NoError(t, err)
-				
+
 				// Verify we got the right subflakes
 				assert.Len(t, subflakes, len(tt.expectedSubflakes))
 				for _, expectedSubflake := range tt.expectedSubflakes {
@@ -147,7 +147,7 @@ ci:
 // only use the first part for config selection
 func TestCIRun_NestedAttributes(t *testing.T) {
 	tmpDir := t.TempDir()
-	
+
 	// Create an om.yaml with a config
 	configPath := filepath.Join(tmpDir, "om.yaml")
 	configContent := `
@@ -172,10 +172,10 @@ ci:
 
 	attr := flake.GetAttr()
 	attrList := attr.AsList()
-	
+
 	// Should have 3 parts: ["dev", "extra", "nested"]
 	require.Len(t, attrList, 3)
-	
+
 	// But we only use the first part for config name
 	configName := attrList[0]
 	assert.Equal(t, "dev", configName)
@@ -189,7 +189,7 @@ ci:
 // TestCIRun_EmptyAttribute tests that an empty attribute defaults to "default"
 func TestCIRun_EmptyAttribute(t *testing.T) {
 	tmpDir := t.TempDir()
-	
+
 	configPath := filepath.Join(tmpDir, "om.yaml")
 	configContent := `
 ci:
@@ -241,7 +241,7 @@ func TestCIRun_Integration(t *testing.T) {
 	}
 
 	tmpDir := t.TempDir()
-	
+
 	// Create a test om.yaml
 	configPath := filepath.Join(tmpDir, "om.yaml")
 	configContent := `
@@ -308,7 +308,7 @@ ci:
 		attrList := attr.AsList()
 		require.Len(t, attrList, 1, "Expected attribute list to have exactly 1 element for .#alt")
 		configName := attrList[0]
-		
+
 		subflakes, err := config.GetConfigByName(configName)
 		require.NoError(t, err)
 

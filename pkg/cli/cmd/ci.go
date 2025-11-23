@@ -115,12 +115,12 @@ Example:
 			}
 
 			if configName != "" {
-				logger.Info("Running CI", 
+				logger.Info("Running CI",
 					zap.String("flake", flake.WithoutAttr().String()),
 					zap.String("config", configName),
 					zap.Strings("systems", systems))
 			} else {
-				logger.Info("Running CI", 
+				logger.Info("Running CI",
 					zap.String("flake", flake.String()),
 					zap.Strings("systems", systems))
 			}

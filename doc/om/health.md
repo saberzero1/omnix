@@ -25,6 +25,8 @@ The `om health` command checks the health of your Nix install. Furthermore, indi
 [^ros]: This check is only performed on macOS with Apple Silicon.
 [^macos]: This check is only performed on  macOS.
 
+**Note on Determinate Nix**: The flakes check automatically detects [Determinate Nix](https://determinate.systems/nix) installations, which enable flakes by default. If you're using Determinate Nix, the flakes check will pass even if `experimental-features` appears empty in the configuration.
+
 Note that some checks are considered non-essential. For eg., the disk space check looks for 1TB+ disk space, but if the user is on a laptop with 256GB SSD, the check will report a warning instead of failing. This can also be configured in per-project basis from `flake.nix` (see below).
 
 ## Usage
