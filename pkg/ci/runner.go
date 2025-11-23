@@ -89,14 +89,14 @@ type StepResult struct {
 }
 
 // Run executes the CI pipeline for a flake
-func Run(ctx context.Context, flake nix.FlakeURL, config Config, opts RunOptions) ([]Result, error) {
+func Run(ctx context.Context, flake nix.FlakeURL, subflakesConfig map[string]SubflakeConfig, opts RunOptions) ([]Result, error) {
 	// Collect subflakes to run
 	var subflakes []struct {
 		name   string
 		config SubflakeConfig
 	}
 
-	for name, subflake := range config.Default {
+	for name, subflake := range subflakesConfig {
 		// Skip if marked to skip
 		if subflake.Skip {
 			continue

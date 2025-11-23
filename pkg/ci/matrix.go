@@ -21,11 +21,19 @@ type GitHubMatrix struct {
 }
 
 // GenerateMatrix creates a GitHub Actions matrix from systems and subflakes
+// It generates matrix rows for the default config
 func GenerateMatrix(systems []string, config Config) GitHubMatrix {
 	var include []GitHubMatrixRow
 
+	// Use the default config for matrix generation
+	subflakes, err := config.GetConfigByName("")
+	if err != nil {
+		// If no default config exists, return empty matrix
+		return GitHubMatrix{Include: include}
+	}
+
 	for _, system := range systems {
-		for name, subflake := range config.Default {
+		for name, subflake := range subflakes {
 			// Skip if this subflake is marked to skip
 			if subflake.Skip {
 				continue

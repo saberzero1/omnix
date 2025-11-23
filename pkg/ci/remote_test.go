@@ -158,18 +158,16 @@ func TestRunWithRemoteHost(t *testing.T) {
 
 	ctx := context.Background()
 
-	config := Config{
-		Default: map[string]SubflakeConfig{
-			"main": {
-				Skip: false,
-				Dir:  ".",
-				Steps: StepsConfig{
-					Build: BuildStep{Enable: false}, // Disable actual build
-					Custom: map[string]CustomStep{
-						"test": {
-							Type:    CustomStepTypeDevShell,
-							Command: []string{"echo", "remote-test"},
-						},
+	subflakes := map[string]SubflakeConfig{
+		"main": {
+			Skip: false,
+			Dir:  ".",
+			Steps: StepsConfig{
+				Build: BuildStep{Enable: false}, // Disable actual build
+				Custom: map[string]CustomStep{
+					"test": {
+						Type:    CustomStepTypeDevShell,
+						Command: []string{"echo", "remote-test"},
 					},
 				},
 			},
@@ -185,7 +183,7 @@ func TestRunWithRemoteHost(t *testing.T) {
 	}
 
 	// This will fail due to no SSH connection, but should not panic
-	results, err := Run(ctx, flake, config, opts)
+	results, err := Run(ctx, flake, subflakes, opts)
 
 	// Either returns error (connection failed) or results
 	if err == nil {
