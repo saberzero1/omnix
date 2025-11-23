@@ -14,36 +14,56 @@ func TestFlakeEnabled_Check(t *testing.T) {
 	tests := []struct {
 		name           string
 		features       []string
+		isDeterminate  bool
 		expectGreen    bool
 		expectRequired bool
 	}{
 		{
 			name:           "Both flakes and nix-command enabled",
 			features:       []string{"flakes", "nix-command"},
+			isDeterminate:  false,
 			expectGreen:    true,
 			expectRequired: true,
 		},
 		{
 			name:           "Only flakes enabled",
 			features:       []string{"flakes"},
+			isDeterminate:  false,
 			expectGreen:    false,
 			expectRequired: true,
 		},
 		{
 			name:           "Only nix-command enabled",
 			features:       []string{"nix-command"},
+			isDeterminate:  false,
 			expectGreen:    false,
 			expectRequired: true,
 		},
 		{
 			name:           "Neither enabled",
 			features:       []string{},
+			isDeterminate:  false,
 			expectGreen:    false,
 			expectRequired: true,
 		},
 		{
 			name:           "Extra features don't matter",
 			features:       []string{"flakes", "nix-command", "ca-derivations"},
+			isDeterminate:  false,
+			expectGreen:    true,
+			expectRequired: true,
+		},
+		{
+			name:           "Determinate Nix with empty features",
+			features:       []string{},
+			isDeterminate:  true,
+			expectGreen:    true,
+			expectRequired: true,
+		},
+		{
+			name:           "Determinate Nix with features",
+			features:       []string{"flakes", "nix-command"},
+			isDeterminate:  true,
 			expectGreen:    true,
 			expectRequired: true,
 		},
@@ -52,6 +72,12 @@ func TestFlakeEnabled_Check(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			nixInfo := &nix.Info{
+				Version: nix.Version{
+					Major:         2,
+					Minor:         32,
+					Patch:         0,
+					IsDeterminate: tt.isDeterminate,
+				},
 				Config: nix.Config{
 					ExperimentalFeatures: nix.ConfigValue[[]string]{Value: tt.features},
 				},

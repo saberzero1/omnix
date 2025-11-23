@@ -111,7 +111,7 @@ func TestFlakeSchemas_UnmarshalJSON(t *testing.T) {
 
 func TestFlakeSchemas_ToFlakeOutputs(t *testing.T) {
 	const helloPkgName = "hello"
-	
+
 	// Create a simple schema structure
 	hello := helloPkgName
 	pkg := Val{
@@ -153,7 +153,7 @@ func TestFlakeSchemas_ToFlakeOutputs(t *testing.T) {
 
 func TestFlakeSchemas_ToFlakeOutputs_WithChildren(t *testing.T) {
 	const helloPkgName = "hello"
-	
+
 	// Test the special "children" key handling
 	hello := helloPkgName
 	pkg := Val{
@@ -198,7 +198,7 @@ func TestFlakeSchemas_ToFlakeOutputs_WithChildren(t *testing.T) {
 
 func TestFlakeSchemas_ToFlakeOutputs_FiltersDocs(t *testing.T) {
 	const helloPkgName = "hello"
-	
+
 	// Doc strings should be filtered out
 	doc := "This is documentation"
 	hello := helloPkgName

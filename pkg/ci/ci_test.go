@@ -15,7 +15,7 @@ func TestDefaultConfig(t *testing.T) {
 	config := DefaultConfig()
 	assert.NotEmpty(t, config.Configs)
 	assert.Contains(t, config.Configs, "default")
-	
+
 	defaultConfig := config.Configs["default"]
 	assert.Contains(t, defaultConfig, ".")
 

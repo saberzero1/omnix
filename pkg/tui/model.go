@@ -27,18 +27,18 @@ const (
 
 // Model is the main application model
 type Model struct {
-	ctx          context.Context
-	currentView  View
-	width        int
-	height       int
-	dashboard    *views.Dashboard
-	healthView   *views.HealthCheck
-	infoView     *views.SystemInfo
-	flakeView    *views.FlakeBrowser
-	helpView     *views.Help
-	keys         KeyMap
-	quitting     bool
-	err          error
+	ctx         context.Context
+	currentView View
+	width       int
+	height      int
+	dashboard   *views.Dashboard
+	healthView  *views.HealthCheck
+	infoView    *views.SystemInfo
+	flakeView   *views.FlakeBrowser
+	helpView    *views.Help
+	keys        KeyMap
+	quitting    bool
+	err         error
 }
 
 // KeyMap defines keyboard shortcuts
@@ -250,7 +250,7 @@ func (m *Model) View() string {
 	headerHeight := lipgloss.Height(header)
 	footerHeight := lipgloss.Height(footer)
 	contentHeight := m.height - headerHeight - footerHeight
-	
+
 	// Protect against negative height in very small terminals
 	if contentHeight < 0 {
 		contentHeight = 0
@@ -259,7 +259,7 @@ func (m *Model) View() string {
 	// Ensure content fills the available space
 	contentStyle := lipgloss.NewStyle().
 		Height(contentHeight)
-	
+
 	paddedContent := contentStyle.Render(content)
 
 	return lipgloss.JoinVertical(

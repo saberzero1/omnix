@@ -27,7 +27,9 @@ func (f *FlakeEnabled) Check(_ context.Context, nixInfo *nix.Info) []NamedCheck 
 	}
 
 	var result CheckResult
-	if hasFlakes && hasNixCommand {
+	// Determinate Nix has flakes enabled by default, even if they don't appear
+	// in the experimental-features list (they use extra-experimental-features)
+	if (hasFlakes && hasNixCommand) || nixInfo.Version.IsDeterminate {
 		result = GreenResult{}
 	} else {
 		result = RedResult{

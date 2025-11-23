@@ -4,14 +4,17 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // Version represents a Nix version parsed from `nix --version`.
 // The version format is typically "nix (Nix) X.Y.Z" or just "X.Y.Z".
 type Version struct {
-	Major uint32
-	Minor uint32
-	Patch uint32
+	Major          uint32
+	Minor          uint32
+	Patch          uint32
+	IsDeterminate  bool   // True if this is Determinate Nix
+	RawVersionLine string // The raw version output for reference
 }
 
 // String returns the string representation of the version (e.g., "2.13.0").
@@ -48,10 +51,15 @@ func ParseVersion(s string) (Version, error) {
 		return Version{}, fmt.Errorf("failed to parse patch version: %w", err)
 	}
 
+	// Check if this is Determinate Nix
+	isDeterminate := strings.Contains(s, "Determinate Nix")
+
 	return Version{
-		Major: uint32(major),
-		Minor: uint32(minor),
-		Patch: uint32(patch),
+		Major:          uint32(major),
+		Minor:          uint32(minor),
+		Patch:          uint32(patch),
+		IsDeterminate:  isDeterminate,
+		RawVersionLine: s,
 	}, nil
 }
 

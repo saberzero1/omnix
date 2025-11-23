@@ -6,6 +6,15 @@ order: 100
 
 ## 2.0.1 (Unreleased) {#2.0.1}
 
+**Bug Fixes**
+
+### Health Check Improvements
+- **Fixed `om health` falsely flagging flakes as disabled on Determinate Nix**: The health check now correctly detects that flakes are enabled on Determinate Nix installations
+  - Determinate Nix enables flakes by default via `extra-experimental-features` in `/etc/nix/nix.conf`
+  - These features don't appear in the `experimental-features` config value from `nix show-config --json`
+  - Health check now detects Determinate Nix installations and correctly reports flakes as enabled
+  - Fixes false negative errors when running `om health` with Determinate Nix
+
 **CI Feature Enhancements - Complete Rust Parity**
 
 This release completes the migration of CI features from Rust to Go, achieving feature parity with the Rust implementation.

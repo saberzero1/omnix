@@ -142,9 +142,9 @@ func TestModel_refreshCurrentView(t *testing.T) {
 	m := New(ctx)
 
 	tests := []struct {
-		name     string
-		view     View
-		wantCmd  bool
+		name    string
+		view    View
+		wantCmd bool
 	}{
 		{"Dashboard", DashboardView, false},
 		{"Health", HealthView, true},
