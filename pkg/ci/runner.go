@@ -44,6 +44,16 @@ func appendOverrideInputs(args []string, overrideInputs map[string]string) []str
 	return args
 }
 
+// appendOverrideInputsForFlake appends --override-input flags with "flake/" prefix.
+// This is used when passing override inputs to devour-flake, which expects override
+// inputs for the target flake to be prefixed with "flake/".
+func appendOverrideInputsForFlake(args []string, overrideInputs map[string]string) []string {
+	for inputName, inputURL := range overrideInputs {
+		args = append(args, "--override-input", "flake/"+inputName, inputURL)
+	}
+	return args
+}
+
 // RunOptions contains options for running CI
 type RunOptions struct {
 	// Systems to build for
@@ -562,8 +572,10 @@ func runBuildStepRemote(ctx context.Context, host string, flake nix.FlakeURL, st
 		args = append(args, "--override-input", "systems", systemsFlakeURL.String())
 	}
 
-	// Add override inputs from subflake config
-	args = appendOverrideInputs(args, subflake.OverrideInputs)
+	// Add override inputs from subflake config with "flake/" prefix
+	// This is necessary because devour-flake expects override inputs for the
+	// target flake to be prefixed with "flake/"
+	args = appendOverrideInputsForFlake(args, subflake.OverrideInputs)
 
 	output, err := executeRemoteCommand(ctx, host, args)
 	if err != nil {

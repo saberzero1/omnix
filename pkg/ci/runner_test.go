@@ -182,3 +182,124 @@ func TestRun(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, results)
 }
+
+func TestAppendOverrideInputs(t *testing.T) {
+	tests := []struct {
+		name           string
+		initialArgs    []string
+		overrideInputs map[string]string
+		expected       []string
+	}{
+		{
+			name:           "empty override inputs",
+			initialArgs:    []string{"nix", "build"},
+			overrideInputs: map[string]string{},
+			expected:       []string{"nix", "build"},
+		},
+		{
+			name:        "single override input",
+			initialArgs: []string{"nix", "build"},
+			overrideInputs: map[string]string{
+				"nixpkgs": "github:NixOS/nixpkgs/nixos-unstable",
+			},
+			expected: []string{"nix", "build", "--override-input", "nixpkgs", "github:NixOS/nixpkgs/nixos-unstable"},
+		},
+		{
+			name:        "multiple override inputs",
+			initialArgs: []string{"nix", "build"},
+			overrideInputs: map[string]string{
+				"nixpkgs":      "github:NixOS/nixpkgs/nixos-unstable",
+				"home-manager": "github:nix-community/home-manager",
+			},
+			// Note: map iteration order is not guaranteed, so we just check the length
+			expected: []string{"nix", "build"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := appendOverrideInputs(tt.initialArgs, tt.overrideInputs)
+
+			if len(tt.overrideInputs) == 0 || len(tt.overrideInputs) == 1 {
+				assert.Equal(t, tt.expected, result)
+			} else {
+				// For multiple inputs, just verify the count
+				expectedLen := len(tt.initialArgs) + len(tt.overrideInputs)*3
+				assert.Equal(t, expectedLen, len(result))
+
+				// Verify all inputs are present
+				for key, value := range tt.overrideInputs {
+					found := false
+					for i := 0; i < len(result)-2; i++ {
+						if result[i] == "--override-input" && result[i+1] == key && result[i+2] == value {
+							found = true
+							break
+						}
+					}
+					assert.True(t, found, "override input %s=%s not found in result", key, value)
+				}
+			}
+		})
+	}
+}
+
+func TestAppendOverrideInputsForFlake(t *testing.T) {
+	tests := []struct {
+		name           string
+		initialArgs    []string
+		overrideInputs map[string]string
+		expected       []string
+	}{
+		{
+			name:           "empty override inputs",
+			initialArgs:    []string{"nix", "build"},
+			overrideInputs: map[string]string{},
+			expected:       []string{"nix", "build"},
+		},
+		{
+			name:        "single override input with flake prefix",
+			initialArgs: []string{"nix", "build"},
+			overrideInputs: map[string]string{
+				"nixpkgs": "github:NixOS/nixpkgs/nixos-unstable",
+			},
+			expected: []string{"nix", "build", "--override-input", "flake/nixpkgs", "github:NixOS/nixpkgs/nixos-unstable"},
+		},
+		{
+			name:        "multiple override inputs with flake prefix",
+			initialArgs: []string{"nix", "build"},
+			overrideInputs: map[string]string{
+				"nixpkgs":      "github:NixOS/nixpkgs/nixos-unstable",
+				"home-manager": "github:nix-community/home-manager",
+			},
+			// Note: map iteration order is not guaranteed, so we just check the length
+			expected: []string{"nix", "build"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := appendOverrideInputsForFlake(tt.initialArgs, tt.overrideInputs)
+
+			if len(tt.overrideInputs) == 0 || len(tt.overrideInputs) == 1 {
+				assert.Equal(t, tt.expected, result)
+			} else {
+				// For multiple inputs, just verify the count
+				expectedLen := len(tt.initialArgs) + len(tt.overrideInputs)*3
+				assert.Equal(t, expectedLen, len(result))
+
+				// Verify all inputs are present with flake/ prefix
+				for key, value := range tt.overrideInputs {
+					found := false
+					expectedKey := "flake/" + key
+					for i := 0; i < len(result)-2; i++ {
+						if result[i] == "--override-input" && result[i+1] == expectedKey && result[i+2] == value {
+							found = true
+							break
+						}
+					}
+					assert.True(t, found, "override input flake/%s=%s not found in result", key, value)
+				}
+			}
+		})
+	}
+}
