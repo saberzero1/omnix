@@ -13,9 +13,8 @@ import (
 type StoreCmd struct{}
 
 // NewCmd creates a new StoreCmd instance.
-func NewCmd() *StoreCmd {
-	return &StoreCmd{}
-}
+// This is an alias for NewStoreCmd for convenience.
+var NewCmd = NewStoreCmd
 
 // NewStoreCmd creates a new StoreCmd instance.
 func NewStoreCmd() *StoreCmd {
