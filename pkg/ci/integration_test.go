@@ -18,22 +18,20 @@ func TestCustomStepExecution(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a config with custom steps
-	config := Config{
-		Default: map[string]SubflakeConfig{
-			"test": {
-				Dir:  ".",
-				Skip: false,
-				Steps: StepsConfig{
-					Build:      BuildStep{Enable: false}, // Disable build to speed up test
-					Lockfile:   LockfileStep{Enable: false},
-					FlakeCheck: FlakeCheckStep{Enable: false},
-					Custom: map[string]CustomStep{
-						// Test app step - om show is available in the current flake
-						"show-test": {
-							Type: CustomStepTypeApp,
-							Name: "default", // Use default app (om)
-							Args: []string{"--version"},
-						},
+	subflakes := map[string]SubflakeConfig{
+		"test": {
+			Dir:  ".",
+			Skip: false,
+			Steps: StepsConfig{
+				Build:      BuildStep{Enable: false}, // Disable build to speed up test
+				Lockfile:   LockfileStep{Enable: false},
+				FlakeCheck: FlakeCheckStep{Enable: false},
+				Custom: map[string]CustomStep{
+					// Test app step - om show is available in the current flake
+					"show-test": {
+						Type: CustomStepTypeApp,
+						Name: "default", // Use default app (om)
+						Args: []string{"--version"},
 					},
 				},
 			},
@@ -51,7 +49,7 @@ func TestCustomStepExecution(t *testing.T) {
 		Systems: []string{info.Config.System.Value},
 	}
 
-	results, err := Run(ctx, flake, config, opts)
+	results, err := Run(ctx, flake, subflakes, opts)
 	require.NoError(t, err)
 	require.Len(t, results, 1)
 

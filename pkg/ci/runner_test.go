@@ -143,16 +143,14 @@ func TestRun(t *testing.T) {
 	flake, err := nix.ParseFlakeURL(".")
 	require.NoError(t, err)
 
-	config := Config{
-		Default: map[string]SubflakeConfig{
-			".": {
-				Dir:  ".",
-				Skip: false,
-				Steps: StepsConfig{
-					Build:      BuildStep{Enable: false},
-					Lockfile:   LockfileStep{Enable: false},
-					FlakeCheck: FlakeCheckStep{Enable: false},
-				},
+	subflakes := map[string]SubflakeConfig{
+		".": {
+			Dir:  ".",
+			Skip: false,
+			Steps: StepsConfig{
+				Build:      BuildStep{Enable: false},
+				Lockfile:   LockfileStep{Enable: false},
+				FlakeCheck: FlakeCheckStep{Enable: false},
 			},
 		},
 	}
@@ -161,7 +159,7 @@ func TestRun(t *testing.T) {
 		Systems: []string{"x86_64-linux"},
 	}
 
-	results, err := Run(ctx, flake, config, opts)
+	results, err := Run(ctx, flake, subflakes, opts)
 	require.NoError(t, err)
 	assert.NotEmpty(t, results)
 }

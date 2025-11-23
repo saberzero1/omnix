@@ -13,10 +13,13 @@ import (
 
 func TestDefaultConfig(t *testing.T) {
 	config := DefaultConfig()
-	assert.NotEmpty(t, config.Default)
-	assert.Contains(t, config.Default, ".")
+	assert.NotEmpty(t, config.Configs)
+	assert.Contains(t, config.Configs, "default")
+	
+	defaultConfig := config.Configs["default"]
+	assert.Contains(t, defaultConfig, ".")
 
-	rootConfig := config.Default["."]
+	rootConfig := defaultConfig["."]
 	assert.False(t, rootConfig.Skip)
 	assert.Equal(t, ".", rootConfig.Dir)
 	assert.True(t, rootConfig.Steps.Build.Enable)
@@ -56,15 +59,17 @@ ci:
 	config, err := LoadConfig(configPath)
 	require.NoError(t, err)
 
-	assert.Contains(t, config.Default, ".")
-	assert.Contains(t, config.Default, "tests")
+	assert.Contains(t, config.Configs, "default")
+	defaultConfig := config.Configs["default"]
+	assert.Contains(t, defaultConfig, ".")
+	assert.Contains(t, defaultConfig, "tests")
 
-	rootConfig := config.Default["."]
+	rootConfig := defaultConfig["."]
 	assert.True(t, rootConfig.Steps.Build.Enable)
 	assert.True(t, rootConfig.Steps.Lockfile.Enable)
 	assert.False(t, rootConfig.Steps.FlakeCheck.Enable)
 
-	testsConfig := config.Default["tests"]
+	testsConfig := defaultConfig["tests"]
 	assert.Equal(t, "tests", testsConfig.Dir)
 	assert.Equal(t, []string{"x86_64-linux"}, testsConfig.Systems)
 }
@@ -206,8 +211,10 @@ func TestGenerateMatrix(t *testing.T) {
 			name:    "single system, single subflake",
 			systems: []string{"x86_64-linux"},
 			config: Config{
-				Default: map[string]SubflakeConfig{
-					".": {Dir: ".", Skip: false},
+				Configs: map[string]map[string]SubflakeConfig{
+					"default": {
+						".": {Dir: ".", Skip: false},
+					},
 				},
 			},
 			expectedCount: 1,
@@ -220,8 +227,10 @@ func TestGenerateMatrix(t *testing.T) {
 			name:    "multiple systems, single subflake",
 			systems: []string{"x86_64-linux", "aarch64-darwin"},
 			config: Config{
-				Default: map[string]SubflakeConfig{
-					".": {Dir: ".", Skip: false},
+				Configs: map[string]map[string]SubflakeConfig{
+					"default": {
+						".": {Dir: ".", Skip: false},
+					},
 				},
 			},
 			expectedCount: 2,
@@ -230,9 +239,11 @@ func TestGenerateMatrix(t *testing.T) {
 			name:    "single system, multiple subflakes",
 			systems: []string{"x86_64-linux"},
 			config: Config{
-				Default: map[string]SubflakeConfig{
-					".":     {Dir: ".", Skip: false},
-					"tests": {Dir: "tests", Skip: false},
+				Configs: map[string]map[string]SubflakeConfig{
+					"default": {
+						".":     {Dir: ".", Skip: false},
+						"tests": {Dir: "tests", Skip: false},
+					},
 				},
 			},
 			expectedCount: 2,
@@ -241,9 +252,11 @@ func TestGenerateMatrix(t *testing.T) {
 			name:    "skip subflake",
 			systems: []string{"x86_64-linux"},
 			config: Config{
-				Default: map[string]SubflakeConfig{
-					".":     {Dir: ".", Skip: false},
-					"tests": {Dir: "tests", Skip: true},
+				Configs: map[string]map[string]SubflakeConfig{
+					"default": {
+						".":     {Dir: ".", Skip: false},
+						"tests": {Dir: "tests", Skip: true},
+					},
 				},
 			},
 			expectedCount: 1,
@@ -252,11 +265,13 @@ func TestGenerateMatrix(t *testing.T) {
 			name:    "system whitelist",
 			systems: []string{"x86_64-linux", "aarch64-darwin"},
 			config: Config{
-				Default: map[string]SubflakeConfig{
-					".": {
-						Dir:     ".",
-						Skip:    false,
-						Systems: []string{"x86_64-linux"},
+				Configs: map[string]map[string]SubflakeConfig{
+					"default": {
+						".": {
+							Dir:     ".",
+							Skip:    false,
+							Systems: []string{"x86_64-linux"},
+						},
 					},
 				},
 			},
@@ -266,7 +281,8 @@ func TestGenerateMatrix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			matrix := GenerateMatrix(tt.systems, tt.config)
+			matrix, err := GenerateMatrix(tt.systems, tt.config)
+			require.NoError(t, err)
 			assert.Equal(t, tt.expectedCount, matrix.Count())
 
 			if tt.expectedFirst != nil && len(matrix.Include) > 0 {

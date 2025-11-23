@@ -9,9 +9,12 @@ import (
 )
 
 // Config represents the CI configuration from om.yaml
+// It contains named configurations, each with a set of subflakes
 type Config struct {
-	// Default contains the default subflake configurations
-	Default map[string]SubflakeConfig `yaml:"default" json:"default"`
+	// Configs is a map of config name to subflake configurations
+	// The key is the config name (e.g., "default", "switch")
+	// The value is a map of subflake name to SubflakeConfig
+	Configs map[string]map[string]SubflakeConfig `yaml:",inline" json:",inline"`
 }
 
 // SubflakeConfig represents configuration for a sub-flake
@@ -118,22 +121,24 @@ func (c *CustomStep) CanRunOn(systems []string) bool {
 // DefaultConfig returns the default CI configuration
 func DefaultConfig() Config {
 	return Config{
-		Default: map[string]SubflakeConfig{
-			".": {
-				Skip: false,
-				Dir:  ".",
-				Steps: StepsConfig{
-					Build: BuildStep{
-						Enable: true,
-						Impure: false,
+		Configs: map[string]map[string]SubflakeConfig{
+			"default": {
+				".": {
+					Skip: false,
+					Dir:  ".",
+					Steps: StepsConfig{
+						Build: BuildStep{
+							Enable: true,
+							Impure: false,
+						},
+						Lockfile: LockfileStep{
+							Enable: true,
+						},
+						FlakeCheck: FlakeCheckStep{
+							Enable: true,
+						},
+						Custom: make(map[string]CustomStep),
 					},
-					Lockfile: LockfileStep{
-						Enable: true,
-					},
-					FlakeCheck: FlakeCheckStep{
-						Enable: true,
-					},
-					Custom: make(map[string]CustomStep),
 				},
 			},
 		},
@@ -155,15 +160,33 @@ func LoadConfig(path string) (Config, error) {
 		return Config{}, fmt.Errorf("failed to parse config YAML: %w", err)
 	}
 
-	// Apply defaults for each subflake
-	for name, subflake := range wrapper.CI.Default {
-		if subflake.Dir == "" {
-			subflake.Dir = "."
+	// Apply defaults for each subflake in all configs
+	for configName, subflakes := range wrapper.CI.Configs {
+		for name, subflake := range subflakes {
+			if subflake.Dir == "" {
+				subflake.Dir = "."
+			}
+			wrapper.CI.Configs[configName][name] = subflake
 		}
-		wrapper.CI.Default[name] = subflake
 	}
 
 	return wrapper.CI, nil
+}
+
+// GetConfigByName returns the subflakes configuration for a specific config name.
+// If the config name is not found, returns an error.
+// If configName is empty, defaults to "default".
+func (c *Config) GetConfigByName(configName string) (map[string]SubflakeConfig, error) {
+	if configName == "" {
+		configName = "default"
+	}
+
+	subflakes, ok := c.Configs[configName]
+	if !ok {
+		return nil, fmt.Errorf("config '%s' not found in om.yaml", configName)
+	}
+
+	return subflakes, nil
 }
 
 // CanRunOn checks if this subflake can run on any of the given systems

@@ -116,8 +116,9 @@ ci:
 	assert.NoError(t, err)
 
 	// Check that custom steps are loaded correctly
-	assert.Contains(t, config.Default, "omnix")
-	omnix := config.Default["omnix"]
+	defaultConfig := config.Configs["default"]
+	assert.Contains(t, defaultConfig, "omnix")
+	omnix := defaultConfig["omnix"]
 
 	assert.Len(t, omnix.Steps.Custom, 3)
 

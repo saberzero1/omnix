@@ -15,15 +15,13 @@ func TestRun_EmptyConfig(t *testing.T) {
 	flake, err := nix.ParseFlakeURL(".")
 	require.NoError(t, err)
 
-	config := Config{
-		Default: map[string]SubflakeConfig{},
-	}
+	subflakes := map[string]SubflakeConfig{}
 
 	opts := RunOptions{
 		Systems: []string{"x86_64-linux"},
 	}
 
-	results, err := Run(ctx, flake, config, opts)
+	results, err := Run(ctx, flake, subflakes, opts)
 	require.NoError(t, err)
 	assert.Empty(t, results)
 }
@@ -33,12 +31,10 @@ func TestRun_SkippedSubflake(t *testing.T) {
 	flake, err := nix.ParseFlakeURL(".")
 	require.NoError(t, err)
 
-	config := Config{
-		Default: map[string]SubflakeConfig{
-			"test": {
-				Dir:  "test",
-				Skip: true, // This should be skipped
-			},
+	subflakes := map[string]SubflakeConfig{
+		"test": {
+			Dir:  "test",
+			Skip: true, // This should be skipped
 		},
 	}
 
@@ -46,7 +42,7 @@ func TestRun_SkippedSubflake(t *testing.T) {
 		Systems: []string{"x86_64-linux"},
 	}
 
-	results, err := Run(ctx, flake, config, opts)
+	results, err := Run(ctx, flake, subflakes, opts)
 	require.NoError(t, err)
 	assert.Empty(t, results)
 }
@@ -56,13 +52,11 @@ func TestRun_SystemMismatch(t *testing.T) {
 	flake, err := nix.ParseFlakeURL(".")
 	require.NoError(t, err)
 
-	config := Config{
-		Default: map[string]SubflakeConfig{
-			"test": {
-				Dir:     "test",
-				Skip:    false,
-				Systems: []string{"aarch64-darwin"}, // Only darwin
-			},
+	subflakes := map[string]SubflakeConfig{
+		"test": {
+			Dir:     "test",
+			Skip:    false,
+			Systems: []string{"aarch64-darwin"}, // Only darwin
 		},
 	}
 
@@ -70,7 +64,7 @@ func TestRun_SystemMismatch(t *testing.T) {
 		Systems: []string{"x86_64-linux"}, // Requesting linux
 	}
 
-	results, err := Run(ctx, flake, config, opts)
+	results, err := Run(ctx, flake, subflakes, opts)
 	require.NoError(t, err)
 	assert.Empty(t, results) // Should skip due to system mismatch
 }
@@ -222,15 +216,18 @@ func TestGitHubMatrix_EmptyInclude(t *testing.T) {
 func TestGitHubMatrix_LargeMatrix(t *testing.T) {
 	systems := []string{"x86_64-linux", "aarch64-linux", "x86_64-darwin", "aarch64-darwin"}
 	config := Config{
-		Default: map[string]SubflakeConfig{
-			".":      {Dir: ".", Skip: false},
-			"tests":  {Dir: "tests", Skip: false},
-			"docs":   {Dir: "docs", Skip: false},
-			"extras": {Dir: "extras", Skip: false},
+		Configs: map[string]map[string]SubflakeConfig{
+			"default": {
+				".":      {Dir: ".", Skip: false},
+				"tests":  {Dir: "tests", Skip: false},
+				"docs":   {Dir: "docs", Skip: false},
+				"extras": {Dir: "extras", Skip: false},
+			},
 		},
 	}
 
-	matrix := GenerateMatrix(systems, config)
+	matrix, err := GenerateMatrix(systems, config)
+	require.NoError(t, err)
 
 	// 4 systems × 4 subflakes = 16 rows
 	assert.Equal(t, 16, matrix.Count())
@@ -257,4 +254,20 @@ func TestToJSON_ErrorHandling(t *testing.T) {
 	var decoded GitHubMatrix
 	err = json.Unmarshal([]byte(jsonStr), &decoded)
 	require.NoError(t, err)
+}
+
+func TestGenerateMatrix_MissingDefaultConfig(t *testing.T) {
+	systems := []string{"x86_64-linux"}
+	config := Config{
+		Configs: map[string]map[string]SubflakeConfig{
+			"production": {
+				".": {Dir: ".", Skip: false},
+			},
+		},
+	}
+
+	// Should error because there's no "default" config
+	_, err := GenerateMatrix(systems, config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "default")
 }

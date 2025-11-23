@@ -80,10 +80,27 @@ Example:
 				return fmt.Errorf("failed to parse flake URL: %w", err)
 			}
 
+			// Extract config name from flake URL attribute (fragment after #)
+			// For example, ".#switch" should use the "switch" config
+			// The attribute may have multiple parts like "switch.subflake"
+			// We only use the first part as the config name
+			attr := flake.GetAttr()
+			configName := ""
+			attrList := attr.AsList()
+			if len(attrList) > 0 {
+				configName = attrList[0]
+			}
+
 			// Load configuration
 			config, err := ci.LoadConfig(ciConfigPath)
 			if err != nil {
 				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			// Get the specific config by name (defaults to "default" if empty)
+			subflakes, err := config.GetConfigByName(configName)
+			if err != nil {
+				return fmt.Errorf("failed to get config: %w", err)
 			}
 
 			// Determine systems to build for
@@ -97,7 +114,16 @@ Example:
 				systems = []string{info.Config.System.Value}
 			}
 
-			logger.Info("Running CI", zap.String("flake", flake.String()), zap.Strings("systems", systems))
+			if configName != "" {
+				logger.Info("Running CI", 
+					zap.String("flake", flake.WithoutAttr().String()),
+					zap.String("config", configName),
+					zap.Strings("systems", systems))
+			} else {
+				logger.Info("Running CI", 
+					zap.String("flake", flake.String()),
+					zap.Strings("systems", systems))
+			}
 
 			// Run CI
 			opts := ci.RunOptions{
@@ -109,7 +135,10 @@ Example:
 				MaxConcurrency:         ciMaxConcurrency,
 			}
 
-			results, err := ci.Run(ctx, flake, config, opts)
+			// We need to pass the base flake URL without the config attribute
+			// because the config name is used to select subflakes, not as a flake attribute
+			baseFlake := flake.WithoutAttr()
+			results, err := ci.Run(ctx, baseFlake, subflakes, opts)
 			if err != nil {
 				return fmt.Errorf("CI run failed: %w", err)
 			}
@@ -190,7 +219,10 @@ Example:
 			}
 
 			// Generate matrix
-			matrix := ci.GenerateMatrix(ciSystems, config)
+			matrix, err := ci.GenerateMatrix(ciSystems, config)
+			if err != nil {
+				return fmt.Errorf("failed to generate matrix: %w", err)
+			}
 
 			// Convert to JSON
 			jsonOutput, err := matrix.ToJSON()

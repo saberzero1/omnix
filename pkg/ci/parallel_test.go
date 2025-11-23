@@ -12,23 +12,21 @@ import (
 func TestRunParallel(t *testing.T) {
 	ctx := context.Background()
 
-	config := Config{
-		Default: map[string]SubflakeConfig{
-			"sub1": {
-				Skip: false,
-				Dir:  ".",
-				Steps: StepsConfig{
-					Build:  BuildStep{Enable: false},
-					Custom: make(map[string]CustomStep),
-				},
+	subflakes := map[string]SubflakeConfig{
+		"sub1": {
+			Skip: false,
+			Dir:  ".",
+			Steps: StepsConfig{
+				Build:  BuildStep{Enable: false},
+				Custom: make(map[string]CustomStep),
 			},
-			"sub2": {
-				Skip: false,
-				Dir:  ".",
-				Steps: StepsConfig{
-					Build:  BuildStep{Enable: false},
-					Custom: make(map[string]CustomStep),
-				},
+		},
+		"sub2": {
+			Skip: false,
+			Dir:  ".",
+			Steps: StepsConfig{
+				Build:  BuildStep{Enable: false},
+				Custom: make(map[string]CustomStep),
 			},
 		},
 	}
@@ -41,7 +39,7 @@ func TestRunParallel(t *testing.T) {
 		Parallel: true,
 	}
 
-	results, err := Run(ctx, flake, config, opts)
+	results, err := Run(ctx, flake, subflakes, opts)
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
 
@@ -54,12 +52,10 @@ func TestRunParallel(t *testing.T) {
 func TestRunParallelWithConcurrencyLimit(t *testing.T) {
 	ctx := context.Background()
 
-	config := Config{
-		Default: map[string]SubflakeConfig{
-			"sub1": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
-			"sub2": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
-			"sub3": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
-		},
+	subflakes := map[string]SubflakeConfig{
+		"sub1": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+		"sub2": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+		"sub3": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
 	}
 
 	flake, err := nix.ParseFlakeURL(".")
@@ -72,7 +68,7 @@ func TestRunParallelWithConcurrencyLimit(t *testing.T) {
 	}
 
 	start := time.Now()
-	results, err := Run(ctx, flake, config, opts)
+	results, err := Run(ctx, flake, subflakes, opts)
 	duration := time.Since(start)
 
 	assert.NoError(t, err)
@@ -85,11 +81,9 @@ func TestRunParallelWithConcurrencyLimit(t *testing.T) {
 func TestRunSequential(t *testing.T) {
 	ctx := context.Background()
 
-	config := Config{
-		Default: map[string]SubflakeConfig{
-			"sub1": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
-			"sub2": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
-		},
+	subflakes := map[string]SubflakeConfig{
+		"sub1": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+		"sub2": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
 	}
 
 	flake, err := nix.ParseFlakeURL(".")
@@ -100,7 +94,7 @@ func TestRunSequential(t *testing.T) {
 		Parallel: false, // Sequential execution
 	}
 
-	results, err := Run(ctx, flake, config, opts)
+	results, err := Run(ctx, flake, subflakes, opts)
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
 
@@ -112,12 +106,10 @@ func TestRunSequential(t *testing.T) {
 func TestRunParallelMaintainsOrder(t *testing.T) {
 	ctx := context.Background()
 
-	config := Config{
-		Default: map[string]SubflakeConfig{
-			"first":  {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
-			"second": {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
-			"third":  {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
-		},
+	subflakes := map[string]SubflakeConfig{
+		"first":  {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+		"second": {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+		"third":  {Dir: ".", Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
 	}
 
 	flake, err := nix.ParseFlakeURL(".")
@@ -128,7 +120,7 @@ func TestRunParallelMaintainsOrder(t *testing.T) {
 		Parallel: true,
 	}
 
-	results, err := Run(ctx, flake, config, opts)
+	results, err := Run(ctx, flake, subflakes, opts)
 	assert.NoError(t, err)
 	assert.Len(t, results, 3)
 
@@ -147,11 +139,9 @@ func TestRunParallelMaintainsOrder(t *testing.T) {
 func TestRunParallelWithFailure(t *testing.T) {
 	ctx := context.Background()
 
-	config := Config{
-		Default: map[string]SubflakeConfig{
-			"success": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
-			"failure": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
-		},
+	subflakes := map[string]SubflakeConfig{
+		"success": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
+		"failure": {Steps: StepsConfig{Build: BuildStep{Enable: false}, Custom: make(map[string]CustomStep)}},
 	}
 
 	flake, err := nix.ParseFlakeURL(".")
@@ -162,7 +152,7 @@ func TestRunParallelWithFailure(t *testing.T) {
 		Parallel: true,
 	}
 
-	results, err := Run(ctx, flake, config, opts)
+	results, err := Run(ctx, flake, subflakes, opts)
 
 	// No error returned - errors are in the result
 	assert.NoError(t, err)
