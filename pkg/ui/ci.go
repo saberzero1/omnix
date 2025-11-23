@@ -73,12 +73,12 @@ func NewCIRunner(flake, config string, systems []string, subflakeNames []string)
 	}
 
 	return CIRunnerModel{
-		flake:      flake,
-		config:     config,
-		systems:    systems,
-		subflakes:  subflakes,
-		spinner:    s,
-		startTime:  time.Now(),
+		flake:        flake,
+		config:       config,
+		systems:      systems,
+		subflakes:    subflakes,
+		spinner:      s,
+		startTime:    time.Now(),
 		currentIndex: -1,
 	}
 }
@@ -198,7 +198,7 @@ func (m CIRunnerModel) View() string {
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderBottom(true).
 		BorderForeground(lipgloss.Color("240")).
-		Width(m.width - 2).
+		Width(m.width-2).
 		Padding(0, 1)
 
 	header := fmt.Sprintf("Running CI • Flake: %s", m.flake)
@@ -224,7 +224,7 @@ func (m CIRunnerModel) View() string {
 			BorderStyle(lipgloss.RoundedBorder()).
 			BorderTop(true).
 			BorderForeground(lipgloss.Color("240")).
-			Width(m.width - 2).
+			Width(m.width-2).
 			Padding(0, 1)
 
 		footer := fmt.Sprintf("Elapsed: %s • Press 'o' to toggle output details • 'q' to quit", elapsed)

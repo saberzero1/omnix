@@ -357,7 +357,6 @@ func runSubflakeWithUI(ctx context.Context, flake nix.FlakeURL, name string, sub
 	return result, nil
 }
 
-
 // runSubflakesSequential runs subflakes one after another
 func runSubflakesSequential(ctx context.Context, flake nix.FlakeURL, subflakes []struct {
 	name   string
