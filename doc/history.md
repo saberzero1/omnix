@@ -22,10 +22,17 @@ This release completes the migration of CI features from Rust to Go, achieving f
   - Reports total dependency count in build output
   - Useful for explicitly pushing all dependencies to binary caches
 
+### Bug Fixes
+- **Fixed `om ci run` with `impure: true` and override inputs**: Properly prefix override inputs with `flake/` when calling devour-flake
+  - Previously, override inputs were incorrectly applied to devour-flake itself instead of the target flake
+  - Now matches Rust implementation behavior with `transform_override_inputs`
+  - Fixes errors like "input 'flake/devour-flake' has an override for a non-existent input 'nixpkgs'"
+
 ### Implementation Details
 - Added `DevourFlakeWithOverrides` function to support passing custom inputs to devour-flake
 - Updated all CI step runners to accept and use SubflakeConfig for override inputs
 - Enhanced test coverage with new override inputs tests
+- Added `appendOverrideInputsForFlake` helper function for proper devour-flake input transformation
 - All changes maintain backward compatibility
 
 **Feature Enhancements - TUI Implementation**
