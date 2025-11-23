@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
@@ -119,13 +118,4 @@ func printFlakeOutputTable(w io.Writer, title string, outputs *nix.FlakeOutputs,
 
 	_ = table.Render()
 	_, _ = fmt.Fprintln(w)
-}
-
-// isTerminal checks if the output is a terminal
-func isTerminal() bool {
-	fileInfo, err := os.Stdout.Stat()
-	if err != nil {
-		return false
-	}
-	return (fileInfo.Mode() & os.ModeCharDevice) != 0
 }

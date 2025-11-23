@@ -131,7 +131,7 @@ Example:
 
 			var results []ci.Result
 			// Use UI if running in a terminal and not disabled
-			if !ciNoUI && !ciGitHubOutput && isTerminal() {
+			if !ciNoUI && !ciGitHubOutput && common.IsTerminal() {
 				results, err = ci.RunWithUI(ctx, baseFlake, configName, subflakes, opts)
 			} else {
 				// Fall back to non-UI version
@@ -186,7 +186,7 @@ Example:
 			}
 
 			// Show success message if not using UI (UI shows its own success message)
-			if ciNoUI || ciGitHubOutput || !isTerminal() {
+			if ciNoUI || ciGitHubOutput || !common.IsTerminal() {
 				logger.Info("✅ All CI steps passed")
 			}
 			return nil
