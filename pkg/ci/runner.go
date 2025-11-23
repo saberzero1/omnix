@@ -35,6 +35,15 @@ func buildFlakeURLWithAttr(base nix.FlakeURL, attr string) string {
 	return base.String() + "#" + attr
 }
 
+// appendOverrideInputs appends --override-input flags for each input in the map.
+// This is a helper to avoid duplicating the override inputs iteration pattern.
+func appendOverrideInputs(args []string, overrideInputs map[string]string) []string {
+	for inputName, inputURL := range overrideInputs {
+		args = append(args, "--override-input", inputName, inputURL)
+	}
+	return args
+}
+
 // RunOptions contains options for running CI
 type RunOptions struct {
 	// Systems to build for
@@ -388,11 +397,7 @@ func runFlakeCheckStep(ctx context.Context, flake nix.FlakeURL, step FlakeCheckS
 
 	// Build nix flake check command with override inputs
 	args := []string{"flake", "check", flake.String()}
-
-	// Add override inputs if specified
-	for inputName, inputURL := range subflake.OverrideInputs {
-		args = append(args, "--override-input", inputName, inputURL)
-	}
+	args = appendOverrideInputs(args, subflake.OverrideInputs)
 
 	// Run nix flake check
 	cmd := nix.NewCmd()
@@ -449,11 +454,7 @@ func runFlakeApp(ctx context.Context, flake nix.FlakeURL, step CustomStep, subfl
 
 	// Build nix run command
 	args := []string{"run", appURL}
-
-	// Add override inputs if specified
-	for inputName, inputURL := range subflake.OverrideInputs {
-		args = append(args, "--override-input", inputName, inputURL)
-	}
+	args = appendOverrideInputs(args, subflake.OverrideInputs)
 
 	if len(step.Args) > 0 {
 		args = append(args, "--")
@@ -475,11 +476,7 @@ func runDevShellCommand(ctx context.Context, flake nix.FlakeURL, step CustomStep
 
 	// Build nix develop command
 	args := []string{"develop", shellURL}
-
-	// Add override inputs if specified
-	for inputName, inputURL := range subflake.OverrideInputs {
-		args = append(args, "--override-input", inputName, inputURL)
-	}
+	args = appendOverrideInputs(args, subflake.OverrideInputs)
 
 	args = append(args, "-c")
 	args = append(args, step.Command...)
@@ -566,9 +563,7 @@ func runBuildStepRemote(ctx context.Context, host string, flake nix.FlakeURL, st
 	}
 
 	// Add override inputs from subflake config
-	for inputName, inputURL := range subflake.OverrideInputs {
-		args = append(args, "--override-input", inputName, inputURL)
-	}
+	args = appendOverrideInputs(args, subflake.OverrideInputs)
 
 	output, err := executeRemoteCommand(ctx, host, args)
 	if err != nil {
@@ -617,11 +612,7 @@ func runFlakeCheckStepRemote(ctx context.Context, host string, flake nix.FlakeUR
 	}
 
 	args := []string{"nix", "flake", "check", flake.String()}
-
-	// Add override inputs if specified
-	for inputName, inputURL := range subflake.OverrideInputs {
-		args = append(args, "--override-input", inputName, inputURL)
-	}
+	args = appendOverrideInputs(args, subflake.OverrideInputs)
 
 	output, err := executeRemoteCommand(ctx, host, args)
 	if err != nil {
@@ -650,11 +641,7 @@ func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, n
 		appName := getFlakeAttrName(step.Name)
 		appURL := buildFlakeURLWithAttr(flake, appName)
 		args = []string{"nix", "run", appURL}
-
-		// Add override inputs if specified
-		for inputName, inputURL := range subflake.OverrideInputs {
-			args = append(args, "--override-input", inputName, inputURL)
-		}
+		args = appendOverrideInputs(args, subflake.OverrideInputs)
 
 		if len(step.Args) > 0 {
 			args = append(args, "--")
@@ -671,11 +658,7 @@ func runCustomStepRemote(ctx context.Context, host string, flake nix.FlakeURL, n
 		shellName := getFlakeAttrName(step.Name)
 		shellURL := buildFlakeURLWithAttr(flake, shellName)
 		args = []string{"nix", "develop", shellURL}
-
-		// Add override inputs if specified
-		for inputName, inputURL := range subflake.OverrideInputs {
-			args = append(args, "--override-input", inputName, inputURL)
-		}
+		args = appendOverrideInputs(args, subflake.OverrideInputs)
 
 		args = append(args, "-c")
 		args = append(args, step.Command...)
