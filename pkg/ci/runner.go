@@ -181,21 +181,27 @@ func RunWithUI(ctx context.Context, flake nix.FlakeURL, configName string, subfl
 	// Use channels to safely collect results and errors
 	resultsChan := make(chan resultWithIndex, len(subflakes))
 
+	// Create cancellable context for CI operations
+	// This allows us to cancel ongoing builds if user exits the UI
+	ciCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// Run the CI in a goroutine and send updates to the UI
 	go func() {
 		defer close(resultsChan)
 
 		if opts.Parallel {
 			// Run subflakes in parallel
-			runSubflakesParallelWithUI(ctx, flake, subflakes, opts, p, resultsChan)
+			runSubflakesParallelWithUI(ciCtx, flake, subflakes, opts, p, resultsChan)
 		} else {
 			// Run subflakes sequentially
-			runSubflakesSequentialWithUI(ctx, flake, subflakes, opts, p, resultsChan)
+			runSubflakesSequentialWithUI(ciCtx, flake, subflakes, opts, p, resultsChan)
 		}
 	}()
 
 	// Run the UI
 	if _, err := p.Run(); err != nil {
+		cancel() // Cancel ongoing CI operations
 		return nil, fmt.Errorf("UI error: %w", err)
 	}
 
@@ -209,11 +215,11 @@ func RunWithUI(ctx context.Context, flake nix.FlakeURL, configName string, subfl
 		}
 	}
 
-	// Sort results by original order
-	results := make([]Result, len(subflakes))
+	// Only return results for completed subflakes, in original order
+	results := make([]Result, 0, len(subflakes))
 	for i := 0; i < len(subflakes); i++ {
 		if result, ok := resultsMap[i]; ok {
-			results[i] = result
+			results = append(results, result)
 		}
 	}
 
