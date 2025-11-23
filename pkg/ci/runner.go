@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/saberzero1/omnix/pkg/nix/store"
+	"github.com/saberzero1/omnix/pkg/ui"
 	"go.uber.org/zap"
 )
 
@@ -140,6 +142,221 @@ func Run(ctx context.Context, flake nix.FlakeURL, subflakesConfig map[string]Sub
 
 	return runSubflakesSequential(ctx, flake, subflakes, opts)
 }
+
+// RunWithUI executes the CI pipeline with an interactive UI
+func RunWithUI(ctx context.Context, flake nix.FlakeURL, configName string, subflakesConfig map[string]SubflakeConfig, opts RunOptions) ([]Result, error) {
+	// Collect subflakes to run
+	var subflakes []struct {
+		name   string
+		config SubflakeConfig
+	}
+
+	for name, subflake := range subflakesConfig {
+		// Skip if marked to skip
+		if subflake.Skip {
+			continue
+		}
+
+		// Skip if can't run on requested systems
+		if !subflake.CanRunOn(opts.Systems) {
+			continue
+		}
+
+		subflakes = append(subflakes, struct {
+			name   string
+			config SubflakeConfig
+		}{name, subflake})
+	}
+
+	// Extract subflake names for UI
+	subflakeNames := make([]string, len(subflakes))
+	for i, sf := range subflakes {
+		subflakeNames[i] = sf.name
+	}
+
+	// Create UI model
+	model := ui.NewCIRunner(flake.String(), configName, opts.Systems, subflakeNames)
+	p := tea.NewProgram(model)
+
+	// Run the CI in a goroutine and send updates to the UI
+	var results []Result
+	var runErr error
+
+	go func() {
+		for i, sf := range subflakes {
+			// Send subflake start message
+			p.Send(ui.SubflakeStartMsg{Index: i, Name: sf.name})
+
+			// Run the subflake and collect result
+			result, err := runSubflakeWithUI(ctx, flake, sf.name, sf.config, opts, p, i)
+			results = append(results, result)
+
+			// Send subflake complete message
+			errStr := ""
+			if err != nil {
+				errStr = err.Error()
+				runErr = err
+			}
+			p.Send(ui.SubflakeCompleteMsg{Index: i, Error: errStr})
+
+			// If there's an error and we're not running in parallel, stop
+			if err != nil && !opts.Parallel {
+				break
+			}
+		}
+
+		// Send done message
+		if runErr != nil {
+			p.Send(ui.ErrorMsg{Err: runErr})
+		} else {
+			p.Send(ui.DoneMsg{})
+		}
+	}()
+
+	// Run the UI
+	if _, err := p.Run(); err != nil {
+		return results, fmt.Errorf("UI error: %w", err)
+	}
+
+	return results, runErr
+}
+
+// runSubflakeWithUI runs CI for a single subflake and sends UI updates
+func runSubflakeWithUI(ctx context.Context, flake nix.FlakeURL, name string, subflake SubflakeConfig, opts RunOptions, p *tea.Program, subflakeIndex int) (Result, error) {
+	start := time.Now()
+
+	result := Result{
+		Subflake: name,
+		Steps:    make(map[string]StepResult),
+		Success:  true,
+	}
+
+	// Get the subflake URL
+	subflakeURL := flake
+	if subflake.Dir != "." {
+		urlStr := flake.String() + "#" + subflake.Dir
+		var err error
+		subflakeURL, err = nix.ParseFlakeURL(urlStr)
+		if err != nil {
+			return result, fmt.Errorf("failed to parse subflake URL: %w", err)
+		}
+	}
+
+	// Run build step
+	if subflake.Steps.Build.Enable {
+		p.Send(ui.StepStartMsg{SubflakeIndex: subflakeIndex, StepName: "build"})
+
+		var stepResult StepResult
+		if opts.RemoteHost != "" {
+			stepResult = runBuildStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.Build, opts, subflake)
+		} else {
+			stepResult = runBuildStep(ctx, subflakeURL, subflake.Steps.Build, opts, subflake)
+		}
+		result.Steps["build"] = stepResult
+
+		p.Send(ui.StepCompleteMsg{
+			SubflakeIndex: subflakeIndex,
+			Output:        stepResult.Output,
+			Error:         stepResult.Error,
+		})
+
+		if !stepResult.Success {
+			result.Success = false
+		}
+	}
+
+	// Run lockfile step
+	if subflake.Steps.Lockfile.Enable {
+		// Check if we should skip
+		if len(subflake.OverrideInputs) > 0 {
+			p.Send(ui.StepSkipMsg{
+				SubflakeIndex: subflakeIndex,
+				StepName:      "lockfile",
+				Reason:        "Skipped (has override inputs)",
+			})
+		} else {
+			p.Send(ui.StepStartMsg{SubflakeIndex: subflakeIndex, StepName: "lockfile"})
+
+			var stepResult StepResult
+			if opts.RemoteHost != "" {
+				stepResult = runLockfileStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.Lockfile, subflake)
+			} else {
+				stepResult = runLockfileStep(ctx, subflakeURL, subflake.Steps.Lockfile, subflake)
+			}
+			result.Steps["lockfile"] = stepResult
+
+			p.Send(ui.StepCompleteMsg{
+				SubflakeIndex: subflakeIndex,
+				Output:        stepResult.Output,
+				Error:         stepResult.Error,
+			})
+
+			if !stepResult.Success {
+				result.Success = false
+			}
+		}
+	}
+
+	// Run flake check step
+	if subflake.Steps.FlakeCheck.Enable {
+		p.Send(ui.StepStartMsg{SubflakeIndex: subflakeIndex, StepName: "flakeCheck"})
+
+		var stepResult StepResult
+		if opts.RemoteHost != "" {
+			stepResult = runFlakeCheckStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.FlakeCheck, subflake)
+		} else {
+			stepResult = runFlakeCheckStep(ctx, subflakeURL, subflake.Steps.FlakeCheck, subflake)
+		}
+		result.Steps["flakeCheck"] = stepResult
+
+		p.Send(ui.StepCompleteMsg{
+			SubflakeIndex: subflakeIndex,
+			Output:        stepResult.Output,
+			Error:         stepResult.Error,
+		})
+
+		if !stepResult.Success {
+			result.Success = false
+		}
+	}
+
+	// Run custom steps
+	for stepName, customStep := range subflake.Steps.Custom {
+		// Check if this step can run on current systems
+		if !customStep.CanRunOn(opts.Systems) {
+			p.Send(ui.StepSkipMsg{
+				SubflakeIndex: subflakeIndex,
+				StepName:      "custom:" + stepName,
+				Reason:        "Skipped (system not supported)",
+			})
+			continue
+		}
+
+		p.Send(ui.StepStartMsg{SubflakeIndex: subflakeIndex, StepName: "custom:" + stepName})
+
+		var stepResult StepResult
+		if opts.RemoteHost != "" {
+			stepResult = runCustomStepRemote(ctx, opts.RemoteHost, subflakeURL, stepName, customStep, subflake)
+		} else {
+			stepResult = runCustomStep(ctx, subflakeURL, stepName, customStep, subflake)
+		}
+		result.Steps["custom:"+stepName] = stepResult
+
+		p.Send(ui.StepCompleteMsg{
+			SubflakeIndex: subflakeIndex,
+			Output:        stepResult.Output,
+			Error:         stepResult.Error,
+		})
+
+		if !stepResult.Success {
+			result.Success = false
+		}
+	}
+
+	result.Duration = time.Since(start)
+	return result, nil
+}
+
 
 // runSubflakesSequential runs subflakes one after another
 func runSubflakesSequential(ctx context.Context, flake nix.FlakeURL, subflakes []struct {
