@@ -174,8 +174,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		// Update all views with new size
-		// Reserve 3 lines for header (2) and footer (1)
-		contentHeight := msg.Height - 3
+		// Calculate content height based on actual header/footer heights
+		headerHeight := 2 // Header takes 2 lines (title + border)
+		footerHeight := 1 // Footer takes 1 line
+		contentHeight := msg.Height - headerHeight - footerHeight
+		if contentHeight < 0 {
+			contentHeight = 0
+		}
 		m.dashboard.SetSize(msg.Width, contentHeight)
 		m.healthView.SetSize(msg.Width, contentHeight)
 		m.infoView.SetSize(msg.Width, contentHeight)
@@ -245,6 +250,11 @@ func (m *Model) View() string {
 	headerHeight := lipgloss.Height(header)
 	footerHeight := lipgloss.Height(footer)
 	contentHeight := m.height - headerHeight - footerHeight
+	
+	// Protect against negative height in very small terminals
+	if contentHeight < 0 {
+		contentHeight = 0
+	}
 
 	// Ensure content fills the available space
 	contentStyle := lipgloss.NewStyle().
