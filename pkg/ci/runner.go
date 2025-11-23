@@ -178,47 +178,163 @@ func RunWithUI(ctx context.Context, flake nix.FlakeURL, configName string, subfl
 	model := ui.NewCIRunner(flake.String(), configName, opts.Systems, subflakeNames)
 	p := tea.NewProgram(model)
 
+	// Use channels to safely collect results and errors
+	resultsChan := make(chan resultWithIndex, len(subflakes))
+
 	// Run the CI in a goroutine and send updates to the UI
-	var results []Result
-	var runErr error
-
 	go func() {
-		for i, sf := range subflakes {
-			// Send subflake start message
-			p.Send(ui.SubflakeStartMsg{Index: i, Name: sf.name})
+		defer close(resultsChan)
 
-			// Run the subflake and collect result
-			result, err := runSubflakeWithUI(ctx, flake, sf.name, sf.config, opts, p, i)
-			results = append(results, result)
-
-			// Send subflake complete message
-			errStr := ""
-			if err != nil {
-				errStr = err.Error()
-				runErr = err
-			}
-			p.Send(ui.SubflakeCompleteMsg{Index: i, Error: errStr})
-
-			// If there's an error and we're not running in parallel, stop
-			if err != nil && !opts.Parallel {
-				break
-			}
-		}
-
-		// Send done message
-		if runErr != nil {
-			p.Send(ui.ErrorMsg{Err: runErr})
+		if opts.Parallel {
+			// Run subflakes in parallel
+			runSubflakesParallelWithUI(ctx, flake, subflakes, opts, p, resultsChan)
 		} else {
-			p.Send(ui.DoneMsg{})
+			// Run subflakes sequentially
+			runSubflakesSequentialWithUI(ctx, flake, subflakes, opts, p, resultsChan)
 		}
 	}()
 
 	// Run the UI
 	if _, err := p.Run(); err != nil {
-		return results, fmt.Errorf("UI error: %w", err)
+		return nil, fmt.Errorf("UI error: %w", err)
 	}
 
-	return results, runErr
+	// Collect all results after UI is done
+	resultsMap := make(map[int]Result)
+	var firstError error
+	for res := range resultsChan {
+		resultsMap[res.index] = res.result
+		if res.err != nil && firstError == nil {
+			firstError = res.err
+		}
+	}
+
+	// Sort results by original order
+	results := make([]Result, len(subflakes))
+	for i := 0; i < len(subflakes); i++ {
+		if result, ok := resultsMap[i]; ok {
+			results[i] = result
+		}
+	}
+
+	return results, firstError
+}
+
+// resultWithIndex holds a result with its index for channel communication
+type resultWithIndex struct {
+	index  int
+	result Result
+	err    error
+}
+
+// runSubflakesSequentialWithUI runs subflakes sequentially with UI updates
+func runSubflakesSequentialWithUI(ctx context.Context, flake nix.FlakeURL, subflakes []struct {
+	name   string
+	config SubflakeConfig
+}, opts RunOptions, p *tea.Program, resultsChan chan<- resultWithIndex) {
+	var firstError error
+
+	for i, sf := range subflakes {
+		// Send subflake start message
+		p.Send(ui.SubflakeStartMsg{Index: i, Name: sf.name})
+
+		// Run the subflake and collect result
+		result, err := runSubflakeWithUI(ctx, flake, sf.name, sf.config, opts, p, i)
+		resultsChan <- resultWithIndex{i, result, err}
+
+		// Send subflake complete message
+		errStr := ""
+		if err != nil {
+			errStr = err.Error()
+			if firstError == nil {
+				firstError = err
+			}
+		}
+		p.Send(ui.SubflakeCompleteMsg{Index: i, Error: errStr})
+
+		// If there's an error, stop
+		if err != nil {
+			break
+		}
+	}
+
+	// Send done message
+	if firstError != nil {
+		p.Send(ui.ErrorMsg{Err: firstError})
+	} else {
+		p.Send(ui.DoneMsg{})
+	}
+}
+
+// runSubflakesParallelWithUI runs subflakes in parallel with UI updates
+func runSubflakesParallelWithUI(ctx context.Context, flake nix.FlakeURL, subflakes []struct {
+	name   string
+	config SubflakeConfig
+}, opts RunOptions, p *tea.Program, resultsChan chan<- resultWithIndex) {
+	// Determine concurrency limit
+	maxConcurrency := opts.MaxConcurrency
+	if maxConcurrency <= 0 {
+		maxConcurrency = len(subflakes)
+	}
+
+	// Create channels for work distribution
+	type job struct {
+		index  int
+		name   string
+		config SubflakeConfig
+	}
+
+	jobs := make(chan job, len(subflakes))
+	errorsChan := make(chan error, len(subflakes))
+
+	// Start worker goroutines
+	for w := 0; w < maxConcurrency; w++ {
+		go func() {
+			for j := range jobs {
+				// Send subflake start message
+				p.Send(ui.SubflakeStartMsg{Index: j.index, Name: j.name})
+
+				// Run the subflake and collect result
+				result, err := runSubflakeWithUI(ctx, flake, j.name, j.config, opts, p, j.index)
+				resultsChan <- resultWithIndex{j.index, result, err}
+
+				// Send subflake complete message
+				errStr := ""
+				if err != nil {
+					errStr = err.Error()
+					errorsChan <- err
+				} else {
+					errorsChan <- nil
+				}
+				p.Send(ui.SubflakeCompleteMsg{Index: j.index, Error: errStr})
+			}
+		}()
+	}
+
+	// Queue all jobs
+	for i, sf := range subflakes {
+		jobs <- job{
+			index:  i,
+			name:   sf.name,
+			config: sf.config,
+		}
+	}
+	close(jobs)
+
+	// Wait for all jobs to complete
+	var firstError error
+	for i := 0; i < len(subflakes); i++ {
+		if err := <-errorsChan; err != nil && firstError == nil {
+			firstError = err
+		}
+	}
+
+	// Send done message
+	if firstError != nil {
+		p.Send(ui.ErrorMsg{Err: firstError})
+	} else {
+		p.Send(ui.DoneMsg{})
+	}
 }
 
 // runSubflakeWithUI runs CI for a single subflake and sends UI updates
