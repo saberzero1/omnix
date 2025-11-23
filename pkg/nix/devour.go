@@ -67,10 +67,13 @@ func DevourFlakeWithOverrides(ctx context.Context, flake FlakeURL, systems []str
 		)
 	}
 
-	// Add additional override inputs
+	// Add additional override inputs with "flake/" prefix
+	// This is necessary because devour-flake expects override inputs for the
+	// target flake to be prefixed with "flake/" to distinguish them from
+	// override inputs for devour-flake itself.
 	for inputName, inputURL := range overrideInputs {
 		args = append(args,
-			"--override-input", inputName, inputURL,
+			"--override-input", "flake/"+inputName, inputURL,
 		)
 	}
 
