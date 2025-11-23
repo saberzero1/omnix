@@ -6,6 +6,28 @@ order: 100
 
 ## 2.0.1 (Unreleased) {#2.0.1}
 
+**CI Feature Enhancements - Complete Rust Parity**
+
+This release completes the migration of CI features from Rust to Go, achieving feature parity with the Rust implementation.
+
+### CI Improvements
+- **Override Inputs Support**: Full support for `overrideInputs` in CI configuration
+  - Build step now applies override inputs when building flake outputs
+  - Flake check step passes override inputs to `nix flake check`
+  - Custom steps (apps and devshells) support override inputs
+  - Lockfile step intelligently skips when override inputs are present (prevents false negatives)
+  - Works for both local and remote (SSH) execution
+- **All Dependencies Fetching**: `--include-all-dependencies` flag now fully functional
+  - Fetches all build and runtime dependencies using `nix-store --query`
+  - Reports total dependency count in build output
+  - Useful for explicitly pushing all dependencies to binary caches
+
+### Implementation Details
+- Added `DevourFlakeWithOverrides` function to support passing custom inputs to devour-flake
+- Updated all CI step runners to accept and use SubflakeConfig for override inputs
+- Enhanced test coverage with new override inputs tests
+- All changes maintain backward compatibility
+
 **Feature Enhancements - TUI Implementation**
 
 This release implements a Terminal User Interface (TUI) for omnix, replacing the Rust Dioxus desktop GUI with a more maintainable terminal-based interface.

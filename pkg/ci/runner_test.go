@@ -28,7 +28,12 @@ func TestRunBuildStep(t *testing.T) {
 		Systems: []string{"x86_64-linux"},
 	}
 
-	result := runBuildStep(ctx, flake, step, opts)
+	subflake := SubflakeConfig{
+		Dir:            ".",
+		OverrideInputs: make(map[string]string),
+	}
+
+	result := runBuildStep(ctx, flake, step, opts, subflake)
 	assert.Equal(t, "build", result.Name)
 	// Note: This may fail or succeed depending on the system, just testing it runs
 }
@@ -46,7 +51,12 @@ func TestRunLockfileStep(t *testing.T) {
 		Enable: true,
 	}
 
-	result := runLockfileStep(ctx, flake, step)
+	subflake := SubflakeConfig{
+		Dir:            ".",
+		OverrideInputs: make(map[string]string),
+	}
+
+	result := runLockfileStep(ctx, flake, step, subflake)
 	assert.Equal(t, "lockfile", result.Name)
 }
 
@@ -63,7 +73,12 @@ func TestRunFlakeCheckStep(t *testing.T) {
 		Enable: true,
 	}
 
-	result := runFlakeCheckStep(ctx, flake, step)
+	subflake := SubflakeConfig{
+		Dir:            ".",
+		OverrideInputs: make(map[string]string),
+	}
+
+	result := runFlakeCheckStep(ctx, flake, step, subflake)
 	assert.Equal(t, "flakeCheck", result.Name)
 }
 
@@ -105,7 +120,11 @@ func TestRunCustomStep(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := runCustomStep(ctx, flake, tt.stepName, tt.step)
+			subflake := SubflakeConfig{
+				Dir:            ".",
+				OverrideInputs: make(map[string]string),
+			}
+			result := runCustomStep(ctx, flake, tt.stepName, tt.step, subflake)
 			assert.Equal(t, tt.expectedName, result.Name)
 
 			if tt.expectedError {

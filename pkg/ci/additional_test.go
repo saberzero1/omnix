@@ -271,3 +271,51 @@ func TestGenerateMatrix_MissingDefaultConfig(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "default")
 }
+
+func TestOverrideInputs_LockfileSkipped(t *testing.T) {
+	ctx := context.Background()
+	flake, err := nix.ParseFlakeURL(".")
+	require.NoError(t, err)
+
+	step := LockfileStep{
+		Enable: true,
+	}
+
+	// Subflake with override inputs should skip lockfile check
+	subflake := SubflakeConfig{
+		Dir: ".",
+		OverrideInputs: map[string]string{
+			"nixpkgs": "github:NixOS/nixpkgs/nixos-unstable",
+		},
+	}
+
+	result := runLockfileStep(ctx, flake, step, subflake)
+	assert.Equal(t, "lockfile", result.Name)
+	assert.True(t, result.Success)
+	assert.Contains(t, result.Output, "Skipped")
+}
+
+func TestOverrideInputs_NoSkipWhenEmpty(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	ctx := context.Background()
+	flake, err := nix.ParseFlakeURL("github:saberzero1/omnix/main")
+	require.NoError(t, err)
+
+	step := LockfileStep{
+		Enable: true,
+	}
+
+	// Subflake without override inputs should run lockfile check
+	subflake := SubflakeConfig{
+		Dir:            ".",
+		OverrideInputs: make(map[string]string),
+	}
+
+	result := runLockfileStep(ctx, flake, step, subflake)
+	assert.Equal(t, "lockfile", result.Name)
+	// Result may succeed or fail, but it should not be skipped
+	assert.NotContains(t, result.Output, "Skipped")
+}

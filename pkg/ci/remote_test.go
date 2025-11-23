@@ -76,7 +76,12 @@ func TestRunBuildStepRemote(t *testing.T) {
 		RemoteHost: "user@remotehost",
 	}
 
-	result := runBuildStepRemote(ctx, opts.RemoteHost, flake, step, opts)
+	subflake := SubflakeConfig{
+		Dir:            ".",
+		OverrideInputs: make(map[string]string),
+	}
+
+	result := runBuildStepRemote(ctx, opts.RemoteHost, flake, step, opts, subflake)
 
 	// Should complete without panic
 	assert.Equal(t, "build", result.Name)
@@ -103,7 +108,12 @@ func TestRunLockfileStepRemote(t *testing.T) {
 		Enable: true,
 	}
 
-	result := runLockfileStepRemote(ctx, "user@host", flake, step)
+	subflake := SubflakeConfig{
+		Dir:            ".",
+		OverrideInputs: make(map[string]string),
+	}
+
+	result := runLockfileStepRemote(ctx, "user@host", flake, step, subflake)
 
 	assert.Equal(t, "lockfile", result.Name)
 	assert.Greater(t, result.Duration.Nanoseconds(), int64(0))
@@ -123,7 +133,12 @@ func TestRunFlakeCheckStepRemote(t *testing.T) {
 		Enable: true,
 	}
 
-	result := runFlakeCheckStepRemote(ctx, "user@host", flake, step)
+	subflake := SubflakeConfig{
+		Dir:            ".",
+		OverrideInputs: make(map[string]string),
+	}
+
+	result := runFlakeCheckStepRemote(ctx, "user@host", flake, step, subflake)
 
 	assert.Equal(t, "flakeCheck", result.Name)
 	assert.Greater(t, result.Duration.Nanoseconds(), int64(0))
@@ -145,7 +160,12 @@ func TestRunCustomStepRemote(t *testing.T) {
 		Command: []string{"echo", "test"},
 	}
 
-	result := runCustomStepRemote(ctx, "user@host", flake, stepName, step)
+	subflake := SubflakeConfig{
+		Dir:            ".",
+		OverrideInputs: make(map[string]string),
+	}
+
+	result := runCustomStepRemote(ctx, "user@host", flake, stepName, step, subflake)
 
 	assert.Equal(t, "custom:custom-test", result.Name)
 	assert.Greater(t, result.Duration.Nanoseconds(), int64(0))
