@@ -305,7 +305,9 @@ ci:
 		require.NoError(t, err)
 
 		attr := flake.GetAttr()
-		configName := attr.AsList()[0]
+		attrList := attr.AsList()
+		require.NotEmpty(t, attrList, "Expected attribute list to not be empty for .#alt")
+		configName := attrList[0]
 		
 		subflakes, err := config.GetConfigByName(configName)
 		require.NoError(t, err)
