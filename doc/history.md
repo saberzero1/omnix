@@ -6,6 +6,38 @@ order: 100
 
 ## 2.0.1 (Unreleased) {#2.0.1}
 
+**Feature Enhancements - TUI Implementation**
+
+This release implements a Terminal User Interface (TUI) for omnix, replacing the Rust Dioxus desktop GUI with a more maintainable terminal-based interface.
+
+### New TUI Command
+- **om tui**: Launch interactive terminal user interface
+  - Built with Bubble Tea framework (https://github.com/charmbracelet/bubbletea)
+  - Four main views: Dashboard, Health Checks, System Info, and Flake Browser
+  - Keyboard-driven navigation with intuitive shortcuts (1-4 for views, r to refresh, ? for help)
+  - Color-coded health check status indicators
+  - Real-time system information display
+  - Asynchronous data loading for responsive interface
+  - Clean, modern terminal UI with Lipgloss styling
+
+### TUI Features
+- **Dashboard View (1)**: Main landing page with navigation guide
+- **Health Checks View (2)**: All Nix system health checks with visual status
+  - Checks: Nix version, flakes, trusted users, caches, max jobs, shell, direnv, homebrew, rosetta
+  - Green (✓) for passing checks, Red (✗) for failures
+- **System Info View (3)**: Detailed Nix installation information
+  - Nix version and configuration details
+  - System architecture, substituters, experimental features
+  - User environment and OS information
+- **Flake Browser View (4)**: Flake exploration (placeholder for future development)
+- **Help View (?)**: Complete keyboard shortcut reference
+
+### Implementation Details
+- **Dependencies**: Added charm.sh packages (bubbletea, lipgloss, bubbles)
+- **Package Structure**: New `pkg/tui` package with modular view components
+- **Integration**: Seamlessly integrates with existing health and nix packages
+- **Architecture**: Elm-inspired model-update-view pattern for reliable state management
+
 **Feature Enhancements - Future Work Implementation**
 
 This release implements the majority of future work items identified in package README files, significantly expanding functionality and improving code quality.
