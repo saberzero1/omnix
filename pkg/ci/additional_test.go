@@ -257,17 +257,17 @@ func TestToJSON_ErrorHandling(t *testing.T) {
 }
 
 func TestGenerateMatrix_MissingDefaultConfig(t *testing.T) {
-systems := []string{"x86_64-linux"}
-config := Config{
-Configs: map[string]map[string]SubflakeConfig{
-"production": {
-".": {Dir: ".", Skip: false},
-},
-},
-}
+	systems := []string{"x86_64-linux"}
+	config := Config{
+		Configs: map[string]map[string]SubflakeConfig{
+			"production": {
+				".": {Dir: ".", Skip: false},
+			},
+		},
+	}
 
-// Should error because there's no "default" config
-_, err := GenerateMatrix(systems, config)
-assert.Error(t, err)
-assert.Contains(t, err.Error(), "default")
+	// Should error because there's no "default" config
+	_, err := GenerateMatrix(systems, config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "default")
 }
