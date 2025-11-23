@@ -226,7 +226,8 @@ func TestGitHubMatrix_LargeMatrix(t *testing.T) {
 		},
 	}
 
-	matrix := GenerateMatrix(systems, config)
+	matrix, err := GenerateMatrix(systems, config)
+	require.NoError(t, err)
 
 	// 4 systems × 4 subflakes = 16 rows
 	assert.Equal(t, 16, matrix.Count())
@@ -253,4 +254,20 @@ func TestToJSON_ErrorHandling(t *testing.T) {
 	var decoded GitHubMatrix
 	err = json.Unmarshal([]byte(jsonStr), &decoded)
 	require.NoError(t, err)
+}
+
+func TestGenerateMatrix_MissingDefaultConfig(t *testing.T) {
+systems := []string{"x86_64-linux"}
+config := Config{
+Configs: map[string]map[string]SubflakeConfig{
+"production": {
+".": {Dir: ".", Skip: false},
+},
+},
+}
+
+// Should error because there's no "default" config
+_, err := GenerateMatrix(systems, config)
+assert.Error(t, err)
+assert.Contains(t, err.Error(), "default")
 }

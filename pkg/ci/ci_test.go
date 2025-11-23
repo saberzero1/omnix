@@ -281,7 +281,8 @@ func TestGenerateMatrix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			matrix := GenerateMatrix(tt.systems, tt.config)
+			matrix, err := GenerateMatrix(tt.systems, tt.config)
+			require.NoError(t, err)
 			assert.Equal(t, tt.expectedCount, matrix.Count())
 
 			if tt.expectedFirst != nil && len(matrix.Include) > 0 {

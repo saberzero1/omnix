@@ -219,7 +219,10 @@ Example:
 			}
 
 			// Generate matrix
-			matrix := ci.GenerateMatrix(ciSystems, config)
+			matrix, err := ci.GenerateMatrix(ciSystems, config)
+			if err != nil {
+				return fmt.Errorf("failed to generate matrix: %w", err)
+			}
 
 			// Convert to JSON
 			jsonOutput, err := matrix.ToJSON()
