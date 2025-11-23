@@ -176,6 +176,8 @@ func RunWithUI(ctx context.Context, flake nix.FlakeURL, configName string, subfl
 
 	// Create UI model
 	model := ui.NewCIRunner(flake.String(), configName, opts.Systems, subflakeNames)
+	// Don't use alternate screen mode to allow native terminal interactions
+	// (e.g., sudo password prompts, Ctrl+C handling)
 	p := tea.NewProgram(model)
 
 	// Use channels to safely collect results and errors
