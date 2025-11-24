@@ -15,9 +15,14 @@ A `result` symlink is also produced, containing a JSON of all built paths. See [
 
 `om ci run` accepts any valid [flake URL](https://nixos.asia/en/flake-url) or a Github PR URL.
 
+By default, `om ci run` displays an interactive terminal UI with real-time progress tracking, spinner animations, and color-coded status indicators. The UI is automatically disabled for non-interactive environments (pipes, CI) or can be manually disabled with `--no-ui`.
+
 ```sh
-# Run CI on current directory flake
+# Run CI on current directory flake (with interactive UI)
 $ om ci # Or `om ci run` or `om ci run .`
+
+# Disable the interactive UI (useful for scripts or CI)
+$ om ci run --no-ui
 
 # Run CI on a local flake (default is $PWD)
 $ om ci run ~/code/myproject
@@ -38,6 +43,22 @@ $ om ci run .#default.dev
 # Run CI remotely over SSH
 $ om ci run --on ssh://myname@myserver ~/code/myproject
 ```
+
+### Interactive UI Features {#ui}
+
+When running in an interactive terminal, `om ci run` displays a live progress view with:
+
+- **Real-time progress tracking**: See each step as it runs with spinner animations
+- **Status indicators**: Color-coded symbols (○ pending, ◐ running, ✓ success, ✗ failed, ⊘ skipped)
+- **Duration tracking**: See how long each step and subflake takes
+- **Interactive controls**: Press 'o' to toggle output details, 'q' to quit
+- **Clean formatting**: No JSON strings, proper newlines and structured layout
+
+The UI automatically detects terminal support and falls back to JSON logging when:
+- Output is piped to another command
+- Running in CI environments (with `--github-output`)
+- Manually disabled with `--no-ui`
+
 
 ## Results JSON and closure {#out-link}
 

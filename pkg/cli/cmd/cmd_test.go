@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/saberzero1/omnix/pkg/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -194,5 +195,5 @@ func TestNewCICmd(t *testing.T) {
 func TestIsTerminal(t *testing.T) {
 	// Test with various file descriptors
 	// Just ensure the function doesn't panic
-	_ = isTerminal() // Just call it to ensure it works
+	_ = common.IsTerminal() // Just call it to ensure it works
 }

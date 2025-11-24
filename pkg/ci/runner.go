@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/saberzero1/omnix/pkg/nix/store"
+	"github.com/saberzero1/omnix/pkg/ui"
 	"go.uber.org/zap"
 )
 
@@ -139,6 +141,344 @@ func Run(ctx context.Context, flake nix.FlakeURL, subflakesConfig map[string]Sub
 	}
 
 	return runSubflakesSequential(ctx, flake, subflakes, opts)
+}
+
+// RunWithUI executes the CI pipeline with an interactive UI
+func RunWithUI(ctx context.Context, flake nix.FlakeURL, configName string, subflakesConfig map[string]SubflakeConfig, opts RunOptions) ([]Result, error) {
+	// Collect subflakes to run
+	var subflakes []struct {
+		name   string
+		config SubflakeConfig
+	}
+
+	for name, subflake := range subflakesConfig {
+		// Skip if marked to skip
+		if subflake.Skip {
+			continue
+		}
+
+		// Skip if can't run on requested systems
+		if !subflake.CanRunOn(opts.Systems) {
+			continue
+		}
+
+		subflakes = append(subflakes, struct {
+			name   string
+			config SubflakeConfig
+		}{name, subflake})
+	}
+
+	// Extract subflake names for UI
+	subflakeNames := make([]string, len(subflakes))
+	for i, sf := range subflakes {
+		subflakeNames[i] = sf.name
+	}
+
+	// Create UI model
+	model := ui.NewCIRunner(flake.String(), configName, opts.Systems, subflakeNames)
+	// Don't use alternate screen mode to allow native terminal interactions
+	// (e.g., sudo password prompts, Ctrl+C handling)
+	p := tea.NewProgram(model)
+
+	// Use channels to safely collect results and errors
+	resultsChan := make(chan resultWithIndex, len(subflakes))
+
+	// Create cancellable context for CI operations
+	// This allows us to cancel ongoing builds if user exits the UI
+	ciCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Run the CI in a goroutine and send updates to the UI
+	go func() {
+		defer close(resultsChan)
+
+		if opts.Parallel {
+			// Run subflakes in parallel
+			runSubflakesParallelWithUI(ciCtx, flake, subflakes, opts, p, resultsChan)
+		} else {
+			// Run subflakes sequentially
+			runSubflakesSequentialWithUI(ciCtx, flake, subflakes, opts, p, resultsChan)
+		}
+	}()
+
+	// Run the UI
+	if _, err := p.Run(); err != nil {
+		cancel() // Cancel ongoing CI operations
+		return nil, fmt.Errorf("UI error: %w", err)
+	}
+
+	// Collect all results after UI is done
+	resultsMap := make(map[int]Result)
+	var firstError error
+	for res := range resultsChan {
+		resultsMap[res.index] = res.result
+		if res.err != nil && firstError == nil {
+			firstError = res.err
+		}
+	}
+
+	// Only return results for completed subflakes, in original order
+	results := make([]Result, 0, len(subflakes))
+	for i := 0; i < len(subflakes); i++ {
+		if result, ok := resultsMap[i]; ok {
+			results = append(results, result)
+		}
+	}
+
+	return results, firstError
+}
+
+// resultWithIndex holds a result with its index for channel communication
+type resultWithIndex struct {
+	index  int
+	result Result
+	err    error
+}
+
+// runSubflakesSequentialWithUI runs subflakes sequentially with UI updates
+func runSubflakesSequentialWithUI(ctx context.Context, flake nix.FlakeURL, subflakes []struct {
+	name   string
+	config SubflakeConfig
+}, opts RunOptions, p *tea.Program, resultsChan chan<- resultWithIndex) {
+	var firstError error
+
+	for i, sf := range subflakes {
+		// Send subflake start message
+		p.Send(ui.SubflakeStartMsg{Index: i, Name: sf.name})
+
+		// Run the subflake and collect result
+		result, err := runSubflakeWithUI(ctx, flake, sf.name, sf.config, opts, p, i)
+		resultsChan <- resultWithIndex{i, result, err}
+
+		// Send subflake complete message
+		errStr := ""
+		if err != nil {
+			errStr = err.Error()
+			if firstError == nil {
+				firstError = err
+			}
+		}
+		p.Send(ui.SubflakeCompleteMsg{Index: i, Error: errStr})
+
+		// If there's an error, stop
+		if err != nil {
+			break
+		}
+	}
+
+	// Send done message
+	if firstError != nil {
+		p.Send(ui.ErrorMsg{Err: firstError})
+	} else {
+		p.Send(ui.DoneMsg{})
+	}
+}
+
+// runSubflakesParallelWithUI runs subflakes in parallel with UI updates
+func runSubflakesParallelWithUI(ctx context.Context, flake nix.FlakeURL, subflakes []struct {
+	name   string
+	config SubflakeConfig
+}, opts RunOptions, p *tea.Program, resultsChan chan<- resultWithIndex) {
+	// Determine concurrency limit
+	maxConcurrency := opts.MaxConcurrency
+	if maxConcurrency <= 0 {
+		maxConcurrency = len(subflakes)
+	}
+
+	// Create channels for work distribution
+	type job struct {
+		index  int
+		name   string
+		config SubflakeConfig
+	}
+
+	jobs := make(chan job, len(subflakes))
+	errorsChan := make(chan error, len(subflakes))
+
+	// Start worker goroutines
+	for w := 0; w < maxConcurrency; w++ {
+		go func() {
+			for j := range jobs {
+				// Send subflake start message
+				p.Send(ui.SubflakeStartMsg{Index: j.index, Name: j.name})
+
+				// Run the subflake and collect result
+				result, err := runSubflakeWithUI(ctx, flake, j.name, j.config, opts, p, j.index)
+				resultsChan <- resultWithIndex{j.index, result, err}
+
+				// Send subflake complete message
+				errStr := ""
+				if err != nil {
+					errStr = err.Error()
+					errorsChan <- err
+				} else {
+					errorsChan <- nil
+				}
+				p.Send(ui.SubflakeCompleteMsg{Index: j.index, Error: errStr})
+			}
+		}()
+	}
+
+	// Queue all jobs
+	for i, sf := range subflakes {
+		jobs <- job{
+			index:  i,
+			name:   sf.name,
+			config: sf.config,
+		}
+	}
+	close(jobs)
+
+	// Wait for all jobs to complete
+	var firstError error
+	for i := 0; i < len(subflakes); i++ {
+		if err := <-errorsChan; err != nil && firstError == nil {
+			firstError = err
+		}
+	}
+
+	// Send done message
+	if firstError != nil {
+		p.Send(ui.ErrorMsg{Err: firstError})
+	} else {
+		p.Send(ui.DoneMsg{})
+	}
+}
+
+// runSubflakeWithUI runs CI for a single subflake and sends UI updates
+func runSubflakeWithUI(ctx context.Context, flake nix.FlakeURL, name string, subflake SubflakeConfig, opts RunOptions, p *tea.Program, subflakeIndex int) (Result, error) {
+	start := time.Now()
+
+	result := Result{
+		Subflake: name,
+		Steps:    make(map[string]StepResult),
+		Success:  true,
+	}
+
+	// Get the subflake URL
+	subflakeURL := flake
+	if subflake.Dir != "." {
+		urlStr := flake.String() + "#" + subflake.Dir
+		var err error
+		subflakeURL, err = nix.ParseFlakeURL(urlStr)
+		if err != nil {
+			return result, fmt.Errorf("failed to parse subflake URL: %w", err)
+		}
+	}
+
+	// Run build step
+	if subflake.Steps.Build.Enable {
+		p.Send(ui.StepStartMsg{SubflakeIndex: subflakeIndex, StepName: "build"})
+
+		var stepResult StepResult
+		if opts.RemoteHost != "" {
+			stepResult = runBuildStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.Build, opts, subflake)
+		} else {
+			stepResult = runBuildStep(ctx, subflakeURL, subflake.Steps.Build, opts, subflake)
+		}
+		result.Steps["build"] = stepResult
+
+		p.Send(ui.StepCompleteMsg{
+			SubflakeIndex: subflakeIndex,
+			Output:        stepResult.Output,
+			Error:         stepResult.Error,
+		})
+
+		if !stepResult.Success {
+			result.Success = false
+		}
+	}
+
+	// Run lockfile step
+	if subflake.Steps.Lockfile.Enable {
+		// Check if we should skip
+		if len(subflake.OverrideInputs) > 0 {
+			p.Send(ui.StepSkipMsg{
+				SubflakeIndex: subflakeIndex,
+				StepName:      "lockfile",
+				Reason:        "Skipped (has override inputs)",
+			})
+		} else {
+			p.Send(ui.StepStartMsg{SubflakeIndex: subflakeIndex, StepName: "lockfile"})
+
+			var stepResult StepResult
+			if opts.RemoteHost != "" {
+				stepResult = runLockfileStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.Lockfile, subflake)
+			} else {
+				stepResult = runLockfileStep(ctx, subflakeURL, subflake.Steps.Lockfile, subflake)
+			}
+			result.Steps["lockfile"] = stepResult
+
+			p.Send(ui.StepCompleteMsg{
+				SubflakeIndex: subflakeIndex,
+				Output:        stepResult.Output,
+				Error:         stepResult.Error,
+			})
+
+			if !stepResult.Success {
+				result.Success = false
+			}
+		}
+	}
+
+	// Run flake check step
+	if subflake.Steps.FlakeCheck.Enable {
+		p.Send(ui.StepStartMsg{SubflakeIndex: subflakeIndex, StepName: "flakeCheck"})
+
+		var stepResult StepResult
+		if opts.RemoteHost != "" {
+			stepResult = runFlakeCheckStepRemote(ctx, opts.RemoteHost, subflakeURL, subflake.Steps.FlakeCheck, subflake)
+		} else {
+			stepResult = runFlakeCheckStep(ctx, subflakeURL, subflake.Steps.FlakeCheck, subflake)
+		}
+		result.Steps["flakeCheck"] = stepResult
+
+		p.Send(ui.StepCompleteMsg{
+			SubflakeIndex: subflakeIndex,
+			Output:        stepResult.Output,
+			Error:         stepResult.Error,
+		})
+
+		if !stepResult.Success {
+			result.Success = false
+		}
+	}
+
+	// Run custom steps
+	for stepName, customStep := range subflake.Steps.Custom {
+		// Check if this step can run on current systems
+		if !customStep.CanRunOn(opts.Systems) {
+			p.Send(ui.StepSkipMsg{
+				SubflakeIndex: subflakeIndex,
+				StepName:      "custom:" + stepName,
+				Reason:        "Skipped (system not supported)",
+			})
+			continue
+		}
+
+		p.Send(ui.StepStartMsg{SubflakeIndex: subflakeIndex, StepName: "custom:" + stepName})
+
+		var stepResult StepResult
+		if opts.RemoteHost != "" {
+			stepResult = runCustomStepRemote(ctx, opts.RemoteHost, subflakeURL, stepName, customStep, subflake)
+		} else {
+			stepResult = runCustomStep(ctx, subflakeURL, stepName, customStep, subflake)
+		}
+		result.Steps["custom:"+stepName] = stepResult
+
+		p.Send(ui.StepCompleteMsg{
+			SubflakeIndex: subflakeIndex,
+			Output:        stepResult.Output,
+			Error:         stepResult.Error,
+		})
+
+		if !stepResult.Success {
+			result.Success = false
+		}
+	}
+
+	result.Duration = time.Since(start)
+	return result, nil
 }
 
 // runSubflakesSequential runs subflakes one after another

@@ -46,6 +46,7 @@ func newCIRunCmd() *cobra.Command {
 		ciRemoteHost     string
 		ciParallel       bool
 		ciMaxConcurrency int
+		ciNoUI           bool
 	)
 
 	cmd := &cobra.Command{
@@ -114,17 +115,6 @@ Example:
 				systems = []string{info.Config.System.Value}
 			}
 
-			if configName != "" {
-				logger.Info("Running CI",
-					zap.String("flake", flake.WithoutAttr().String()),
-					zap.String("config", configName),
-					zap.Strings("systems", systems))
-			} else {
-				logger.Info("Running CI",
-					zap.String("flake", flake.String()),
-					zap.Strings("systems", systems))
-			}
-
 			// Run CI
 			opts := ci.RunOptions{
 				Systems:                systems,
@@ -138,14 +128,34 @@ Example:
 			// We need to pass the base flake URL without the config attribute
 			// because the config name is used to select subflakes, not as a flake attribute
 			baseFlake := flake.WithoutAttr()
-			results, err := ci.Run(ctx, baseFlake, subflakes, opts)
-			if err != nil {
-				return fmt.Errorf("CI run failed: %w", err)
+
+			var results []ci.Result
+			// Use UI if running in a terminal and not disabled
+			if !ciNoUI && !ciGitHubOutput && common.IsTerminal() {
+				results, err = ci.RunWithUI(ctx, baseFlake, configName, subflakes, opts)
+			} else {
+				// Fall back to non-UI version
+				if configName != "" {
+					logger.Info("Running CI",
+						zap.String("flake", flake.WithoutAttr().String()),
+						zap.String("config", configName),
+						zap.Strings("systems", systems))
+				} else {
+					logger.Info("Running CI",
+						zap.String("flake", flake.String()),
+						zap.Strings("systems", systems))
+				}
+
+				results, err = ci.Run(ctx, baseFlake, subflakes, opts)
+
+				// Log results
+				for _, result := range results {
+					ci.LogResult(result, logger)
+				}
 			}
 
-			// Log results
-			for _, result := range results {
-				ci.LogResult(result, logger)
+			if err != nil {
+				return fmt.Errorf("CI run failed: %w", err)
 			}
 
 			// Write results to file if requested
@@ -175,7 +185,10 @@ Example:
 				return fmt.Errorf("some CI steps failed")
 			}
 
-			logger.Info("✅ All CI steps passed")
+			// Show success message if not using UI (UI shows its own success message)
+			if ciNoUI || ciGitHubOutput || !common.IsTerminal() {
+				logger.Info("✅ All CI steps passed")
+			}
 			return nil
 		},
 	}
@@ -189,6 +202,7 @@ Example:
 	cmd.Flags().StringVar(&ciRemoteHost, "remote", "", "Remote host for SSH-based builds (e.g., user@host)")
 	cmd.Flags().BoolVar(&ciParallel, "parallel", false, "Run subflakes in parallel")
 	cmd.Flags().IntVar(&ciMaxConcurrency, "max-concurrency", 0, "Maximum number of parallel builds (0 = unlimited)")
+	cmd.Flags().BoolVar(&ciNoUI, "no-ui", false, "Disable interactive UI")
 
 	return cmd
 }

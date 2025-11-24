@@ -48,6 +48,25 @@ This release completes the migration of CI features from Rust to Go, achieving f
 
 This release implements a Terminal User Interface (TUI) for omnix, replacing the Rust Dioxus desktop GUI with a more maintainable terminal-based interface.
 
+### Enhanced CI Terminal Output
+- **Interactive UI for CI runs**: `om ci run` now displays an enhanced terminal UI with real-time progress tracking
+  - Spinner animations for running steps
+  - Color-coded status indicators (○ pending, ◐ running, ✓ success, ✗ failed, ⊘ skipped)
+  - Duration tracking for each step and subflake
+  - Structured, readable layout with proper borders and formatting
+  - No more JSON strings printed directly to terminal
+  - Newlines and formatting are properly respected
+- **Interactive controls**: 
+  - Press 'o' to toggle detailed output display
+  - Press 'q' to quit
+  - Automatic window size detection and adjustment
+- **Smart UI detection**: 
+  - Automatically enabled when running in an interactive terminal
+  - Automatically disabled when output is piped, in CI environments, or with `--github-output`
+  - Manual control with `--no-ui` flag
+- **Backward compatibility**: Falls back to JSON logging for non-interactive environments
+- **Built with Bubble Tea**: Uses the industry-standard charm.sh libraries for terminal UI
+
 ### New TUI Command
 - **om tui**: Launch interactive terminal user interface
   - Built with Bubble Tea framework (https://github.com/charmbracelet/bubbletea)
