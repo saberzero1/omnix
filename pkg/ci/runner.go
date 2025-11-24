@@ -355,16 +355,8 @@ func runSubflakeWithUI(ctx context.Context, flake nix.FlakeURL, name string, sub
 		Success:  true,
 	}
 
-	// Get the subflake URL
-	subflakeURL := flake
-	if subflake.Dir != "." {
-		urlStr := flake.String() + "#" + subflake.Dir
-		var err error
-		subflakeURL, err = nix.ParseFlakeURL(urlStr)
-		if err != nil {
-			return result, fmt.Errorf("failed to parse subflake URL: %w", err)
-		}
-	}
+	// Get the subflake URL using the correct method
+	subflakeURL := flake.SubFlakeURL(subflake.Dir)
 
 	// Run build step
 	if subflake.Steps.Build.Enable {
@@ -587,16 +579,8 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 		Success:  true,
 	}
 
-	// Get the subflake URL
-	subflakeURL := flake
-	if subflake.Dir != "." {
-		urlStr := flake.String() + "#" + subflake.Dir
-		var err error
-		subflakeURL, err = nix.ParseFlakeURL(urlStr)
-		if err != nil {
-			return result, fmt.Errorf("failed to parse subflake URL: %w", err)
-		}
-	}
+	// Get the subflake URL using the correct method
+	subflakeURL := flake.SubFlakeURL(subflake.Dir)
 
 	// Run build step
 	if subflake.Steps.Build.Enable {
