@@ -15,8 +15,10 @@ func TestGetOmnixSourcePath(t *testing.T) {
 	// Test when OMNIX_SOURCE env var is set
 	t.Run("from environment variable", func(t *testing.T) {
 		expected := "/nix/store/abc123-omnix"
-		os.Setenv("OMNIX_SOURCE", expected)
-		defer os.Unsetenv("OMNIX_SOURCE")
+		require.NoError(t, os.Setenv("OMNIX_SOURCE", expected))
+		defer func() {
+			_ = os.Unsetenv("OMNIX_SOURCE")
+		}()
 
 		path, err := getOmnixSourcePath()
 		require.NoError(t, err)
@@ -25,7 +27,7 @@ func TestGetOmnixSourcePath(t *testing.T) {
 
 	// Test error when neither env var nor store path is available
 	t.Run("no source available", func(t *testing.T) {
-		os.Unsetenv("OMNIX_SOURCE")
+		_ = os.Unsetenv("OMNIX_SOURCE")
 		// This test may fail in Nix environment, but should work in normal Go test
 		_, err := getOmnixSourcePath()
 		// Either succeeds (in Nix) or fails (outside Nix)
