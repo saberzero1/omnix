@@ -5,10 +5,66 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/saberzero1/omnix/pkg/nix"
 )
+
+var (
+	// repoRoot is the root directory of the repository, determined at init time
+	repoRoot     string
+	repoRootOnce sync.Once
+)
+
+// getRepoRoot returns the repository root directory.
+// It's determined once and cached for subsequent calls.
+//
+// The function walks up the directory tree from the current working directory
+// looking for go.mod or flake.nix as indicators of the repository root.
+// If these markers are not found, it falls back to the current working directory.
+//
+// Note: This fallback may not be correct in all scenarios (e.g., tests or when
+// running from outside the repository). In such cases, the FLAKE_METADATA and
+// FLAKE_ADDSTRINGCONTEXT environment variables should be set explicitly.
+func getRepoRoot() string {
+	repoRootOnce.Do(func() {
+		// Try to get from current working directory first
+		if cwd, err := os.Getwd(); err == nil {
+			// Walk up the directory tree looking for go.mod or flake.nix
+			dir := cwd
+			for {
+				// Check for go.mod or flake.nix as indicators of repo root
+				if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+					repoRoot = dir
+					return
+				}
+				if _, err := os.Stat(filepath.Join(dir, "flake.nix")); err == nil {
+					repoRoot = dir
+					return
+				}
+
+				// Move up one directory
+				parent := filepath.Dir(dir)
+				if parent == dir {
+					// Reached root without finding markers
+					break
+				}
+				dir = parent
+			}
+		}
+
+		// Fallback to current working directory
+		// This may not be correct in all scenarios but is better than failing
+		if cwd, err := os.Getwd(); err == nil {
+			repoRoot = cwd
+		} else {
+			repoRoot = "."
+		}
+	})
+	return repoRoot
+}
 
 // FlakeFn defines the interface for Nix flake functions.
 // This interface allows calling Nix flakes as functions with typed inputs and outputs.
@@ -230,9 +286,9 @@ func FlakeMetadataURL() string {
 	if url := os.Getenv("FLAKE_METADATA"); url != "" {
 		return url
 	}
-	// Fallback: use the path within the Go package structure
-	// The flake.nix files are co-located with the Go code
-	return "path:./pkg/nix/flake/functions/metadata#default"
+	// Fallback: use absolute path to avoid issues with WorkDir changes
+	root := getRepoRoot()
+	return fmt.Sprintf("path:%s/pkg/nix/flake/functions/metadata#default", root)
 }
 
 // FlakeAddStringContextURL returns the URL to the FLAKE_ADDSTRINGCONTEXT flake function
@@ -241,7 +297,7 @@ func FlakeAddStringContextURL() string {
 	if url := os.Getenv("FLAKE_ADDSTRINGCONTEXT"); url != "" {
 		return url
 	}
-	// Fallback: use the path within the Go package structure
-	// The flake.nix files are co-located with the Go code
-	return "path:./pkg/nix/flake/functions/addstringcontext#default"
+	// Fallback: use absolute path to avoid issues with WorkDir changes
+	root := getRepoRoot()
+	return fmt.Sprintf("path:%s/pkg/nix/flake/functions/addstringcontext#default", root)
 }

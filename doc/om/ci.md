@@ -191,7 +191,11 @@ For a real-world example of custom steps, checkout [Omnix's configuration](https
 
 ## Remote CI {#remote}
 
-Omnix can run CI over SSH.
+Omnix provides two modes for running CI remotely over SSH:
+
+### Metadata-based Remote CI (Recommended) {#remote-metadata}
+
+The `--on` flag enables efficient remote CI with flake caching:
 
 ```sh
 om ci run --on ssh://myname@myserver ~/code/myproject
@@ -199,13 +203,53 @@ om ci run --on ssh://myname@myserver ~/code/myproject
 
 What this does:
 
-1. Copy the flake source to the remote server, and run `om ci` there
-2. Copy the built paths back to local store
+1. **Cache flake locally**: Uses flake metadata to cache the flake (and optionally its inputs) in your local Nix store
+2. **Copy once**: Copies the cached flake closure and omnix source to the remote server (one-time initial operation)
+3. **Build remotely**: Runs `om ci` on the remote server using the cached flake
+4. **Copy results back**: If `--out-link` is specified, copies build results back to local store and creates a GC root
 
-### Options
+**Key Benefits:**
+- Significantly reduces network traffic by caching flakes before copying
+- Only copies each flake/input once, even for repeated builds
+- Leverages Nix's content-addressed storage for deduplication
+- Matches the Rust implementation's efficiency
 
-- Pass `copy-inputs=true` if you wish to copy all flake inputs recursively. This is useful if you have private Git inputs. For example, `om ci run --on "ssh://myname@myserver?copy-inputs=true" ~/code/myproject`
-- Omnix copies the results back to local store, unless `--no-link` was passed.
+**Options:**
+- `--copy-inputs`: Transitively copy all flake inputs to the remote store. Useful for private Git inputs that the remote can't access
+- `--out-link <PATH>`: Creates a local symlink to the results JSON and copies all build outputs back to local store
+- `--no-link`: Don't copy results back (faster for CI scenarios where you only need remote builds)
+
+**Examples:**
+
+```sh
+# Basic remote CI with caching
+om ci run --on ssh://builder@myserver ~/code/myproject
+
+# Copy all flake inputs (useful for private inputs)
+om ci run --on "ssh://builder@myserver?copy-inputs=true" ~/code/myproject
+# Or use the flag:
+om ci run --on ssh://builder@myserver --copy-inputs ~/code/myproject
+
+# Don't copy results back
+om ci run --on ssh://builder@myserver --no-link ~/code/myproject
+
+# Copy results to custom location
+om ci run --on ssh://builder@myserver --out-link ./build-results.json ~/code/myproject
+```
+
+### Direct SSH Remote CI (Legacy) {#remote-direct}
+
+The `--remote` flag provides simple direct SSH execution without caching:
+
+```sh
+om ci run --remote myname@myserver ~/code/myproject
+```
+
+This mode directly executes build commands via SSH without the flake caching optimization. It's simpler but less efficient for repeated builds.
+
+**When to use `--on` vs `--remote`:**
+- Use `--on` (metadata-based): For most remote CI scenarios, especially with repeated builds or when network efficiency matters
+- Use `--remote` (direct SSH): For quick one-off builds or when you don't need caching overhead
 
 ## Examples
 
