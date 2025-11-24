@@ -176,7 +176,7 @@ func runRemoteWithoutOutLink(
 	omnixSource string,
 ) ([]Result, error) {
 	// Build the remote om ci run command
-	args := buildRemoteCICommand(omnixSource, cachedFlake, subflakesConfig, opts, "")
+	args := buildRemoteCICommand(omnixSource, cachedFlake, opts, "")
 
 	// Execute via SSH
 	output, err := executeRemoteCommand(ctx, sshURI.String(), args)
@@ -219,7 +219,7 @@ func runRemoteWithOutLink(
 	omJSONPath := filepath.Join(tmpDir, "om.json")
 
 	// Build the remote om ci run command with out-link
-	args := buildRemoteCICommand(omnixSource, cachedFlake, subflakesConfig, opts, omJSONPath)
+	args := buildRemoteCICommand(omnixSource, cachedFlake, opts, omJSONPath)
 
 	// Execute via SSH
 	output, err := executeRemoteCommand(ctx, sshURI.String(), args)
@@ -263,7 +263,6 @@ func runRemoteWithOutLink(
 func buildRemoteCICommand(
 	omnixSource string,
 	cachedFlake nix.FlakeURL,
-	subflakesConfig map[string]SubflakeConfig,
 	opts RunOptions,
 	outLink string,
 ) []string {

@@ -104,7 +104,7 @@ func TestBuildRemoteCICommand(t *testing.T) {
 			Systems: []string{"x86_64-linux"},
 		}
 
-		args := buildRemoteCICommand(omnixSource, flake, nil, opts, "")
+		args := buildRemoteCICommand(omnixSource, flake, opts, "")
 		
 		assert.Contains(t, args, "nix")
 		assert.Contains(t, args, "run")
@@ -124,7 +124,7 @@ func TestBuildRemoteCICommand(t *testing.T) {
 		opts := RunOptions{}
 		outLink := "/tmp/results.json"
 
-		args := buildRemoteCICommand(omnixSource, flake, nil, opts, outLink)
+		args := buildRemoteCICommand(omnixSource, flake, opts, outLink)
 		
 		assert.Contains(t, args, "--out-link")
 		assert.Contains(t, args, outLink)
@@ -140,7 +140,7 @@ func TestBuildRemoteCICommand(t *testing.T) {
 			MaxConcurrency: 4,
 		}
 
-		args := buildRemoteCICommand(omnixSource, flake, nil, opts, "")
+		args := buildRemoteCICommand(omnixSource, flake, opts, "")
 		
 		assert.Contains(t, args, "--parallel")
 		assert.Contains(t, args, "--max-concurrency")
@@ -155,7 +155,7 @@ func TestBuildRemoteCICommand(t *testing.T) {
 			IncludeAllDependencies: true,
 		}
 
-		args := buildRemoteCICommand(omnixSource, flake, nil, opts, "")
+		args := buildRemoteCICommand(omnixSource, flake, opts, "")
 		
 		assert.Contains(t, args, "--include-all-dependencies")
 	})
