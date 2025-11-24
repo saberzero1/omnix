@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/saberzero1/omnix/pkg/nix"
@@ -99,7 +98,9 @@ func Call[Input, Output any](
 		if err := os.Chdir(opts.WorkDir); err != nil {
 			return "", output, fmt.Errorf("failed to change directory: %w", err)
 		}
-		defer os.Chdir(originalDir)
+		defer func() {
+			_ = os.Chdir(originalDir)
+		}()
 	}
 
 	// Run nix build
@@ -235,14 +236,4 @@ func FlakeAddStringContextURL() string {
 	// Get the path from the Nix environment
 	// In development, this might not be set, so we return a relative path
 	return "path:./crates/nix_rs/src/flake/functions/addstringcontext#default"
-}
-
-// resolveRelativePath resolves a path relative to the omnix source directory
-func resolveRelativePath(relPath string) string {
-	// Try to get OMNIX_SOURCE from environment (set by Nix)
-	if src := os.Getenv("OMNIX_SOURCE"); src != "" {
-		return filepath.Join(src, relPath)
-	}
-	// Fallback: assume we're in the repo
-	return relPath
 }

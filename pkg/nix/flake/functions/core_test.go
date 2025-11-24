@@ -141,20 +141,20 @@ func TestTrueFlakeURL(t *testing.T) {
 	original := os.Getenv("TRUE_FLAKE")
 	defer func() {
 		if original != "" {
-			os.Setenv("TRUE_FLAKE", original)
+			_ = os.Setenv("TRUE_FLAKE", original)
 		} else {
-			os.Unsetenv("TRUE_FLAKE")
+			_ = os.Unsetenv("TRUE_FLAKE")
 		}
 	}()
 
 	t.Run("with env var", func(t *testing.T) {
 		expected := "path:/custom/true/flake"
-		os.Setenv("TRUE_FLAKE", expected)
+		_ = os.Setenv("TRUE_FLAKE", expected)
 		assert.Equal(t, expected, TrueFlakeURL())
 	})
 
 	t.Run("without env var", func(t *testing.T) {
-		os.Unsetenv("TRUE_FLAKE")
+		_ = os.Unsetenv("TRUE_FLAKE")
 		url := TrueFlakeURL()
 		assert.Contains(t, url, "github:boolean-option/true")
 	})
@@ -165,20 +165,20 @@ func TestFalseFlakeURL(t *testing.T) {
 	original := os.Getenv("FALSE_FLAKE")
 	defer func() {
 		if original != "" {
-			os.Setenv("FALSE_FLAKE", original)
+			_ = os.Setenv("FALSE_FLAKE", original)
 		} else {
-			os.Unsetenv("FALSE_FLAKE")
+			_ = os.Unsetenv("FALSE_FLAKE")
 		}
 	}()
 
 	t.Run("with env var", func(t *testing.T) {
 		expected := "path:/custom/false/flake"
-		os.Setenv("FALSE_FLAKE", expected)
+		_ = os.Setenv("FALSE_FLAKE", expected)
 		assert.Equal(t, expected, FalseFlakeURL())
 	})
 
 	t.Run("without env var", func(t *testing.T) {
-		os.Unsetenv("FALSE_FLAKE")
+		_ = os.Unsetenv("FALSE_FLAKE")
 		url := FalseFlakeURL()
 		assert.Contains(t, url, "github:boolean-option/false")
 	})
@@ -189,20 +189,20 @@ func TestFlakeMetadataURL(t *testing.T) {
 	original := os.Getenv("FLAKE_METADATA")
 	defer func() {
 		if original != "" {
-			os.Setenv("FLAKE_METADATA", original)
+			_ = os.Setenv("FLAKE_METADATA", original)
 		} else {
-			os.Unsetenv("FLAKE_METADATA")
+			_ = os.Unsetenv("FLAKE_METADATA")
 		}
 	}()
 
 	t.Run("with env var", func(t *testing.T) {
 		expected := "path:/nix/store/abc-metadata"
-		os.Setenv("FLAKE_METADATA", expected)
+		_ = os.Setenv("FLAKE_METADATA", expected)
 		assert.Equal(t, expected, FlakeMetadataURL())
 	})
 
 	t.Run("without env var", func(t *testing.T) {
-		os.Unsetenv("FLAKE_METADATA")
+		_ = os.Unsetenv("FLAKE_METADATA")
 		url := FlakeMetadataURL()
 		assert.Contains(t, url, "metadata")
 	})
@@ -213,20 +213,20 @@ func TestFlakeAddStringContextURL(t *testing.T) {
 	original := os.Getenv("FLAKE_ADDSTRINGCONTEXT")
 	defer func() {
 		if original != "" {
-			os.Setenv("FLAKE_ADDSTRINGCONTEXT", original)
+			_ = os.Setenv("FLAKE_ADDSTRINGCONTEXT", original)
 		} else {
-			os.Unsetenv("FLAKE_ADDSTRINGCONTEXT")
+			_ = os.Unsetenv("FLAKE_ADDSTRINGCONTEXT")
 		}
 	}()
 
 	t.Run("with env var", func(t *testing.T) {
 		expected := "path:/nix/store/abc-addstringcontext"
-		os.Setenv("FLAKE_ADDSTRINGCONTEXT", expected)
+		_ = os.Setenv("FLAKE_ADDSTRINGCONTEXT", expected)
 		assert.Equal(t, expected, FlakeAddStringContextURL())
 	})
 
 	t.Run("without env var", func(t *testing.T) {
-		os.Unsetenv("FLAKE_ADDSTRINGCONTEXT")
+		_ = os.Unsetenv("FLAKE_ADDSTRINGCONTEXT")
 		url := FlakeAddStringContextURL()
 		assert.Contains(t, url, "addstringcontext")
 	})
