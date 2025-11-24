@@ -22,9 +22,9 @@ func TestDefaultConfig(t *testing.T) {
 	rootConfig := defaultConfig["."]
 	assert.False(t, rootConfig.Skip)
 	assert.Equal(t, ".", rootConfig.Dir)
-	assert.True(t, rootConfig.Steps.Build.Enable)
-	assert.True(t, rootConfig.Steps.Lockfile.Enable)
-	assert.True(t, rootConfig.Steps.FlakeCheck.Enable)
+	assert.False(t, rootConfig.Steps.Build.Enable)
+	assert.False(t, rootConfig.Steps.Lockfile.Enable)
+	assert.False(t, rootConfig.Steps.FlakeCheck.Enable)
 }
 
 func TestLoadConfig(t *testing.T) {
@@ -90,6 +90,78 @@ func TestLoadConfig_MissingFile(t *testing.T) {
 	_, err := LoadConfig("/nonexistent/path/om.yaml")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to read config file")
+}
+
+func TestLoadConfig_FlakeCheckKeyCompatibility(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Test with flake-check key (Rust style)
+	t.Run("flake-check key", func(t *testing.T) {
+		configPath := filepath.Join(tmpDir, "om-rust-style.yaml")
+		configContent := `
+ci:
+  default:
+    ".":
+      dir: "."
+      steps:
+        flake-check:
+          enable: true
+`
+		err := os.WriteFile(configPath, []byte(configContent), 0644)
+		require.NoError(t, err)
+
+		config, err := LoadConfig(configPath)
+		require.NoError(t, err)
+
+		rootConfig := config.Configs["default"]["."]
+		assert.True(t, rootConfig.Steps.FlakeCheck.Enable, "flake-check key should be recognized")
+	})
+
+	// Test with flakeCheck key (Go style)
+	t.Run("flakeCheck key", func(t *testing.T) {
+		configPath := filepath.Join(tmpDir, "om-go-style.yaml")
+		configContent := `
+ci:
+  default:
+    ".":
+      dir: "."
+      steps:
+        flakeCheck:
+          enable: true
+`
+		err := os.WriteFile(configPath, []byte(configContent), 0644)
+		require.NoError(t, err)
+
+		config, err := LoadConfig(configPath)
+		require.NoError(t, err)
+
+		rootConfig := config.Configs["default"]["."]
+		assert.True(t, rootConfig.Steps.FlakeCheck.Enable, "flakeCheck key should be recognized")
+	})
+
+	// Test that flake-check takes precedence over flakeCheck
+	t.Run("flake-check precedence", func(t *testing.T) {
+		configPath := filepath.Join(tmpDir, "om-both-keys.yaml")
+		configContent := `
+ci:
+  default:
+    ".":
+      dir: "."
+      steps:
+        flakeCheck:
+          enable: false
+        flake-check:
+          enable: true
+`
+		err := os.WriteFile(configPath, []byte(configContent), 0644)
+		require.NoError(t, err)
+
+		config, err := LoadConfig(configPath)
+		require.NoError(t, err)
+
+		rootConfig := config.Configs["default"]["."]
+		assert.True(t, rootConfig.Steps.FlakeCheck.Enable, "flake-check should take precedence over flakeCheck")
+	})
 }
 
 func TestSubflakeConfig_CanRunOn(t *testing.T) {

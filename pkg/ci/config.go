@@ -44,10 +44,52 @@ type StepsConfig struct {
 	Lockfile LockfileStep `yaml:"lockfile" json:"lockfile"`
 
 	// FlakeCheck controls the flake check step
+	// Supports both "flakeCheck" (Go style) and "flake-check" (Rust style) YAML keys
 	FlakeCheck FlakeCheckStep `yaml:"flakeCheck" json:"flakeCheck"`
 
 	// Custom defines custom steps (map of step name to CustomStep)
 	Custom map[string]CustomStep `yaml:"custom" json:"custom"`
+}
+
+// UnmarshalYAML implements custom unmarshaling to support both "flakeCheck" and "flake-check" keys.
+// The "flake-check" key (Rust style) takes precedence over "flakeCheck" (Go style) if both are present.
+func (s *StepsConfig) UnmarshalYAML(value *yaml.Node) error {
+	// First decode into a raw map to check which keys are present
+	var rawMap map[string]yaml.Node
+	if err := value.Decode(&rawMap); err != nil {
+		return err
+	}
+
+	// Define a temporary struct with explicit field mapping
+	type stepsConfigAlias struct {
+		Build      BuildStep             `yaml:"build"`
+		Lockfile   LockfileStep          `yaml:"lockfile"`
+		FlakeCheck FlakeCheckStep        `yaml:"flakeCheck"`
+		Custom     map[string]CustomStep `yaml:"custom"`
+	}
+
+	var temp stepsConfigAlias
+	if err := value.Decode(&temp); err != nil {
+		return err
+	}
+
+	// If "flake-check" key exists (Rust style), use it to override flakeCheck
+	// This provides backwards compatibility while preferring the Rust style
+	if flakeCheckNode, ok := rawMap["flake-check"]; ok {
+		var flakeCheck FlakeCheckStep
+		if err := flakeCheckNode.Decode(&flakeCheck); err != nil {
+			return err
+		}
+		temp.FlakeCheck = flakeCheck
+	}
+
+	// Copy values to the actual struct
+	s.Build = temp.Build
+	s.Lockfile = temp.Lockfile
+	s.FlakeCheck = temp.FlakeCheck
+	s.Custom = temp.Custom
+
+	return nil
 }
 
 // BuildStep configures the build step
@@ -128,14 +170,14 @@ func DefaultConfig() Config {
 					Dir:  ".",
 					Steps: StepsConfig{
 						Build: BuildStep{
-							Enable: true,
+							Enable: false,
 							Impure: false,
 						},
 						Lockfile: LockfileStep{
-							Enable: true,
+							Enable: false,
 						},
 						FlakeCheck: FlakeCheckStep{
-							Enable: true,
+							Enable: false,
 						},
 						Custom: make(map[string]CustomStep),
 					},
