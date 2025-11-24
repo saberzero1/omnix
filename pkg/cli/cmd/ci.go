@@ -9,6 +9,7 @@ import (
 	"github.com/saberzero1/omnix/pkg/ci"
 	"github.com/saberzero1/omnix/pkg/common"
 	"github.com/saberzero1/omnix/pkg/nix"
+	"github.com/saberzero1/omnix/pkg/nix/flake/functions/addstringcontext"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -165,11 +166,39 @@ Example:
 					return fmt.Errorf("failed to marshal results: %w", err)
 				}
 
-				if err := os.WriteFile(ciOutputPath, data, 0644); err != nil {
-					return fmt.Errorf("failed to write results: %w", err)
+				// Write results to a temporary file first
+				tmpFile, err := os.CreateTemp("", "om-ci-results-*.json")
+				if err != nil {
+					return fmt.Errorf("failed to create temp file: %w", err)
+				}
+				tmpPath := tmpFile.Name()
+				defer func() {
+					_ = os.Remove(tmpPath) // Best effort cleanup
+				}()
+
+				if _, err := tmpFile.Write(data); err != nil {
+					_ = tmpFile.Close()
+					return fmt.Errorf("failed to write temp file: %w", err)
+				}
+				if err := tmpFile.Close(); err != nil {
+					return fmt.Errorf("failed to close temp file: %w", err)
 				}
 
-				logger.Info("Results written", zap.String("path", ciOutputPath))
+				// Use addstringcontext to create a Nix store path that tracks dependencies
+				// This ensures that the JSON file properly tracks all the store paths it references
+				storePath, err := addstringcontext.AddStringContext(ctx, tmpPath, ciOutputPath)
+				if err != nil {
+					// If addstringcontext fails (e.g., Nix not available), fall back to simple file write
+					logger.Warn("Failed to use addstringcontext, writing results directly", zap.Error(err))
+					if err := os.WriteFile(ciOutputPath, data, 0644); err != nil {
+						return fmt.Errorf("failed to write results: %w", err)
+					}
+					logger.Info("Results written", zap.String("path", ciOutputPath))
+				} else {
+					logger.Info("Results available",
+						zap.String("storePath", storePath),
+						zap.String("outLink", ciOutputPath))
+				}
 			}
 
 			// Check if any results failed

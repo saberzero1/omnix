@@ -4,8 +4,9 @@ lib.mapAttrs (_: v: builtins.toString v) {
   CACHIX_BIN = lib.getExe' cachix "cachix";
   OM_INIT_REGISTRY = "path:${src}/crates/omnix-init/registry";
   DEFAULT_FLAKE_SCHEMAS = "path:${src}/nix/flake-schemas";
-  FLAKE_METADATA = "path:${src}/crates/nix_rs/src/flake/functions/metadata";
-  FLAKE_ADDSTRINGCONTEXT = "path:${src}/crates/nix_rs/src/flake/functions/addstringcontext";
+  # Flake functions now use the Go implementation
+  FLAKE_METADATA = "path:${src}/pkg/nix/flake/functions/metadata";
+  FLAKE_ADDSTRINGCONTEXT = "path:${src}/pkg/nix/flake/functions/addstringcontext";
   DEVOUR_FLAKE = fetchFromGitHub {
     owner = "srid";
     repo = "devour-flake";
