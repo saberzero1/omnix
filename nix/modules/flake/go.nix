@@ -34,6 +34,10 @@
             # Inject flake-related environment variables
             "-X github.com/saberzero1/omnix/pkg/nix/flake.defaultFlakeSchemas=${envVars.DEFAULT_FLAKE_SCHEMAS}"
             "-X github.com/saberzero1/omnix/pkg/nix/flake.inspectFlake=${envVars.INSPECT_FLAKE}"
+            # Inject flake function paths (for addstringcontext and metadata)
+            # These are embedded at build time so the binary works from any directory
+            "-X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeMetadata=${envVars.FLAKE_METADATA}"
+            "-X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeAddStringContext=${envVars.FLAKE_ADDSTRINGCONTEXT}"
             # Inject omnix source path for remote CI
             "-X github.com/saberzero1/omnix/pkg/ci.omnixSourcePath=${envVars.OMNIX_SOURCE}"
           ];

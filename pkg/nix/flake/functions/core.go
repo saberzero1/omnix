@@ -12,6 +12,19 @@ import (
 	"github.com/saberzero1/omnix/pkg/nix"
 )
 
+// Build-time injectable variables.
+// These are set via ldflags during Nix build to embed absolute paths to flake functions.
+// Example: -X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeMetadata=path:/nix/store/...
+var (
+	// flakeMetadata is the path to the metadata flake function.
+	// Injected via: -X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeMetadata=...
+	flakeMetadata string
+
+	// flakeAddStringContext is the path to the addstringcontext flake function.
+	// Injected via: -X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeAddStringContext=...
+	flakeAddStringContext string
+)
+
 var (
 	// repoRoot is the root directory of the repository, determined at init time
 	repoRoot     string
@@ -280,9 +293,18 @@ func FalseFlakeURL() string {
 	return "github:boolean-option/false/d06b4794a134686c70a1325df88a6e6768c6b212"
 }
 
-// FlakeMetadataURL returns the URL to the FLAKE_METADATA flake function
-// This is set by the Nix build environment
+// FlakeMetadataURL returns the URL to the FLAKE_METADATA flake function.
+//
+// Priority order:
+// 1. Build-time injected value (flakeMetadata variable, set via ldflags during Nix build)
+// 2. Runtime environment variable (FLAKE_METADATA)
+// 3. Fallback: derive from repository root (only works when running from within the repo)
 func FlakeMetadataURL() string {
+	// First, check build-time injected value (most reliable for Nix builds)
+	if flakeMetadata != "" {
+		return flakeMetadata + "#default"
+	}
+	// Then check runtime environment variable
 	if url := os.Getenv("FLAKE_METADATA"); url != "" {
 		return url
 	}
@@ -291,9 +313,18 @@ func FlakeMetadataURL() string {
 	return fmt.Sprintf("path:%s/pkg/nix/flake/functions/metadata#default", root)
 }
 
-// FlakeAddStringContextURL returns the URL to the FLAKE_ADDSTRINGCONTEXT flake function
-// This is set by the Nix build environment
+// FlakeAddStringContextURL returns the URL to the FLAKE_ADDSTRINGCONTEXT flake function.
+//
+// Priority order:
+// 1. Build-time injected value (flakeAddStringContext variable, set via ldflags during Nix build)
+// 2. Runtime environment variable (FLAKE_ADDSTRINGCONTEXT)
+// 3. Fallback: derive from repository root (only works when running from within the repo)
 func FlakeAddStringContextURL() string {
+	// First, check build-time injected value (most reliable for Nix builds)
+	if flakeAddStringContext != "" {
+		return flakeAddStringContext + "#default"
+	}
+	// Then check runtime environment variable
 	if url := os.Getenv("FLAKE_ADDSTRINGCONTEXT"); url != "" {
 		return url
 	}
