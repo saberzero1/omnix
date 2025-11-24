@@ -51,15 +51,6 @@ This release completes the migration of CI features from Rust to Go, achieving f
   - Now matches Rust implementation behavior with `transform_override_inputs`
   - Fixes errors like "input 'flake/devour-flake' has an override for a non-existent input 'nixpkgs'"
 
-### Implementation Details
-- Added `RunOnRemoteStore` function for metadata-based remote CI orchestration
-- Implemented `cacheFlake` helper that uses flake metadata functions to cache flakes with optional inputs
-- Added `OMNIX_SOURCE` injection via ldflags for remote omnix execution
-- New `--on` flag distinct from `--remote` (legacy SSH-only execution)
-- Added comprehensive tests for remote CI caching functionality
-- Enhanced build system to inject omnix source path at compile time
-- All changes maintain backward compatibility
-
 **Go Migration - Flake Functions Framework**
 
 This release implements the flake functions framework from Rust in Go, providing FFI-like capabilities to call Nix functions defined in flakes.

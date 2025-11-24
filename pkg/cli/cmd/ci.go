@@ -95,7 +95,7 @@ Example:
 	cmd.Flags().BoolVar(&ciNoLink, "no-link", false, "Do not create output results file")
 	cmd.Flags().StringVar(&ciRemoteHost, "remote", "", "Remote host for SSH-based builds (e.g., user@host) - uses direct SSH, no caching")
 	cmd.Flags().StringVar(&ciRemoteStore, "on", "", "Remote store URI for builds with flake caching (e.g., ssh://user@host)")
-	cmd.Flags().BoolVar(&ciCopyInputs, "copy-inputs", false, "Copy all flake inputs to remote store (used with --on)")
+	cmd.Flags().BoolVar(&ciCopyInputs, "copy-inputs", false, "Copy all flake inputs to remote store (requires --on)")
 	cmd.Flags().BoolVar(&ciParallel, "parallel", false, "Run subflakes in parallel")
 	cmd.Flags().IntVar(&ciMaxConcurrency, "max-concurrency", 0, "Maximum number of parallel builds (0 = unlimited)")
 	cmd.Flags().BoolVar(&ciNoUI, "no-ui", false, "Disable interactive UI")
@@ -123,6 +123,15 @@ type ciRunParams struct {
 func runCICommand(args []string, params ciRunParams) error {
 	ctx := context.Background()
 	logger := common.Logger()
+
+	// Validate flag combinations
+	if params.remoteHost != "" && params.remoteStore != "" {
+		return fmt.Errorf("cannot specify both --remote and --on flags")
+	}
+
+	if params.copyInputs && params.remoteStore == "" {
+		return fmt.Errorf("--copy-inputs requires --on to be specified")
+	}
 
 	// Get flake URL (default to current directory)
 	flakeURL := "."

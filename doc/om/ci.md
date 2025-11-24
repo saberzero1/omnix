@@ -204,7 +204,7 @@ om ci run --on ssh://myname@myserver ~/code/myproject
 What this does:
 
 1. **Cache flake locally**: Uses flake metadata to cache the flake (and optionally its inputs) in your local Nix store
-2. **Copy once**: Copies the cached flake closure and omnix source to the remote server (one-time operation)
+2. **Copy once**: Copies the cached flake closure and omnix source to the remote server (one-time initial operation)
 3. **Build remotely**: Runs `om ci` on the remote server using the cached flake
 4. **Copy results back**: If `--out-link` is specified, copies build results back to local store and creates a GC root
 

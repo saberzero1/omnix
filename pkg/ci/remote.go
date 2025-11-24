@@ -130,12 +130,15 @@ func getOmnixSourcePath() (string, error) {
 
 	// If the binary is in /nix/store, use its store path
 	if strings.HasPrefix(omnixPath, "/nix/store/") {
-		// Extract store path (everything up to the first / after /nix/store/)
-		parts := strings.SplitN(omnixPath, "/", 5)
-		if len(parts) >= 4 {
-			storePath := "/" + filepath.Join(parts[1], parts[2], parts[3])
+		// Extract store path (everything up to the first / after /nix/store/hash-name)
+		rel := omnixPath[len("/nix/store/"):]
+		idx := strings.Index(rel, "/")
+		if idx != -1 {
+			storePath := "/nix/store/" + rel[:idx]
 			return storePath, nil
 		}
+		// If there is no further slash, the binary is directly in the store path
+		return omnixPath, nil
 	}
 
 	return "", fmt.Errorf("OMNIX_SOURCE not set and omnix not in /nix/store")
@@ -192,7 +195,10 @@ func runRemoteWithoutOutLink(
 	}, nil
 }
 
-// runRemoteWithOutLink runs CI on remote and copies results back for local out-link
+// runRemoteWithOutLink runs CI on remote and copies results back for local out-link.
+//
+// Note: Currently returns a generic success result rather than parsing the JSON.
+// The detailed results are available in the out-link file on disk.
 func runRemoteWithOutLink(
 	ctx context.Context,
 	sshURI *store.SSHURI,

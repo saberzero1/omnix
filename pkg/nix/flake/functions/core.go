@@ -20,6 +20,14 @@ var (
 
 // getRepoRoot returns the repository root directory.
 // It's determined once and cached for subsequent calls.
+//
+// The function walks up the directory tree from the current working directory
+// looking for go.mod or flake.nix as indicators of the repository root.
+// If these markers are not found, it falls back to the current working directory.
+//
+// Note: This fallback may not be correct in all scenarios (e.g., tests or when
+// running from outside the repository). In such cases, the FLAKE_METADATA and
+// FLAKE_ADDSTRINGCONTEXT environment variables should be set explicitly.
 func getRepoRoot() string {
 	repoRootOnce.Do(func() {
 		// Try to get from current working directory first
@@ -48,6 +56,7 @@ func getRepoRoot() string {
 		}
 
 		// Fallback to current working directory
+		// This may not be correct in all scenarios but is better than failing
 		if cwd, err := os.Getwd(); err == nil {
 			repoRoot = cwd
 		} else {
