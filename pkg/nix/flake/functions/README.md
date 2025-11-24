@@ -109,6 +109,9 @@ Example:
 package myfunction
 
 import (
+	"context"
+	"os"
+
 	"github.com/saberzero1/omnix/pkg/nix/flake/functions"
 )
 

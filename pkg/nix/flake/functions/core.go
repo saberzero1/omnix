@@ -204,8 +204,10 @@ func TrueFlakeURL() string {
 	if url := os.Getenv("TRUE_FLAKE"); url != "" {
 		return url
 	}
-	// Fallback to stable commit from the boolean-option GitHub organization
-	// This is a minimal flake that evaluates to true for boolean inputs
+	// Fallback to stable commit from the boolean-option GitHub organization.
+	// This commit SHA must match the one in nix/envs/default.nix (TRUE_FLAKE, line 55).
+	// These are minimal flakes maintained specifically for boolean inputs in flake functions.
+	// Pinned to a specific commit to ensure reproducibility.
 	return "github:boolean-option/true/6ecb49143ca31b140a5273f1575746ba93c3f698"
 }
 
@@ -215,8 +217,10 @@ func FalseFlakeURL() string {
 	if url := os.Getenv("FALSE_FLAKE"); url != "" {
 		return url
 	}
-	// Fallback to stable commit from the boolean-option GitHub organization
-	// This is a minimal flake that evaluates to false for boolean inputs
+	// Fallback to stable commit from the boolean-option GitHub organization.
+	// This commit SHA must match the one in nix/envs/default.nix (FALSE_FLAKE, line 49).
+	// These are minimal flakes maintained specifically for boolean inputs in flake functions.
+	// Pinned to a specific commit to ensure reproducibility.
 	return "github:boolean-option/false/d06b4794a134686c70a1325df88a6e6768c6b212"
 }
 
