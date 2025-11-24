@@ -44,6 +44,37 @@ This release completes the migration of CI features from Rust to Go, achieving f
 - Added `appendOverrideInputsForFlake` helper function for proper devour-flake input transformation
 - All changes maintain backward compatibility
 
+**Go Migration - Flake Functions Framework**
+
+This release implements the flake functions framework from Rust in Go, providing FFI-like capabilities to call Nix functions defined in flakes.
+
+### Flake Functions
+- **Core Framework**: Implemented `FlakeFn` interface for defining and calling Nix flake functions
+  - Generic `Call[Input, Output]()` function for executing flake functions
+  - Automatic serialization of input structs to `--override-input` arguments
+  - Boolean value support using TRUE_FLAKE and FALSE_FLAKE
+  - Environment variable resolution for flake function URLs
+  - Located in `pkg/nix/flake/functions/`
+  
+- **Metadata Function**: Alternative to `nix flake metadata` using Nix evaluation
+  - Retrieve flake store paths and metadata
+  - Support for transitive input inclusion
+  - Useful for advanced flake introspection
+  - Nix implementation: `pkg/nix/flake/functions/metadata/flake.nix`
+  
+- **AddStringContext Function**: Add string context to JSON files with store paths
+  - Transforms JSON files so output paths are tracked as dependencies
+  - Enables proper dependency tracking in Nix store
+  - Requires `--impure` mode
+  - Nix implementation: `pkg/nix/flake/functions/addstringcontext/flake.nix`
+
+### Technical Details
+- Ported from `crates/nix_rs/src/flake/functions/` to Go
+- Includes both Nix flake implementations (`flake.nix`, `flake.lock`) and Go wrappers
+- Comprehensive test coverage (>80%) for all functions
+- Documented in `pkg/nix/flake/functions/README.md`
+- Environment variables: `FLAKE_METADATA`, `FLAKE_ADDSTRINGCONTEXT`, `TRUE_FLAKE`, `FALSE_FLAKE`
+
 **Feature Enhancements - TUI Implementation**
 
 This release implements a Terminal User Interface (TUI) for omnix, replacing the Rust Dioxus desktop GUI with a more maintainable terminal-based interface.

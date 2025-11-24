@@ -1,0 +1,248 @@
+package functions
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/saberzero1/omnix/pkg/nix"
+)
+
+// FlakeFn defines the interface for Nix flake functions.
+// This interface allows calling Nix flakes as functions with typed inputs and outputs.
+type FlakeFn[Input, Output any] interface {
+	// FlakeURL returns the flake URL referencing this function
+	FlakeURL() string
+
+	// Init is called after reading from Nix build to initialize/modify the output
+	Init(out *Output)
+}
+
+// CallOptions configures how a flake function is called
+type CallOptions struct {
+	// Impure enables --impure flag for nix build
+	Impure bool
+
+	// WorkDir sets the working directory for the nix build command
+	WorkDir string
+
+	// OutLink specifies the output link path. If empty, --no-link is used
+	OutLink string
+
+	// ExtraArgs are additional arguments to pass to nix build
+	// Note: --override-input arguments are treated specially (see transformOverrideInputs)
+	ExtraArgs []string
+}
+
+// Call executes a flake function with the given input and returns the output.
+//
+// The function:
+//  1. Serializes the input struct to override-input arguments
+//  2. Runs `nix build` with the flake function URL
+//  3. Reads the JSON output from the built store path
+//  4. Deserializes the JSON into the output struct
+//  5. Calls Init on the output
+//
+// Arguments with boolean values are converted to TRUE_FLAKE or FALSE_FLAKE URLs.
+// Override-input arguments in ExtraArgs are prefixed with "flake/" to account for
+// nested flake inputs.
+func Call[Input, Output any](
+	ctx context.Context,
+	fn FlakeFn[Input, Output],
+	opts *CallOptions,
+	input Input,
+) (storePath string, output Output, err error) {
+	if opts == nil {
+		opts = &CallOptions{}
+	}
+
+	// Build nix build command
+	args := []string{"build", fn.FlakeURL(), "-L", "--print-out-paths"}
+
+	if opts.Impure {
+		args = append(args, "--impure")
+	}
+
+	if opts.OutLink != "" {
+		args = append(args, "--out-link", opts.OutLink)
+	} else {
+		args = append(args, "--no-link")
+	}
+
+	// Convert input struct to override-input arguments
+	overrideInputs, err := toOverrideInputs(input)
+	if err != nil {
+		return "", output, fmt.Errorf("failed to convert input to override-inputs: %w", err)
+	}
+
+	for k, v := range overrideInputs {
+		args = append(args, "--override-input", k, v)
+	}
+
+	// Transform and add extra args (with special handling for --override-input)
+	args = append(args, transformOverrideInputs(opts.ExtraArgs)...)
+
+	// Create command
+	cmd := nix.NewCmd()
+
+	// Set working directory if specified
+	if opts.WorkDir != "" {
+		// We need to modify the context or run in a different way
+		// For now, we'll change directory before running
+		originalDir, err := os.Getwd()
+		if err != nil {
+			return "", output, fmt.Errorf("failed to get current directory: %w", err)
+		}
+		if err := os.Chdir(opts.WorkDir); err != nil {
+			return "", output, fmt.Errorf("failed to change directory: %w", err)
+		}
+		defer os.Chdir(originalDir)
+	}
+
+	// Run nix build
+	cmdOutput, err := cmd.Run(ctx, args...)
+	if err != nil {
+		return "", output, fmt.Errorf("nix build failed: %w", err)
+	}
+
+	// Parse store path from output
+	storePath = strings.TrimSpace(cmdOutput)
+	if storePath == "" {
+		return "", output, fmt.Errorf("nix build returned empty output")
+	}
+
+	// Read JSON from store path
+	data, err := os.ReadFile(storePath)
+	if err != nil {
+		return "", output, fmt.Errorf("failed to read output from %s: %w", storePath, err)
+	}
+
+	// Unmarshal JSON into output
+	if err := json.Unmarshal(data, &output); err != nil {
+		return "", output, fmt.Errorf("failed to unmarshal output JSON: %w", err)
+	}
+
+	// Initialize output
+	fn.Init(&output)
+
+	return storePath, output, nil
+}
+
+// toOverrideInputs converts a struct to a map of override-input arguments.
+// Fields are serialized to JSON and then converted:
+//   - String values are used as-is
+//   - Boolean true becomes TrueFlakeURL()
+//   - Boolean false becomes FalseFlakeURL()
+//   - Null/nil values are skipped
+func toOverrideInputs(input any) (map[string]string, error) {
+	// Serialize to JSON to get field names and values
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal to map: %w", err)
+	}
+
+	result := make(map[string]string)
+	for k, v := range raw {
+		switch val := v.(type) {
+		case string:
+			result[k] = val
+		case bool:
+			if val {
+				result[k] = TrueFlakeURL()
+			} else {
+				result[k] = FalseFlakeURL()
+			}
+		case nil:
+			// Skip null values
+			continue
+		default:
+			// For other types, we skip them
+			// The original Rust implementation only handles String and Bool
+			continue
+		}
+	}
+
+	return result, nil
+}
+
+// transformOverrideInputs transforms --override-input arguments to use "flake/" prefix.
+//
+// This is necessary because when calling a flake function that itself takes a flake as input,
+// we need to distinguish between override inputs for the function's flake vs the nested flake.
+//
+// For example, if the function flake has an input named "flake" (common pattern), and we want
+// to override an input of that nested flake, we use "flake/input-name" as the override key.
+func transformOverrideInputs(args []string) []string {
+	result := make([]string, 0, len(args))
+	i := 0
+	for i < len(args) {
+		result = append(result, args[i])
+		if args[i] == "--override-input" && i+1 < len(args) {
+			i++
+			// Prefix the input name with "flake/"
+			result = append(result, "flake/"+args[i])
+		}
+		i++
+	}
+	return result
+}
+
+// TrueFlakeURL returns the URL to the TRUE_FLAKE
+// This is set by the Nix build environment
+func TrueFlakeURL() string {
+	if url := os.Getenv("TRUE_FLAKE"); url != "" {
+		return url
+	}
+	// Fallback to the GitHub repository
+	return "github:boolean-option/true/6ecb49143ca31b140a5273f1575746ba93c3f698"
+}
+
+// FalseFlakeURL returns the URL to the FALSE_FLAKE
+// This is set by the Nix build environment
+func FalseFlakeURL() string {
+	if url := os.Getenv("FALSE_FLAKE"); url != "" {
+		return url
+	}
+	// Fallback to the GitHub repository
+	return "github:boolean-option/false/d06b4794a134686c70a1325df88a6e6768c6b212"
+}
+
+// FlakeMetadataURL returns the URL to the FLAKE_METADATA flake function
+// This is set by the Nix build environment
+func FlakeMetadataURL() string {
+	if url := os.Getenv("FLAKE_METADATA"); url != "" {
+		return url
+	}
+	// Get the path from the Nix environment
+	// In development, this might not be set, so we return a relative path
+	return "path:./crates/nix_rs/src/flake/functions/metadata#default"
+}
+
+// FlakeAddStringContextURL returns the URL to the FLAKE_ADDSTRINGCONTEXT flake function
+// This is set by the Nix build environment
+func FlakeAddStringContextURL() string {
+	if url := os.Getenv("FLAKE_ADDSTRINGCONTEXT"); url != "" {
+		return url
+	}
+	// Get the path from the Nix environment
+	// In development, this might not be set, so we return a relative path
+	return "path:./crates/nix_rs/src/flake/functions/addstringcontext#default"
+}
+
+// resolveRelativePath resolves a path relative to the omnix source directory
+func resolveRelativePath(relPath string) string {
+	// Try to get OMNIX_SOURCE from environment (set by Nix)
+	if src := os.Getenv("OMNIX_SOURCE"); src != "" {
+		return filepath.Join(src, relPath)
+	}
+	// Fallback: assume we're in the repo
+	return relPath
+}
