@@ -106,7 +106,14 @@ func AddStringContextToData(ctx context.Context, data any, outLink string) (stri
 		return "", fmt.Errorf("failed to create temp file: %w", err)
 	}
 	tmpPath := tmpFile.Name()
+	
+	// Best effort cleanup of temp file
+	// We defer removal but ignore errors since:
+	// 1. The OS will clean up /tmp eventually
+	// 2. Nix build may have already consumed/moved the file
+	// 3. File permissions may have changed during processing
 	defer func() {
+		// Best effort cleanup - ignore errors as they're not critical
 		_ = os.Remove(tmpPath)
 	}()
 

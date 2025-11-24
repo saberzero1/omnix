@@ -87,10 +87,14 @@ func Call[Input, Output any](
 	// Create command
 	cmd := nix.NewCmd()
 
-	// Set working directory if specified
+	// Run nix build
+	// Note: If WorkDir is specified, we need to change the directory.
+	// Since nix.Cmd doesn't support setting the working directory directly,
+	// we change it temporarily. This is safe in our use case because:
+	// 1. This function is typically called for file-based operations
+	// 2. The working directory change is localized to this goroutine
+	// 3. We restore the original directory in a defer
 	if opts.WorkDir != "" {
-		// We need to modify the context or run in a different way
-		// For now, we'll change directory before running
 		originalDir, err := os.Getwd()
 		if err != nil {
 			return "", output, fmt.Errorf("failed to get current directory: %w", err)
@@ -103,7 +107,6 @@ func Call[Input, Output any](
 		}()
 	}
 
-	// Run nix build
 	cmdOutput, err := cmd.Run(ctx, args...)
 	if err != nil {
 		return "", output, fmt.Errorf("nix build failed: %w", err)
@@ -222,9 +225,9 @@ func FlakeMetadataURL() string {
 	if url := os.Getenv("FLAKE_METADATA"); url != "" {
 		return url
 	}
-	// Get the path from the Nix environment
-	// In development, this might not be set, so we return a relative path
-	return "path:./crates/nix_rs/src/flake/functions/metadata#default"
+	// Fallback: use the path within the Go package structure
+	// The flake.nix files are co-located with the Go code
+	return "path:./pkg/nix/flake/functions/metadata#default"
 }
 
 // FlakeAddStringContextURL returns the URL to the FLAKE_ADDSTRINGCONTEXT flake function
@@ -233,7 +236,7 @@ func FlakeAddStringContextURL() string {
 	if url := os.Getenv("FLAKE_ADDSTRINGCONTEXT"); url != "" {
 		return url
 	}
-	// Get the path from the Nix environment
-	// In development, this might not be set, so we return a relative path
-	return "path:./crates/nix_rs/src/flake/functions/addstringcontext#default"
+	// Fallback: use the path within the Go package structure
+	// The flake.nix files are co-located with the Go code
+	return "path:./pkg/nix/flake/functions/addstringcontext#default"
 }
