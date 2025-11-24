@@ -275,7 +275,7 @@ func runRemoteStoreCI(
 		remoteOpts.OutLink = ""
 	}
 
-	results, err := ci.RunOnRemoteStore(ctx, baseFlake, subflakes, opts, remoteOpts)
+	results, err := ci.RunOnRemoteStore(ctx, baseFlake, opts, remoteOpts)
 	if err != nil {
 		return nil, fmt.Errorf("remote CI failed: %w", err)
 	}

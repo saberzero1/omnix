@@ -36,7 +36,6 @@ type RemoteRunOptions struct {
 func RunOnRemoteStore(
 	ctx context.Context,
 	flake nix.FlakeURL,
-	subflakesConfig map[string]SubflakeConfig,
 	opts RunOptions,
 	remoteOpts RemoteRunOptions,
 ) ([]Result, error) {

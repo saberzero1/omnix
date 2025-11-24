@@ -182,11 +182,10 @@ func TestRunOnRemoteStore_ValidationOnly(t *testing.T) {
 		}
 
 		opts := RunOptions{}
-		subflakes := map[string]SubflakeConfig{}
 
 		// This will fail at the cache/copy stage, but that's expected
 		// We're just testing that it accepts SSH URIs
-		_, err = RunOnRemoteStore(ctx, flake, subflakes, opts, remoteOpts)
+		_, err = RunOnRemoteStore(ctx, flake, opts, remoteOpts)
 		// Error is expected since we're not actually connecting
 		assert.Error(t, err)
 	})
