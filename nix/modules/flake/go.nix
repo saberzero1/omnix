@@ -34,6 +34,8 @@
             # Inject flake-related environment variables
             "-X github.com/saberzero1/omnix/pkg/nix/flake.defaultFlakeSchemas=${envVars.DEFAULT_FLAKE_SCHEMAS}"
             "-X github.com/saberzero1/omnix/pkg/nix/flake.inspectFlake=${envVars.INSPECT_FLAKE}"
+            # Inject omnix source path for remote CI
+            "-X github.com/saberzero1/omnix/pkg/ci.omnixSourcePath=${envVars.OMNIX_SOURCE}"
           ];
 
           # Only build the main binary

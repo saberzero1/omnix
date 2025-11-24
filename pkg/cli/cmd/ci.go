@@ -10,6 +10,7 @@ import (
 	"github.com/saberzero1/omnix/pkg/common"
 	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/saberzero1/omnix/pkg/nix/flake/functions/addstringcontext"
+	"github.com/saberzero1/omnix/pkg/nix/store"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -37,7 +38,7 @@ The ci command provides comprehensive CI/CD automation including:
 
 // newCIRunCmd creates the ci run command
 func newCIRunCmd() *cobra.Command {
-	var (
+		var (
 		ciSystems        []string
 		ciGitHubOutput   bool
 		ciIncludeAllDeps bool
@@ -45,6 +46,8 @@ func newCIRunCmd() *cobra.Command {
 		ciOutputPath     string
 		ciNoLink         bool
 		ciRemoteHost     string
+		ciRemoteStore    string
+		ciCopyInputs     bool
 		ciParallel       bool
 		ciMaxConcurrency int
 		ciNoUI           bool
@@ -131,8 +134,35 @@ Example:
 			baseFlake := flake.WithoutAttr()
 
 			var results []ci.Result
-			// Use UI if running in a terminal and not disabled
-			if !ciNoUI && !ciGitHubOutput && common.IsTerminal() {
+			
+			// Check if remote store is specified (new metadata-based remote CI)
+			if ciRemoteStore != "" {
+				logger.Info("Running CI on remote store with flake caching",
+					zap.String("flake", baseFlake.String()),
+					zap.String("remote", ciRemoteStore),
+					zap.Bool("copyInputs", ciCopyInputs))
+
+				// Parse the remote store URI
+				storeURI, err := store.ParseURI(ciRemoteStore)
+				if err != nil {
+					return fmt.Errorf("failed to parse remote store URI: %w", err)
+				}
+
+				remoteOpts := ci.RemoteRunOptions{
+					StoreURI:   storeURI,
+					CopyInputs: ciCopyInputs,
+					OutLink:    ciOutputPath,
+				}
+				if ciNoLink {
+					remoteOpts.OutLink = ""
+				}
+
+				results, err = ci.RunOnRemoteStore(ctx, baseFlake, subflakes, opts, remoteOpts)
+				if err != nil {
+					return fmt.Errorf("remote CI failed: %w", err)
+				}
+			} else if !ciNoUI && !ciGitHubOutput && common.IsTerminal() {
+				// Use UI if running in a terminal and not disabled
 				results, err = ci.RunWithUI(ctx, baseFlake, configName, subflakes, opts)
 			} else {
 				// Fall back to non-UI version
@@ -228,7 +258,9 @@ Example:
 	cmd.Flags().StringVarP(&ciConfigPath, "config", "c", "om.yaml", "Path to om.yaml configuration file")
 	cmd.Flags().StringVarP(&ciOutputPath, "out-link", "o", "result.json", "Path to output results JSON")
 	cmd.Flags().BoolVar(&ciNoLink, "no-link", false, "Do not create output results file")
-	cmd.Flags().StringVar(&ciRemoteHost, "remote", "", "Remote host for SSH-based builds (e.g., user@host)")
+	cmd.Flags().StringVar(&ciRemoteHost, "remote", "", "Remote host for SSH-based builds (e.g., user@host) - uses direct SSH, no caching")
+	cmd.Flags().StringVar(&ciRemoteStore, "on", "", "Remote store URI for builds with flake caching (e.g., ssh://user@host)")
+	cmd.Flags().BoolVar(&ciCopyInputs, "copy-inputs", false, "Copy all flake inputs to remote store (used with --on)")
 	cmd.Flags().BoolVar(&ciParallel, "parallel", false, "Run subflakes in parallel")
 	cmd.Flags().IntVar(&ciMaxConcurrency, "max-concurrency", 0, "Maximum number of parallel builds (0 = unlimited)")
 	cmd.Flags().BoolVar(&ciNoUI, "no-ui", false, "Disable interactive UI")

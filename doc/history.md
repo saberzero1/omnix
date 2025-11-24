@@ -19,6 +19,20 @@ order: 100
 
 This release completes the migration of CI features from Rust to Go, achieving feature parity with the Rust implementation.
 
+### Remote CI with Flake Metadata Caching
+- **Implemented metadata-based remote CI execution** (matching Rust `run_remote.rs`)
+  - New `--on` flag for specifying remote store URIs (e.g., `--on ssh://user@host`)
+  - Caches flakes locally using `FlakeMetadata::from_nix` equivalent before copying to remote
+  - Optional `--copy-inputs` flag to transitively copy all flake inputs to remote store
+  - Significantly reduces network traffic by copying flakes once instead of per-build
+  - Supports out-link creation with automatic result copying back to local store
+  - Seamlessly integrates with existing CI configuration (om.yaml)
+- **Enhanced remote execution efficiency**
+  - Flake closure is computed locally and copied once to remote
+  - Remote builds use cached store paths, avoiding redundant fetches
+  - Omnix source is also cached and copied to remote for execution
+  - Results can be copied back and GC-rooted locally when `--out-link` is specified
+
 ### CI Improvements
 - **Override Inputs Support**: Full support for `overrideInputs` in CI configuration
   - Build step now applies override inputs when building flake outputs
@@ -38,10 +52,12 @@ This release completes the migration of CI features from Rust to Go, achieving f
   - Fixes errors like "input 'flake/devour-flake' has an override for a non-existent input 'nixpkgs'"
 
 ### Implementation Details
-- Added `DevourFlakeWithOverrides` function to support passing custom inputs to devour-flake
-- Updated all CI step runners to accept and use SubflakeConfig for override inputs
-- Enhanced test coverage with new override inputs tests
-- Added `appendOverrideInputsForFlake` helper function for proper devour-flake input transformation
+- Added `RunOnRemoteStore` function for metadata-based remote CI orchestration
+- Implemented `cacheFlake` helper that uses flake metadata functions to cache flakes with optional inputs
+- Added `OMNIX_SOURCE` injection via ldflags for remote omnix execution
+- New `--on` flag distinct from `--remote` (legacy SSH-only execution)
+- Added comprehensive tests for remote CI caching functionality
+- Enhanced build system to inject omnix source path at compile time
 - All changes maintain backward compatibility
 
 **Go Migration - Flake Functions Framework**
