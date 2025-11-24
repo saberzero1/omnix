@@ -51,14 +51,21 @@ type StepsConfig struct {
 	Custom map[string]CustomStep `yaml:"custom" json:"custom"`
 }
 
-// UnmarshalYAML implements custom unmarshaling to support both "flakeCheck" and "flake-check" keys
+// UnmarshalYAML implements custom unmarshaling to support both "flakeCheck" and "flake-check" keys.
+// The "flake-check" key (Rust style) takes precedence over "flakeCheck" (Go style) if both are present.
 func (s *StepsConfig) UnmarshalYAML(value *yaml.Node) error {
+	// First decode into a raw map to check which keys are present
+	var rawMap map[string]yaml.Node
+	if err := value.Decode(&rawMap); err != nil {
+		return err
+	}
+
 	// Define a temporary struct with explicit field mapping
 	type stepsConfigAlias struct {
-		Build      BuildStep                `yaml:"build"`
-		Lockfile   LockfileStep             `yaml:"lockfile"`
-		FlakeCheck FlakeCheckStep           `yaml:"flakeCheck"`
-		Custom     map[string]CustomStep    `yaml:"custom"`
+		Build      BuildStep             `yaml:"build"`
+		Lockfile   LockfileStep          `yaml:"lockfile"`
+		FlakeCheck FlakeCheckStep        `yaml:"flakeCheck"`
+		Custom     map[string]CustomStep `yaml:"custom"`
 	}
 
 	var temp stepsConfigAlias
@@ -66,13 +73,8 @@ func (s *StepsConfig) UnmarshalYAML(value *yaml.Node) error {
 		return err
 	}
 
-	// Check if "flake-check" key exists (Rust style)
-	var rawMap map[string]yaml.Node
-	if err := value.Decode(&rawMap); err != nil {
-		return err
-	}
-
-	// If "flake-check" exists, use it; otherwise use "flakeCheck"
+	// If "flake-check" key exists (Rust style), use it to override flakeCheck
+	// This provides backwards compatibility while preferring the Rust style
 	if flakeCheckNode, ok := rawMap["flake-check"]; ok {
 		var flakeCheck FlakeCheckStep
 		if err := flakeCheckNode.Decode(&flakeCheck); err != nil {
