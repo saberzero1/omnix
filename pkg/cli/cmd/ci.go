@@ -186,12 +186,7 @@ Example:
 
 				// Use addstringcontext to create a Nix store path that tracks dependencies
 				// This ensures that the JSON file properly tracks all the store paths it references
-				outLink := ""
-				if ciOutputPath != "" {
-					outLink = ciOutputPath
-				}
-				
-				storePath, err := addstringcontext.AddStringContext(ctx, tmpPath, outLink)
+				storePath, err := addstringcontext.AddStringContext(ctx, tmpPath, ciOutputPath)
 				if err != nil {
 					// If addstringcontext fails (e.g., Nix not available), fall back to simple file write
 					logger.Warn("Failed to use addstringcontext, writing results directly", zap.Error(err))

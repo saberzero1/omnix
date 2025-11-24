@@ -124,12 +124,3 @@ func TestOutput_AllPaths(t *testing.T) {
 	assert.Contains(t, paths, "/nix/store/def-nixpkgs")
 	assert.Contains(t, paths, "/nix/store/ghi-flake-utils")
 }
-
-func TestOutput_FlakeDir(t *testing.T) {
-	output := Output{
-		Flake: "/nix/store/abc-source/flake.nix",
-	}
-
-	dir := output.FlakeDir()
-	assert.Equal(t, "/nix/store/abc-source", dir)
-}

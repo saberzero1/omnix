@@ -88,12 +88,11 @@ func Call[Input, Output any](
 	cmd := nix.NewCmd()
 
 	// Run nix build
-	// Note: If WorkDir is specified, we need to change the directory.
+	// Note: os.Chdir affects the entire process and is NOT goroutine-safe.
+	// This implementation should not be called concurrently with different WorkDir values.
+	// We restore the original directory in a defer to minimize the window of side effects.
 	// Since nix.Cmd doesn't support setting the working directory directly,
-	// we change it temporarily. This is safe in our use case because:
-	// 1. This function is typically called for file-based operations
-	// 2. The working directory change is localized to this goroutine
-	// 3. We restore the original directory in a defer
+	// we must use os.Chdir for WorkDir support.
 	if opts.WorkDir != "" {
 		originalDir, err := os.Getwd()
 		if err != nil {
@@ -205,7 +204,8 @@ func TrueFlakeURL() string {
 	if url := os.Getenv("TRUE_FLAKE"); url != "" {
 		return url
 	}
-	// Fallback to the GitHub repository
+	// Fallback to stable commit from the boolean-option GitHub organization
+	// This is a minimal flake that evaluates to true for boolean inputs
 	return "github:boolean-option/true/6ecb49143ca31b140a5273f1575746ba93c3f698"
 }
 
@@ -215,7 +215,8 @@ func FalseFlakeURL() string {
 	if url := os.Getenv("FALSE_FLAKE"); url != "" {
 		return url
 	}
-	// Fallback to the GitHub repository
+	// Fallback to stable commit from the boolean-option GitHub organization
+	// This is a minimal flake that evaluates to false for boolean inputs
 	return "github:boolean-option/false/d06b4794a134686c70a1325df88a6e6768c6b212"
 }
 

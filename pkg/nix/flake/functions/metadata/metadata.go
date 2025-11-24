@@ -3,7 +3,6 @@ package metadata
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	"github.com/saberzero1/omnix/pkg/nix/flake/functions"
 )
@@ -136,9 +135,4 @@ func (o *Output) AllPaths() []string {
 		paths = append(paths, input.Path)
 	}
 	return paths
-}
-
-// FlakeDir returns the directory containing the flake (parent of the flake path).
-func (o *Output) FlakeDir() string {
-	return filepath.Dir(o.Flake)
 }
