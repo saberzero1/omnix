@@ -201,9 +201,10 @@ func TestFlakeMetadataURL(t *testing.T) {
 
 	t.Run("with env var", func(t *testing.T) {
 		// When no build-time variable is set (unit test case), env var takes precedence
-		expected := "path:/nix/store/abc-metadata"
-		_ = os.Setenv("FLAKE_METADATA", expected)
-		assert.Equal(t, expected, FlakeMetadataURL())
+		// The function appends #default to the env var value for consistency
+		envVal := "path:/nix/store/abc-metadata"
+		_ = os.Setenv("FLAKE_METADATA", envVal)
+		assert.Equal(t, envVal+"#default", FlakeMetadataURL())
 	})
 
 	t.Run("without env var uses fallback", func(t *testing.T) {
@@ -232,9 +233,10 @@ func TestFlakeAddStringContextURL(t *testing.T) {
 
 	t.Run("with env var", func(t *testing.T) {
 		// When no build-time variable is set (unit test case), env var takes precedence
-		expected := "path:/nix/store/abc-addstringcontext"
-		_ = os.Setenv("FLAKE_ADDSTRINGCONTEXT", expected)
-		assert.Equal(t, expected, FlakeAddStringContextURL())
+		// The function appends #default to the env var value for consistency
+		envVal := "path:/nix/store/abc-addstringcontext"
+		_ = os.Setenv("FLAKE_ADDSTRINGCONTEXT", envVal)
+		assert.Equal(t, envVal+"#default", FlakeAddStringContextURL())
 	})
 
 	t.Run("without env var uses fallback", func(t *testing.T) {

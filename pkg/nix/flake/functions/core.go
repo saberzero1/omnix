@@ -306,7 +306,7 @@ func FlakeMetadataURL() string {
 	}
 	// Then check runtime environment variable
 	if url := os.Getenv("FLAKE_METADATA"); url != "" {
-		return url
+		return url + "#default"
 	}
 	// Fallback: use absolute path to avoid issues with WorkDir changes
 	root := getRepoRoot()
@@ -326,7 +326,7 @@ func FlakeAddStringContextURL() string {
 	}
 	// Then check runtime environment variable
 	if url := os.Getenv("FLAKE_ADDSTRINGCONTEXT"); url != "" {
-		return url
+		return url + "#default"
 	}
 	// Fallback: use absolute path to avoid issues with WorkDir changes
 	root := getRepoRoot()
