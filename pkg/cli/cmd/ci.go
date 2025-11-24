@@ -38,7 +38,7 @@ The ci command provides comprehensive CI/CD automation including:
 
 // newCIRunCmd creates the ci run command
 func newCIRunCmd() *cobra.Command {
-		var (
+	var (
 		ciSystems        []string
 		ciGitHubOutput   bool
 		ciIncludeAllDeps bool

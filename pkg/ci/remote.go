@@ -86,15 +86,12 @@ func cacheFlake(ctx context.Context, flake nix.FlakeURL, includeInputs bool) (st
 		IncludeInputs: includeInputs,
 	}
 
-	storePath, output, err := metadata.GetMetadata(ctx, input)
+	_, output, err := metadata.GetMetadata(ctx, input)
 	if err != nil {
 		return "", nix.FlakeURL{}, fmt.Errorf("failed to get flake metadata: %w", err)
 	}
 
-	// storePath is the JSON output in the store; we just need the flake itself
-	_ = storePath // Not used directly, but kept for clarity
-
-	// The flake itself is the first path in the metadata output
+	// The flake itself is in the metadata output
 	cachedFlakeURL, err := nix.ParseFlakeURL(output.Flake)
 	if err != nil {
 		return "", nix.FlakeURL{}, fmt.Errorf("failed to parse cached flake URL: %w", err)
