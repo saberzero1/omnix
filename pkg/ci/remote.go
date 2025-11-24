@@ -71,11 +71,11 @@ func RunOnRemoteStore(
 
 	// Handle out-link if requested
 	if remoteOpts.OutLink != "" {
-		return runRemoteWithOutLink(ctx, sshURI, cachedFlakeURL, subflakesConfig, opts, omnixSource, remoteOpts)
+		return runRemoteWithOutLink(ctx, sshURI, cachedFlakeURL, opts, omnixSource, remoteOpts)
 	}
 
 	// Run CI on remote without out-link
-	return runRemoteWithoutOutLink(ctx, sshURI, cachedFlakeURL, subflakesConfig, opts, omnixSource)
+	return runRemoteWithoutOutLink(ctx, sshURI, cachedFlakeURL, opts, omnixSource)
 }
 
 // cacheFlake caches a flake locally using metadata functions and returns the
@@ -171,7 +171,6 @@ func runRemoteWithoutOutLink(
 	ctx context.Context,
 	sshURI *store.SSHURI,
 	cachedFlake nix.FlakeURL,
-	subflakesConfig map[string]SubflakeConfig,
 	opts RunOptions,
 	omnixSource string,
 ) ([]Result, error) {
@@ -203,7 +202,6 @@ func runRemoteWithOutLink(
 	ctx context.Context,
 	sshURI *store.SSHURI,
 	cachedFlake nix.FlakeURL,
-	subflakesConfig map[string]SubflakeConfig,
 	opts RunOptions,
 	omnixSource string,
 	remoteOpts RemoteRunOptions,
