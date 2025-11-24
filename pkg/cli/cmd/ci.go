@@ -235,7 +235,7 @@ func executeCIRun(
 ) ([]ci.Result, error) {
 	// Check if remote store is specified (new metadata-based remote CI)
 	if params.remoteStore != "" {
-		return runRemoteStoreCI(ctx, baseFlake, subflakes, opts, params, logger)
+		return runRemoteStoreCI(ctx, baseFlake, opts, params, logger)
 	}
 
 	// Use UI if running in a terminal and not disabled
@@ -251,7 +251,6 @@ func executeCIRun(
 func runRemoteStoreCI(
 	ctx context.Context,
 	baseFlake nix.FlakeURL,
-	subflakes map[string]ci.SubflakeConfig,
 	opts ci.RunOptions,
 	params ciRunParams,
 	logger *zap.Logger,
