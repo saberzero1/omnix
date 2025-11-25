@@ -248,28 +248,28 @@ func TestFlakeAddStringContextURL(t *testing.T) {
 	})
 }
 
-// TestBuildTimeVariables documents the build-time variables that can be injected
-// via ldflags. These tests verify the expected behavior when the variables are set.
+// TestBuildTimeVariables verifies that build-time variables correctly override
+// environment variables and fallback behavior. The variables are injected via ldflags:
+//   - flakeMetadata: -X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeMetadata=...
+//   - flakeAddStringContext: -X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeAddStringContext=...
+//
+// In unit tests, these variables are empty so we verify the fallback behavior works correctly.
 func TestBuildTimeVariables(t *testing.T) {
-	t.Run("flakeMetadata variable documentation", func(t *testing.T) {
-		// flakeMetadata is set via: -X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeMetadata=...
-		// When set, FlakeMetadataURL() returns the injected value + "#default"
-		// In unit tests, this variable is empty so the test verifies fallback behavior
-		if flakeMetadata == "" {
-			t.Log("flakeMetadata is empty (expected in unit tests)")
-		} else {
-			t.Logf("flakeMetadata is set to: %s", flakeMetadata)
-		}
+	t.Run("flakeMetadata empty in unit tests uses fallback", func(t *testing.T) {
+		// In unit tests, build-time variable is not set, so fallback should be used
+		assert.Empty(t, flakeMetadata, "flakeMetadata should be empty in unit tests")
+		// The URL should still be valid (using fallback)
+		url := FlakeMetadataURL()
+		assert.NotEmpty(t, url, "FlakeMetadataURL should return a valid URL even without build-time injection")
+		assert.Contains(t, url, "#default", "URL should include #default attribute")
 	})
 
-	t.Run("flakeAddStringContext variable documentation", func(t *testing.T) {
-		// flakeAddStringContext is set via: -X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeAddStringContext=...
-		// When set, FlakeAddStringContextURL() returns the injected value + "#default"
-		// In unit tests, this variable is empty so the test verifies fallback behavior
-		if flakeAddStringContext == "" {
-			t.Log("flakeAddStringContext is empty (expected in unit tests)")
-		} else {
-			t.Logf("flakeAddStringContext is set to: %s", flakeAddStringContext)
-		}
+	t.Run("flakeAddStringContext empty in unit tests uses fallback", func(t *testing.T) {
+		// In unit tests, build-time variable is not set, so fallback should be used
+		assert.Empty(t, flakeAddStringContext, "flakeAddStringContext should be empty in unit tests")
+		// The URL should still be valid (using fallback)
+		url := FlakeAddStringContextURL()
+		assert.NotEmpty(t, url, "FlakeAddStringContextURL should return a valid URL even without build-time injection")
+		assert.Contains(t, url, "#default", "URL should include #default attribute")
 	})
 }

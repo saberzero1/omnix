@@ -335,6 +335,9 @@ func writeResults(ctx context.Context, results []ci.Result, outputPath string, n
 	// which only works on attribute sets (objects), not lists (arrays)
 	resultMap := make(map[string]ci.Result)
 	for _, result := range results {
+		if _, exists := resultMap[result.Subflake]; exists {
+			return fmt.Errorf("duplicate subflake name detected: %q", result.Subflake)
+		}
 		resultMap[result.Subflake] = result
 	}
 	wrapper := runResultWrapper{Result: resultMap}
