@@ -316,13 +316,30 @@ func runLocalCI(
 	return results, nil
 }
 
+// runResultWrapper wraps CI results in an object structure compatible with addstringcontext.
+// The addstringcontext flake.nix uses lib.mapAttrsRecursive which requires an object (attribute set),
+// not an array. This structure mirrors the Rust RunResult type.
+type runResultWrapper struct {
+	// Result contains CI results keyed by subflake name
+	Result map[string]ci.Result `json:"result"`
+}
+
 // writeResults writes CI results to a file if requested
 func writeResults(ctx context.Context, results []ci.Result, outputPath string, noLink bool, logger *zap.Logger) error {
 	if noLink || outputPath == "" {
 		return nil
 	}
 
-	data, err := json.MarshalIndent(results, "", "  ")
+	// Convert results slice to a map keyed by subflake name
+	// This is required because addstringcontext's flake.nix uses lib.mapAttrsRecursive
+	// which only works on attribute sets (objects), not lists (arrays)
+	resultMap := make(map[string]ci.Result)
+	for _, result := range results {
+		resultMap[result.Subflake] = result
+	}
+	wrapper := runResultWrapper{Result: resultMap}
+
+	data, err := json.MarshalIndent(wrapper, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal results: %w", err)
 	}
