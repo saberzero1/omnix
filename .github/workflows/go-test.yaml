@@ -27,7 +27,7 @@ jobs:
     
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-13]  # macos-latest is arm64, macos-13 is x86_64
+        os: [ubuntu-latest, macos-latest]  # macos-latest is arm64 (Apple Silicon)
         go-version: ['1.22', '1.23']
         include:
           # Add labels for clarity
@@ -35,8 +35,6 @@ jobs:
             platform: linux-x86_64
           - os: macos-latest
             platform: darwin-aarch64
-          - os: macos-13
-            platform: darwin-x86_64
       fail-fast: false
     
     steps:

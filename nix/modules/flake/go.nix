@@ -5,9 +5,15 @@
 {
   perSystem = { config, self', pkgs, lib, system, ... }:
     let
+      # Cleaned omnix repository source - includes all necessary files including flake functions
+      # This is used for both the Go build and embedded paths to ensure consistency
+      omnixSrc = lib.cleanSource inputs.self;
+
       # Import environment variables from nix/envs
+      # Use omnixSrc so the embedded paths reference the same Nix store path
+      # that contains the flake function directories
       envVars = import "${inputs.self}/nix/envs" {
-        inherit (config.rust-project) src;
+        src = omnixSrc;
         inherit (pkgs) cachix fetchFromGitHub lib;
       };
     in
@@ -17,7 +23,7 @@
         omnix-go = pkgs.buildGo123Module rec {
           pname = "omnix";
           version = "2.0.0-beta";
-          src = lib.cleanSource inputs.self;
+          src = omnixSrc;
 
           # vendorHash computed by Nix (set to lib.fakeHash, build, then use reported hash)
           vendorHash = "sha256-3MnvLADYS4vDYMDNAOzg/vfJtPKBgYgVl1H2uiq9lkU=";
@@ -34,6 +40,10 @@
             # Inject flake-related environment variables
             "-X github.com/saberzero1/omnix/pkg/nix/flake.defaultFlakeSchemas=${envVars.DEFAULT_FLAKE_SCHEMAS}"
             "-X github.com/saberzero1/omnix/pkg/nix/flake.inspectFlake=${envVars.INSPECT_FLAKE}"
+            # Inject flake function paths (for addstringcontext and metadata)
+            # These are embedded at build time so the binary works from any directory
+            "-X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeMetadata=${envVars.FLAKE_METADATA}"
+            "-X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeAddStringContext=${envVars.FLAKE_ADDSTRINGCONTEXT}"
             # Inject omnix source path for remote CI
             "-X github.com/saberzero1/omnix/pkg/ci.omnixSourcePath=${envVars.OMNIX_SOURCE}"
           ];

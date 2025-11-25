@@ -195,16 +195,24 @@ func TestFlakeMetadataURL(t *testing.T) {
 		}
 	}()
 
+	// Note: Build-time injected variables (flakeMetadata) cannot be tested directly
+	// since they require recompilation with ldflags. In unit tests, they are empty,
+	// so the environment variable or fallback is used.
+
 	t.Run("with env var", func(t *testing.T) {
-		expected := "path:/nix/store/abc-metadata"
-		_ = os.Setenv("FLAKE_METADATA", expected)
-		assert.Equal(t, expected, FlakeMetadataURL())
+		// When no build-time variable is set (unit test case), env var takes precedence
+		// The function appends #default to the env var value for consistency
+		envVal := "path:/nix/store/abc-metadata"
+		_ = os.Setenv("FLAKE_METADATA", envVal)
+		assert.Equal(t, envVal+"#default", FlakeMetadataURL())
 	})
 
-	t.Run("without env var", func(t *testing.T) {
+	t.Run("without env var uses fallback", func(t *testing.T) {
+		// Without build-time var or env var, falls back to repo root detection
 		_ = os.Unsetenv("FLAKE_METADATA")
 		url := FlakeMetadataURL()
 		assert.Contains(t, url, "metadata")
+		assert.Contains(t, url, "#default") // Should include the attribute
 	})
 }
 
@@ -219,15 +227,49 @@ func TestFlakeAddStringContextURL(t *testing.T) {
 		}
 	}()
 
+	// Note: Build-time injected variables (flakeAddStringContext) cannot be tested directly
+	// since they require recompilation with ldflags. In unit tests, they are empty,
+	// so the environment variable or fallback is used.
+
 	t.Run("with env var", func(t *testing.T) {
-		expected := "path:/nix/store/abc-addstringcontext"
-		_ = os.Setenv("FLAKE_ADDSTRINGCONTEXT", expected)
-		assert.Equal(t, expected, FlakeAddStringContextURL())
+		// When no build-time variable is set (unit test case), env var takes precedence
+		// The function appends #default to the env var value for consistency
+		envVal := "path:/nix/store/abc-addstringcontext"
+		_ = os.Setenv("FLAKE_ADDSTRINGCONTEXT", envVal)
+		assert.Equal(t, envVal+"#default", FlakeAddStringContextURL())
 	})
 
-	t.Run("without env var", func(t *testing.T) {
+	t.Run("without env var uses fallback", func(t *testing.T) {
+		// Without build-time var or env var, falls back to repo root detection
 		_ = os.Unsetenv("FLAKE_ADDSTRINGCONTEXT")
 		url := FlakeAddStringContextURL()
 		assert.Contains(t, url, "addstringcontext")
+		assert.Contains(t, url, "#default") // Should include the attribute
+	})
+}
+
+// TestBuildTimeVariables verifies that build-time variables correctly override
+// environment variables and fallback behavior. The variables are injected via ldflags:
+//   - flakeMetadata: -X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeMetadata=...
+//   - flakeAddStringContext: -X github.com/saberzero1/omnix/pkg/nix/flake/functions.flakeAddStringContext=...
+//
+// In unit tests, these variables are empty so we verify the fallback behavior works correctly.
+func TestBuildTimeVariables(t *testing.T) {
+	t.Run("flakeMetadata empty in unit tests uses fallback", func(t *testing.T) {
+		// In unit tests, build-time variable is not set, so fallback should be used
+		assert.Empty(t, flakeMetadata, "flakeMetadata should be empty in unit tests")
+		// The URL should still be valid (using fallback)
+		url := FlakeMetadataURL()
+		assert.NotEmpty(t, url, "FlakeMetadataURL should return a valid URL even without build-time injection")
+		assert.Contains(t, url, "#default", "URL should include #default attribute")
+	})
+
+	t.Run("flakeAddStringContext empty in unit tests uses fallback", func(t *testing.T) {
+		// In unit tests, build-time variable is not set, so fallback should be used
+		assert.Empty(t, flakeAddStringContext, "flakeAddStringContext should be empty in unit tests")
+		// The URL should still be valid (using fallback)
+		url := FlakeAddStringContextURL()
+		assert.NotEmpty(t, url, "FlakeAddStringContextURL should return a valid URL even without build-time injection")
+		assert.Contains(t, url, "#default", "URL should include #default attribute")
 	})
 }
