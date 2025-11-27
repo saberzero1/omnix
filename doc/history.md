@@ -50,6 +50,11 @@ This release completes the migration of CI features from Rust to Go, achieving f
   - Previously, override inputs were incorrectly applied to devour-flake itself instead of the target flake
   - Now matches Rust implementation behavior with `transform_override_inputs`
   - Fixes errors like "input 'flake/devour-flake' has an override for a non-existent input 'nixpkgs'"
+- **Fixed symlink creation failing when target already exists**: The `CopyDirAll` function now correctly handles overwriting existing symlinks and files
+  - Symlinks can now be updated to point to different targets on subsequent copies
+  - Prevents accidental data loss by refusing to replace existing directories
+  - Adds comprehensive test coverage for type transitions (symlink ↔ file)
+  - Fixes issue #57 where result symlinks could not be recreated
 
 **Go Migration - Flake Functions Framework**
 
