@@ -50,16 +50,32 @@ func copyEntry(srcBase, srcPath string, entry fs.DirEntry, dstBase string) error
 		if err != nil {
 			return err
 		}
-		// Remove existing file/symlink/directory if it exists (os.Symlink fails if target exists)
-		if err := os.RemoveAll(target); err != nil && !os.IsNotExist(err) {
+		// Remove existing file/symlink if it exists (os.Symlink fails if target exists)
+		// Refuse to delete directories to prevent accidental data loss
+		if targetInfo, err := os.Lstat(target); err == nil {
+			if targetInfo.IsDir() {
+				return fmt.Errorf("cannot replace directory %s with symlink", target)
+			}
+			if err := os.Remove(target); err != nil {
+				return err
+			}
+		} else if !os.IsNotExist(err) {
 			return err
 		}
 		return os.Symlink(linkTarget, target)
 	}
 
 	// Handle regular files
-	// Remove existing symlink if target was previously a symlink (copyFile can't overwrite symlinks)
-	if err := os.RemoveAll(target); err != nil && !os.IsNotExist(err) {
+	// Remove existing file/symlink if it exists (copyFile can't overwrite symlinks)
+	// Refuse to delete directories to prevent accidental data loss
+	if targetInfo, err := os.Lstat(target); err == nil {
+		if targetInfo.IsDir() {
+			return fmt.Errorf("cannot replace directory %s with file", target)
+		}
+		if err := os.Remove(target); err != nil {
+			return err
+		}
+	} else if !os.IsNotExist(err) {
 		return err
 	}
 	if err := copyFile(srcPath, target); err != nil {

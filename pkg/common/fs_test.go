@@ -204,6 +204,73 @@ func TestCopyDirAllTypeTransition(t *testing.T) {
 	}
 }
 
+func TestCopyDirAllDirectoryToSymlink(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	// Create a symlink in source
+	testFile := filepath.Join(srcDir, "original.txt")
+	if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	linkPath := filepath.Join(srcDir, "item")
+	if err := os.Symlink("original.txt", linkPath); err != nil {
+		t.Fatalf("Failed to create symlink: %v", err)
+	}
+
+	// Create a directory at dst/item with files inside (simulating user modification)
+	dstItem := filepath.Join(dstDir, "item")
+	if err := os.Mkdir(dstItem, 0755); err != nil {
+		t.Fatalf("Failed to create directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dstItem, "userfile.txt"), []byte("user data"), 0644); err != nil {
+		t.Fatalf("Failed to create user file: %v", err)
+	}
+
+	// Copy should fail because we refuse to replace directories
+	err := CopyDirAll(srcDir, dstDir)
+	if err == nil {
+		t.Fatal("Expected error when trying to replace directory with symlink, but got nil")
+	}
+
+	// Verify the directory still exists with its contents (no data loss)
+	if _, err := os.Stat(filepath.Join(dstItem, "userfile.txt")); err != nil {
+		t.Errorf("User file should still exist after failed copy: %v", err)
+	}
+}
+
+func TestCopyDirAllDirectoryToFile(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	// Create a regular file in source
+	srcFile := filepath.Join(srcDir, "item")
+	if err := os.WriteFile(srcFile, []byte("file content"), 0644); err != nil {
+		t.Fatalf("Failed to create source file: %v", err)
+	}
+
+	// Create a directory at dst/item with files inside (simulating user modification)
+	dstItem := filepath.Join(dstDir, "item")
+	if err := os.Mkdir(dstItem, 0755); err != nil {
+		t.Fatalf("Failed to create directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dstItem, "userfile.txt"), []byte("user data"), 0644); err != nil {
+		t.Fatalf("Failed to create user file: %v", err)
+	}
+
+	// Copy should fail because we refuse to replace directories
+	err := CopyDirAll(srcDir, dstDir)
+	if err == nil {
+		t.Fatal("Expected error when trying to replace directory with file, but got nil")
+	}
+
+	// Verify the directory still exists with its contents (no data loss)
+	if _, err := os.Stat(filepath.Join(dstItem, "userfile.txt")); err != nil {
+		t.Errorf("User file should still exist after failed copy: %v", err)
+	}
+}
+
 func TestFindPaths(t *testing.T) {
 	dir := t.TempDir()
 
