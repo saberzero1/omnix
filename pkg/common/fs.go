@@ -8,6 +8,22 @@ import (
 	"path/filepath"
 )
 
+// removeTargetIfNeeded removes the target path if it exists, unless it's a directory.
+// Returns an error if the target is a directory to prevent accidental data loss.
+func removeTargetIfNeeded(target string, replacingWith string) error {
+	targetInfo, err := os.Lstat(target)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if targetInfo.IsDir() {
+		return fmt.Errorf("cannot replace directory %s with %s", target, replacingWith)
+	}
+	return os.Remove(target)
+}
+
 // CopyDirAll copies a directory recursively from src to dst.
 // The target directory will always be user readable & writable.
 func CopyDirAll(src, dst string) error {
@@ -50,10 +66,16 @@ func copyEntry(srcBase, srcPath string, entry fs.DirEntry, dstBase string) error
 		if err != nil {
 			return err
 		}
+		if err := removeTargetIfNeeded(target, "symlink"); err != nil {
+			return err
+		}
 		return os.Symlink(linkTarget, target)
 	}
 
 	// Handle regular files
+	if err := removeTargetIfNeeded(target, "file"); err != nil {
+		return err
+	}
 	if err := copyFile(srcPath, target); err != nil {
 		return err
 	}

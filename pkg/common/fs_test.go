@@ -82,6 +82,195 @@ func TestCopyDirAllWithSymlink(t *testing.T) {
 	}
 }
 
+func TestCopyDirAllWithExistingSymlink(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	// Create a file and a symlink to it in source
+	testFile := filepath.Join(srcDir, "original.txt")
+	if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	linkPath := filepath.Join(srcDir, "link.txt")
+	if err := os.Symlink("original.txt", linkPath); err != nil {
+		t.Fatalf("Failed to create symlink: %v", err)
+	}
+
+	// First copy - should succeed
+	if err := CopyDirAll(srcDir, dstDir); err != nil {
+		t.Fatalf("First CopyDirAll() failed: %v", err)
+	}
+
+	// Verify symlink was created
+	copiedLink := filepath.Join(dstDir, "link.txt")
+	target, err := os.Readlink(copiedLink)
+	if err != nil {
+		t.Fatalf("Failed to read symlink: %v", err)
+	}
+	if target != "original.txt" {
+		t.Errorf("Symlink target = %q, want %q", target, "original.txt")
+	}
+
+	// Modify source to point to a different target
+	if err := os.Remove(linkPath); err != nil {
+		t.Fatalf("Failed to remove original symlink: %v", err)
+	}
+	testFile2 := filepath.Join(srcDir, "other.txt")
+	if err := os.WriteFile(testFile2, []byte("other content"), 0644); err != nil {
+		t.Fatalf("Failed to create second test file: %v", err)
+	}
+	if err := os.Symlink("other.txt", linkPath); err != nil {
+		t.Fatalf("Failed to create new symlink: %v", err)
+	}
+
+	// Second copy - should succeed and update the symlink
+	if err := CopyDirAll(srcDir, dstDir); err != nil {
+		t.Fatalf("Second CopyDirAll() failed: %v", err)
+	}
+
+	// Verify symlink was updated
+	target, err = os.Readlink(copiedLink)
+	if err != nil {
+		t.Fatalf("Failed to read updated symlink: %v", err)
+	}
+	if target != "other.txt" {
+		t.Errorf("Updated symlink target = %q, want %q", target, "other.txt")
+	}
+}
+
+func TestCopyDirAllTypeTransition(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	// Create a file and a symlink to it in source
+	testFile := filepath.Join(srcDir, "original.txt")
+	if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	linkPath := filepath.Join(srcDir, "link.txt")
+	if err := os.Symlink("original.txt", linkPath); err != nil {
+		t.Fatalf("Failed to create symlink: %v", err)
+	}
+
+	// First copy - creates symlink at dst/link.txt
+	if err := CopyDirAll(srcDir, dstDir); err != nil {
+		t.Fatalf("First CopyDirAll() failed: %v", err)
+	}
+
+	// Verify symlink was created
+	copiedLink := filepath.Join(dstDir, "link.txt")
+	info, err := os.Lstat(copiedLink)
+	if err != nil {
+		t.Fatalf("Failed to stat copied path: %v", err)
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		t.Fatal("Expected symlink, got regular file")
+	}
+
+	// Change source: replace symlink with regular file
+	if err := os.Remove(linkPath); err != nil {
+		t.Fatalf("Failed to remove symlink: %v", err)
+	}
+	if err := os.WriteFile(linkPath, []byte("now a regular file"), 0644); err != nil {
+		t.Fatalf("Failed to create regular file: %v", err)
+	}
+
+	// Second copy - should replace symlink with regular file
+	if err := CopyDirAll(srcDir, dstDir); err != nil {
+		t.Fatalf("Second CopyDirAll() failed: %v", err)
+	}
+
+	// Verify it's now a regular file, not a symlink
+	info, err = os.Lstat(copiedLink)
+	if err != nil {
+		t.Fatalf("Failed to stat updated path: %v", err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		t.Error("Expected regular file, but got symlink")
+	}
+	if !info.Mode().IsRegular() {
+		t.Errorf("Expected regular file, got mode %v", info.Mode())
+	}
+
+	// Verify content
+	content, err := os.ReadFile(copiedLink)
+	if err != nil {
+		t.Fatalf("Failed to read file: %v", err)
+	}
+	if string(content) != "now a regular file" {
+		t.Errorf("Content = %q, want %q", string(content), "now a regular file")
+	}
+}
+
+func TestCopyDirAllDirectoryToSymlink(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	// Create a symlink in source
+	testFile := filepath.Join(srcDir, "original.txt")
+	if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	linkPath := filepath.Join(srcDir, "item")
+	if err := os.Symlink("original.txt", linkPath); err != nil {
+		t.Fatalf("Failed to create symlink: %v", err)
+	}
+
+	// Create a directory at dst/item with files inside (simulating user modification)
+	dstItem := filepath.Join(dstDir, "item")
+	if err := os.Mkdir(dstItem, 0755); err != nil {
+		t.Fatalf("Failed to create directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dstItem, "userfile.txt"), []byte("user data"), 0644); err != nil {
+		t.Fatalf("Failed to create user file: %v", err)
+	}
+
+	// Copy should fail because we refuse to replace directories
+	err := CopyDirAll(srcDir, dstDir)
+	if err == nil {
+		t.Fatal("Expected error when trying to replace directory with symlink, but got nil")
+	}
+
+	// Verify the directory still exists with its contents (no data loss)
+	if _, err := os.Stat(filepath.Join(dstItem, "userfile.txt")); err != nil {
+		t.Errorf("User file should still exist after failed copy: %v", err)
+	}
+}
+
+func TestCopyDirAllDirectoryToFile(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	// Create a regular file in source
+	srcFile := filepath.Join(srcDir, "item")
+	if err := os.WriteFile(srcFile, []byte("file content"), 0644); err != nil {
+		t.Fatalf("Failed to create source file: %v", err)
+	}
+
+	// Create a directory at dst/item with files inside (simulating user modification)
+	dstItem := filepath.Join(dstDir, "item")
+	if err := os.Mkdir(dstItem, 0755); err != nil {
+		t.Fatalf("Failed to create directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dstItem, "userfile.txt"), []byte("user data"), 0644); err != nil {
+		t.Fatalf("Failed to create user file: %v", err)
+	}
+
+	// Copy should fail because we refuse to replace directories
+	err := CopyDirAll(srcDir, dstDir)
+	if err == nil {
+		t.Fatal("Expected error when trying to replace directory with file, but got nil")
+	}
+
+	// Verify the directory still exists with its contents (no data loss)
+	if _, err := os.Stat(filepath.Join(dstItem, "userfile.txt")); err != nil {
+		t.Errorf("User file should still exist after failed copy: %v", err)
+	}
+}
+
 func TestFindPaths(t *testing.T) {
 	dir := t.TempDir()
 
