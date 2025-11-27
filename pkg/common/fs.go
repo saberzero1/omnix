@@ -50,7 +50,7 @@ func copyEntry(srcBase, srcPath string, entry fs.DirEntry, dstBase string) error
 		if err != nil {
 			return err
 		}
-		// Remove existing symlink if it exists (os.Symlink fails if target exists)
+		// Remove existing file/symlink if it exists (os.Symlink fails if target exists)
 		if err := os.Remove(target); err != nil && !os.IsNotExist(err) {
 			return err
 		}
