@@ -319,3 +319,52 @@ func TestOverrideInputs_NoSkipWhenEmpty(t *testing.T) {
 	// Result may succeed or fail, but it should not be skipped
 	assert.NotContains(t, result.Output, "Skipped")
 }
+
+// TestGenerateMatrix_DeterministicOrder verifies that the GitHub matrix is generated
+// with subflakes in deterministic (alphabetically sorted) order, matching the Rust
+// implementation which uses BTreeMap.
+func TestGenerateMatrix_DeterministicOrder(t *testing.T) {
+	systems := []string{"x86_64-linux", "aarch64-darwin"}
+	config := Config{
+		Configs: map[string]map[string]SubflakeConfig{
+			"default": {
+				"zebra":  {Dir: "zebra", Skip: false},
+				"alpha":  {Dir: "alpha", Skip: false},
+				"middle": {Dir: "middle", Skip: false},
+				"beta":   {Dir: "beta", Skip: false},
+			},
+		},
+	}
+
+	// Run multiple iterations to verify deterministic ordering
+	for i := 0; i < 10; i++ {
+		matrix, err := GenerateMatrix(systems, config)
+		require.NoError(t, err)
+
+		// 2 systems × 4 subflakes = 8 rows
+		require.Equal(t, 8, matrix.Count())
+
+		// For each system, subflakes should be in alphabetical order
+		// First system (x86_64-linux) rows 0-3
+		// Second system (aarch64-darwin) rows 4-7
+		expectedSubflakeOrder := []string{"alpha", "beta", "middle", "zebra"}
+
+		// Check first system's rows
+		for j := 0; j < 4; j++ {
+			assert.Equal(t, "x86_64-linux", matrix.Include[j].System,
+				"iteration %d, row %d: expected system x86_64-linux", i, j)
+			assert.Equal(t, expectedSubflakeOrder[j], matrix.Include[j].Subflake,
+				"iteration %d, row %d: expected subflake %s, got %s",
+				i, j, expectedSubflakeOrder[j], matrix.Include[j].Subflake)
+		}
+
+		// Check second system's rows
+		for j := 0; j < 4; j++ {
+			assert.Equal(t, "aarch64-darwin", matrix.Include[j+4].System,
+				"iteration %d, row %d: expected system aarch64-darwin", i, j+4)
+			assert.Equal(t, expectedSubflakeOrder[j], matrix.Include[j+4].Subflake,
+				"iteration %d, row %d: expected subflake %s, got %s",
+				i, j+4, expectedSubflakeOrder[j], matrix.Include[j+4].Subflake)
+		}
+	}
+}

@@ -3,6 +3,7 @@ package ci
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 )
 
 // GitHubMatrixRow represents a single row in the GitHub Actions matrix
@@ -23,6 +24,7 @@ type GitHubMatrix struct {
 // GenerateMatrix creates a GitHub Actions matrix from systems and subflakes
 // It generates matrix rows for the default config.
 // Returns an error if the default config doesn't exist.
+// Subflakes are iterated in alphabetical order for deterministic output (matching Rust BTreeMap behavior).
 func GenerateMatrix(systems []string, config Config) (GitHubMatrix, error) {
 	var include []GitHubMatrixRow
 
@@ -32,8 +34,16 @@ func GenerateMatrix(systems []string, config Config) (GitHubMatrix, error) {
 		return GitHubMatrix{}, fmt.Errorf("failed to get default config for matrix: %w", err)
 	}
 
+	// Sort subflake names for deterministic order
+	subflakeNames := make([]string, 0, len(subflakes))
+	for name := range subflakes {
+		subflakeNames = append(subflakeNames, name)
+	}
+	sort.Strings(subflakeNames)
+
 	for _, system := range systems {
-		for name, subflake := range subflakes {
+		for _, name := range subflakeNames {
+			subflake := subflakes[name]
 			// Skip if this subflake is marked to skip
 			if subflake.Skip {
 				continue

@@ -205,40 +205,25 @@ func TestAppendOverrideInputs(t *testing.T) {
 			expected: []string{"nix", "build", "--override-input", "nixpkgs", "github:NixOS/nixpkgs/nixos-unstable"},
 		},
 		{
-			name:        "multiple override inputs",
+			name:        "multiple override inputs - deterministic alphabetical order",
 			initialArgs: []string{"nix", "build"},
 			overrideInputs: map[string]string{
 				"nixpkgs":      "github:NixOS/nixpkgs/nixos-unstable",
 				"home-manager": "github:nix-community/home-manager",
 			},
-			// Note: map iteration order is not guaranteed, so we just check the length
-			expected: []string{"nix", "build"},
+			// Now deterministic: home-manager comes before nixpkgs alphabetically
+			expected: []string{
+				"nix", "build",
+				"--override-input", "home-manager", "github:nix-community/home-manager",
+				"--override-input", "nixpkgs", "github:NixOS/nixpkgs/nixos-unstable",
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := appendOverrideInputs(tt.initialArgs, tt.overrideInputs)
-
-			if len(tt.overrideInputs) == 0 || len(tt.overrideInputs) == 1 {
-				assert.Equal(t, tt.expected, result)
-			} else {
-				// For multiple inputs, just verify the count
-				expectedLen := len(tt.initialArgs) + len(tt.overrideInputs)*3
-				assert.Equal(t, expectedLen, len(result))
-
-				// Verify all inputs are present
-				for key, value := range tt.overrideInputs {
-					found := false
-					for i := 0; i < len(result)-2; i++ {
-						if result[i] == "--override-input" && result[i+1] == key && result[i+2] == value {
-							found = true
-							break
-						}
-					}
-					assert.True(t, found, "override input %s=%s not found in result", key, value)
-				}
-			}
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -265,41 +250,25 @@ func TestAppendOverrideInputsForFlake(t *testing.T) {
 			expected: []string{"nix", "build", "--override-input", "flake/nixpkgs", "github:NixOS/nixpkgs/nixos-unstable"},
 		},
 		{
-			name:        "multiple override inputs with flake prefix",
+			name:        "multiple override inputs with flake prefix - deterministic alphabetical order",
 			initialArgs: []string{"nix", "build"},
 			overrideInputs: map[string]string{
 				"nixpkgs":      "github:NixOS/nixpkgs/nixos-unstable",
 				"home-manager": "github:nix-community/home-manager",
 			},
-			// Note: map iteration order is not guaranteed, so we just check the length
-			expected: []string{"nix", "build"},
+			// Now deterministic: home-manager comes before nixpkgs alphabetically
+			expected: []string{
+				"nix", "build",
+				"--override-input", "flake/home-manager", "github:nix-community/home-manager",
+				"--override-input", "flake/nixpkgs", "github:NixOS/nixpkgs/nixos-unstable",
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := appendOverrideInputsForFlake(tt.initialArgs, tt.overrideInputs)
-
-			if len(tt.overrideInputs) == 0 || len(tt.overrideInputs) == 1 {
-				assert.Equal(t, tt.expected, result)
-			} else {
-				// For multiple inputs, just verify the count
-				expectedLen := len(tt.initialArgs) + len(tt.overrideInputs)*3
-				assert.Equal(t, expectedLen, len(result))
-
-				// Verify all inputs are present with flake/ prefix
-				for key, value := range tt.overrideInputs {
-					found := false
-					expectedKey := "flake/" + key
-					for i := 0; i < len(result)-2; i++ {
-						if result[i] == "--override-input" && result[i+1] == expectedKey && result[i+2] == value {
-							found = true
-							break
-						}
-					}
-					assert.True(t, found, "override input flake/%s=%s not found in result", key, value)
-				}
-			}
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -371,6 +340,44 @@ func TestCustomStepsDeterministicOrder(t *testing.T) {
 			// that all steps were processed (and in the implementation, they are
 			// now processed in alphabetical order)
 			assert.Len(t, result.Steps, 4, "iteration %d: should have exactly 4 custom steps", i)
+		}
+	})
+}
+
+// TestSubflakesDeterministicOrder verifies that subflakes are processed in
+// deterministic (alphabetically sorted) order, matching the Rust implementation
+// which uses BTreeMap.
+func TestSubflakesDeterministicOrder(t *testing.T) {
+	t.Run("Run processes subflakes in sorted order", func(t *testing.T) {
+		ctx := context.Background()
+		flake, err := nix.ParseFlakeURL(".")
+		require.NoError(t, err)
+
+		// Create subflakes with names that would be affected by map randomization
+		subflakesConfig := map[string]SubflakeConfig{
+			"zebra":  {Dir: ".", Skip: false, Steps: StepsConfig{}},
+			"alpha":  {Dir: ".", Skip: false, Steps: StepsConfig{}},
+			"middle": {Dir: ".", Skip: false, Steps: StepsConfig{}},
+			"beta":   {Dir: ".", Skip: false, Steps: StepsConfig{}},
+		}
+
+		opts := RunOptions{
+			Systems: []string{"x86_64-linux"},
+		}
+
+		// Run multiple iterations to verify deterministic ordering
+		for i := 0; i < 10; i++ {
+			results, err := Run(ctx, flake, subflakesConfig, opts)
+			require.NoError(t, err)
+			require.Len(t, results, 4)
+
+			// Verify subflakes are processed in alphabetical order
+			expectedOrder := []string{"alpha", "beta", "middle", "zebra"}
+			for j, result := range results {
+				assert.Equal(t, expectedOrder[j], result.Subflake,
+					"iteration %d: subflake at position %d should be %s, got %s",
+					i, j, expectedOrder[j], result.Subflake)
+			}
 		}
 	})
 }
