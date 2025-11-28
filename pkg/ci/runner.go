@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"sort"
 	"strings"
 	"time"
 
@@ -436,8 +437,15 @@ func runSubflakeWithUI(ctx context.Context, flake nix.FlakeURL, name string, sub
 		}
 	}
 
-	// Run custom steps
-	for stepName, customStep := range subflake.Steps.Custom {
+	// Run custom steps in deterministic (sorted) order
+	customStepNames := make([]string, 0, len(subflake.Steps.Custom))
+	for stepName := range subflake.Steps.Custom {
+		customStepNames = append(customStepNames, stepName)
+	}
+	sort.Strings(customStepNames)
+
+	for _, stepName := range customStepNames {
+		customStep := subflake.Steps.Custom[stepName]
 		// Check if this step can run on current systems
 		if !customStep.CanRunOn(opts.Systems) {
 			p.Send(ui.StepSkipMsg{
@@ -624,8 +632,15 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 		}
 	}
 
-	// Run custom steps
-	for name, customStep := range subflake.Steps.Custom {
+	// Run custom steps in deterministic (sorted) order
+	customStepNames := make([]string, 0, len(subflake.Steps.Custom))
+	for name := range subflake.Steps.Custom {
+		customStepNames = append(customStepNames, name)
+	}
+	sort.Strings(customStepNames)
+
+	for _, name := range customStepNames {
+		customStep := subflake.Steps.Custom[name]
 		// Check if this step can run on current systems
 		if !customStep.CanRunOn(opts.Systems) {
 			continue
