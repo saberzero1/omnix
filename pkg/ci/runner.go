@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"sort"
 	"strings"
 	"time"
 
@@ -39,9 +40,17 @@ func buildFlakeURLWithAttr(base nix.FlakeURL, attr string) string {
 
 // appendOverrideInputs appends --override-input flags for each input in the map.
 // This is a helper to avoid duplicating the override inputs iteration pattern.
+// Inputs are sorted alphabetically for deterministic ordering (matching Rust BTreeMap behavior).
 func appendOverrideInputs(args []string, overrideInputs map[string]string) []string {
-	for inputName, inputURL := range overrideInputs {
-		args = append(args, "--override-input", inputName, inputURL)
+	// Sort input names for deterministic order
+	inputNames := make([]string, 0, len(overrideInputs))
+	for inputName := range overrideInputs {
+		inputNames = append(inputNames, inputName)
+	}
+	sort.Strings(inputNames)
+
+	for _, inputName := range inputNames {
+		args = append(args, "--override-input", inputName, overrideInputs[inputName])
 	}
 	return args
 }
@@ -49,9 +58,17 @@ func appendOverrideInputs(args []string, overrideInputs map[string]string) []str
 // appendOverrideInputsForFlake appends --override-input flags with "flake/" prefix.
 // This is used when passing override inputs to devour-flake, which expects override
 // inputs for the target flake to be prefixed with "flake/".
+// Inputs are sorted alphabetically for deterministic ordering (matching Rust BTreeMap behavior).
 func appendOverrideInputsForFlake(args []string, overrideInputs map[string]string) []string {
-	for inputName, inputURL := range overrideInputs {
-		args = append(args, "--override-input", "flake/"+inputName, inputURL)
+	// Sort input names for deterministic order
+	inputNames := make([]string, 0, len(overrideInputs))
+	for inputName := range overrideInputs {
+		inputNames = append(inputNames, inputName)
+	}
+	sort.Strings(inputNames)
+
+	for _, inputName := range inputNames {
+		args = append(args, "--override-input", "flake/"+inputName, overrideInputs[inputName])
 	}
 	return args
 }
@@ -112,13 +129,21 @@ type StepResult struct {
 
 // Run executes the CI pipeline for a flake
 func Run(ctx context.Context, flake nix.FlakeURL, subflakesConfig map[string]SubflakeConfig, opts RunOptions) ([]Result, error) {
-	// Collect subflakes to run
+	// Sort subflake names for deterministic order (matching Rust BTreeMap behavior)
+	subflakeNames := make([]string, 0, len(subflakesConfig))
+	for name := range subflakesConfig {
+		subflakeNames = append(subflakeNames, name)
+	}
+	sort.Strings(subflakeNames)
+
+	// Collect subflakes to run in sorted order
 	var subflakes []struct {
 		name   string
 		config SubflakeConfig
 	}
 
-	for name, subflake := range subflakesConfig {
+	for _, name := range subflakeNames {
+		subflake := subflakesConfig[name]
 		// Skip if marked to skip
 		if subflake.Skip {
 			continue
@@ -145,13 +170,21 @@ func Run(ctx context.Context, flake nix.FlakeURL, subflakesConfig map[string]Sub
 
 // RunWithUI executes the CI pipeline with an interactive UI
 func RunWithUI(ctx context.Context, flake nix.FlakeURL, configName string, subflakesConfig map[string]SubflakeConfig, opts RunOptions) ([]Result, error) {
-	// Collect subflakes to run
+	// Sort subflake names for deterministic order (matching Rust BTreeMap behavior)
+	sortedSubflakeNames := make([]string, 0, len(subflakesConfig))
+	for name := range subflakesConfig {
+		sortedSubflakeNames = append(sortedSubflakeNames, name)
+	}
+	sort.Strings(sortedSubflakeNames)
+
+	// Collect subflakes to run in sorted order
 	var subflakes []struct {
 		name   string
 		config SubflakeConfig
 	}
 
-	for name, subflake := range subflakesConfig {
+	for _, name := range sortedSubflakeNames {
+		subflake := subflakesConfig[name]
 		// Skip if marked to skip
 		if subflake.Skip {
 			continue
@@ -436,8 +469,15 @@ func runSubflakeWithUI(ctx context.Context, flake nix.FlakeURL, name string, sub
 		}
 	}
 
-	// Run custom steps
-	for stepName, customStep := range subflake.Steps.Custom {
+	// Run custom steps in deterministic (sorted) order
+	customStepNames := make([]string, 0, len(subflake.Steps.Custom))
+	for stepName := range subflake.Steps.Custom {
+		customStepNames = append(customStepNames, stepName)
+	}
+	sort.Strings(customStepNames)
+
+	for _, stepName := range customStepNames {
+		customStep := subflake.Steps.Custom[stepName]
 		// Check if this step can run on current systems
 		if !customStep.CanRunOn(opts.Systems) {
 			p.Send(ui.StepSkipMsg{
@@ -624,8 +664,15 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 		}
 	}
 
-	// Run custom steps
-	for name, customStep := range subflake.Steps.Custom {
+	// Run custom steps in deterministic (sorted) order
+	customStepNames := make([]string, 0, len(subflake.Steps.Custom))
+	for name := range subflake.Steps.Custom {
+		customStepNames = append(customStepNames, name)
+	}
+	sort.Strings(customStepNames)
+
+	for _, name := range customStepNames {
+		customStep := subflake.Steps.Custom[name]
 		// Check if this step can run on current systems
 		if !customStep.CanRunOn(opts.Systems) {
 			continue
