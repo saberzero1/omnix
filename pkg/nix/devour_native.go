@@ -8,8 +8,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/saberzero1/omnix/pkg/common"
 	"github.com/saberzero1/omnix/pkg/nix/flake"
 	"github.com/saberzero1/omnix/pkg/nix/store"
+	"go.uber.org/zap"
 )
 
 // OutputCategory represents a category of flake outputs
@@ -369,10 +371,14 @@ func DevourFlakeNative(ctx context.Context, flakeURL FlakeURL, systems []string,
 	// Collect results
 	var outPaths []store.Path
 	byName := make(map[string]store.Path)
+	logger := common.Logger()
 
 	for _, result := range buildResults {
 		if result.Error != nil {
 			// Log error but continue - some outputs may fail
+			logger.Warn("failed to build flake output",
+				zap.String("flakeRef", result.Output.FlakeRef),
+				zap.Error(result.Error))
 			continue
 		}
 
@@ -392,17 +398,6 @@ func DevourFlakeNative(ctx context.Context, flakeURL FlakeURL, systems []string,
 		OutPaths: outPaths,
 		ByName:   byName,
 	}, nil
-}
-
-// DevourFlakeWithParallel builds all outputs of a flake with optional parallel support
-// This uses the native implementation if parallel is true, otherwise falls back to the external flake
-func DevourFlakeWithParallel(ctx context.Context, flakeURL FlakeURL, systems []string, impure bool, overrideInputs map[string]string, parallel bool, maxConcurrency int) (*DevourFlakeOutput, error) {
-	if parallel {
-		return DevourFlakeNative(ctx, flakeURL, systems, impure, overrideInputs, parallel, maxConcurrency)
-	}
-
-	// Fall back to external devour-flake for non-parallel builds (more reliable)
-	return DevourFlakeWithOverrides(ctx, flakeURL, systems, impure, overrideInputs)
 }
 
 // GetCurrentSystem returns the current system string

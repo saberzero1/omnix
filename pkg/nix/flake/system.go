@@ -144,12 +144,18 @@ func getCurrentSystemImpl() System {
 	}
 
 	// Map Go OS to Nix OS
+	// For unknown systems, construct a Nix-style system string
 	switch runtime.GOOS {
 	case "linux":
 		return System{os: OSLinux, arch: arch}
 	case "darwin":
 		return System{os: OSDarwin, arch: arch}
 	default:
-		return System{os: runtime.GOOS, arch: arch}
+		// For unknown OS, construct a full system string in Nix format (e.g., "x86_64-freebsd")
+		archStr := arch.String()
+		if archStr == "unknown" {
+			archStr = runtime.GOARCH
+		}
+		return System{os: fmt.Sprintf("%s-%s", archStr, runtime.GOOS), arch: arch}
 	}
 }
