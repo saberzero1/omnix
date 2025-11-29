@@ -1,6 +1,9 @@
 package flake
 
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+)
 
 const (
 	// OSLinux represents the Linux operating system
@@ -119,5 +122,34 @@ func (a Arch) String() string {
 		return "x86_64"
 	default:
 		return "unknown"
+	}
+}
+
+// GetCurrentSystem returns the current system based on runtime.GOOS and runtime.GOARCH
+func GetCurrentSystem() System {
+	return getCurrentSystemImpl()
+}
+
+// getCurrentSystemImpl determines the current Nix system from Go runtime values
+func getCurrentSystemImpl() System {
+	// Map Go architecture to Nix architecture
+	var arch Arch
+	switch runtime.GOARCH {
+	case "arm64":
+		arch = ArchAarch64
+	case "amd64":
+		arch = ArchX86_64
+	default:
+		arch = ArchUnknown
+	}
+
+	// Map Go OS to Nix OS
+	switch runtime.GOOS {
+	case "linux":
+		return System{os: OSLinux, arch: arch}
+	case "darwin":
+		return System{os: OSDarwin, arch: arch}
+	default:
+		return System{os: runtime.GOOS, arch: arch}
 	}
 }

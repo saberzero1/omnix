@@ -236,3 +236,21 @@ func TestSystemConstants(t *testing.T) {
 	assert.Equal(t, OSDarwin, SystemDarwinAarch64.os)
 	assert.Equal(t, ArchAarch64, SystemDarwinAarch64.arch)
 }
+
+func TestGetCurrentSystem(t *testing.T) {
+	sys := GetCurrentSystem()
+
+	// The system string should be non-empty and follow Nix system format
+	sysStr := sys.String()
+	assert.NotEmpty(t, sysStr)
+
+	// On Linux, it should be Linux
+	// On Darwin, it should be Darwin
+	// This test runs on Linux (GitHub Actions)
+	if sys.IsLinux() {
+		assert.Contains(t, sysStr, "linux")
+	}
+	if sys.IsDarwin() {
+		assert.Contains(t, sysStr, "darwin")
+	}
+}

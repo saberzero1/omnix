@@ -695,6 +695,7 @@ func runSubflake(ctx context.Context, flake nix.FlakeURL, name string, subflake 
 }
 
 // runBuildStep executes the build step using devour-flake
+// When opts.Parallel is true, uses the native Go implementation that can build outputs in parallel
 func runBuildStep(ctx context.Context, flake nix.FlakeURL, step BuildStep, opts RunOptions, subflake SubflakeConfig) StepResult {
 	start := time.Now()
 	result := StepResult{
@@ -702,8 +703,17 @@ func runBuildStep(ctx context.Context, flake nix.FlakeURL, step BuildStep, opts 
 		Success: true,
 	}
 
-	// Use devour-flake to build all outputs with override inputs
-	output, err := nix.DevourFlakeWithOverrides(ctx, flake, opts.Systems, step.Impure, subflake.OverrideInputs)
+	var output *nix.DevourFlakeOutput
+	var err error
+
+	// Use native parallel implementation when parallel mode is enabled
+	if opts.Parallel {
+		output, err = nix.DevourFlakeNative(ctx, flake, opts.Systems, step.Impure, subflake.OverrideInputs, true, opts.MaxConcurrency)
+	} else {
+		// Use devour-flake to build all outputs with override inputs
+		output, err = nix.DevourFlakeWithOverrides(ctx, flake, opts.Systems, step.Impure, subflake.OverrideInputs)
+	}
+
 	if err != nil {
 		result.Success = false
 		result.Error = err.Error()
