@@ -209,6 +209,7 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 // for Home Manager configurations since outputs.homeConfigurations doesn't specify which architecture to build for
 func enumerateLegacyPackages(flakeURL FlakeURL, legacyPackages map[string]map[string]interface{}, systemSet map[string]bool) []FlakeOutput {
 	var outputs []FlakeOutput
+	logger := common.Logger()
 
 	for sys, attrs := range legacyPackages {
 		// Filter by system if specified
@@ -225,6 +226,9 @@ func enumerateLegacyPackages(flakeURL FlakeURL, legacyPackages map[string]map[st
 		// homeConfigurations is a map of config names to config objects
 		configsMap, ok := homeConfigs.(map[string]interface{})
 		if !ok {
+			logger.Warn("unexpected type for homeConfigurations",
+				zap.String("system", sys),
+				zap.String("type", fmt.Sprintf("%T", homeConfigs)))
 			continue
 		}
 
@@ -253,7 +257,11 @@ type BuildResult struct {
 	Error error
 }
 
-// BuildOutput builds a single flake output and returns the store path
+// BuildOutput builds a single flake output and returns the store path.
+// If impure is true, passes --impure to the build command.
+// overrideInputs maps input names to flake URLs that override the flake's inputs.
+// When a build produces multiple outputs (e.g., out, dev, doc), only the first path is returned.
+// Returns an error if the build fails or produces no output.
 func BuildOutput(ctx context.Context, output FlakeOutput, impure bool, overrideInputs map[string]string) (store.Path, error) {
 	cmd := NewCmd()
 
@@ -291,7 +299,8 @@ func BuildOutput(ctx context.Context, output FlakeOutput, impure bool, overrideI
 		return store.Path{}, fmt.Errorf("build returned empty output for %s", output.FlakeRef)
 	}
 
-	// Handle multiple paths (some builds may have multiple outputs)
+	// Handle multiple paths (some builds may have multiple outputs like out, dev, doc).
+	// We only return the first path as that is typically the main output.
 	paths := strings.Split(pathStr, "\n")
 	return store.NewPath(strings.TrimSpace(paths[0])), nil
 }
@@ -340,6 +349,7 @@ func buildOutputsSequential(ctx context.Context, outputs []FlakeOutput, opts Bui
 // buildOutputsParallel builds outputs concurrently
 func buildOutputsParallel(ctx context.Context, outputs []FlakeOutput, opts BuildAllOutputsOptions) []BuildResult {
 	results := make([]BuildResult, len(outputs))
+	var mu sync.Mutex // Protects writes to results slice
 
 	// Determine concurrency limit
 	maxConcurrency := opts.MaxConcurrency
@@ -363,11 +373,14 @@ func buildOutputsParallel(ctx context.Context, outputs []FlakeOutput, opts Build
 			defer wg.Done()
 			for j := range jobs {
 				path, err := BuildOutput(ctx, j.output, opts.Impure, opts.OverrideInputs)
-				results[j.index] = BuildResult{
+				result := BuildResult{
 					Output:    j.output,
 					StorePath: path,
 					Error:     err,
 				}
+				mu.Lock()
+				results[j.index] = result
+				mu.Unlock()
 			}
 		}()
 	}
@@ -412,9 +425,11 @@ func DevourFlakeNative(ctx context.Context, flakeURL FlakeURL, systems []string,
 	var outPaths []store.Path
 	byName := make(map[string]store.Path)
 	logger := common.Logger()
+	failedCount := 0
 
 	for _, result := range buildResults {
 		if result.Error != nil {
+			failedCount++
 			// Log error but continue - some outputs may fail
 			logger.Warn("failed to build flake output",
 				zap.String("flakeRef", result.Output.FlakeRef),
@@ -429,6 +444,11 @@ func DevourFlakeNative(ctx context.Context, flakeURL FlakeURL, systems []string,
 		if name != "" {
 			byName[name] = result.StorePath
 		}
+	}
+
+	// Return error if all builds failed
+	if failedCount == len(buildResults) && len(buildResults) > 0 {
+		return nil, fmt.Errorf("all %d builds failed", failedCount)
 	}
 
 	// Remove duplicates

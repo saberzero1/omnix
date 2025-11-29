@@ -1,6 +1,7 @@
 package flake
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -244,13 +245,24 @@ func TestGetCurrentSystem(t *testing.T) {
 	sysStr := sys.String()
 	assert.NotEmpty(t, sysStr)
 
-	// On Linux, it should be Linux
-	// On Darwin, it should be Darwin
-	// This test runs on Linux (GitHub Actions)
-	if sys.IsLinux() {
+	// Verify the system matches runtime.GOOS and runtime.GOARCH
+	switch runtime.GOOS {
+	case "linux":
+		assert.True(t, sys.IsLinux(), "should detect Linux")
 		assert.Contains(t, sysStr, "linux")
-	}
-	if sys.IsDarwin() {
+	case "darwin":
+		assert.True(t, sys.IsDarwin(), "should detect Darwin")
 		assert.Contains(t, sysStr, "darwin")
+	default:
+		// For other platforms, just ensure it's non-empty
+		t.Logf("Running on unsupported platform: %s", runtime.GOOS)
+	}
+
+	// Verify architecture is detected correctly
+	switch runtime.GOARCH {
+	case "amd64":
+		assert.Contains(t, sysStr, "x86_64")
+	case "arm64":
+		assert.Contains(t, sysStr, "aarch64")
 	}
 }

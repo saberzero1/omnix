@@ -133,16 +133,13 @@ func TestEnumerateFlakeOutputs_Integration(t *testing.T) {
 
 	// Log the outputs for debugging
 	t.Logf("Found %d outputs", len(outputs))
-	for _, output := range outputs[:min(5, len(outputs))] {
+	displayCount := 5
+	if len(outputs) < displayCount {
+		displayCount = len(outputs)
+	}
+	for _, output := range outputs[:displayCount] {
 		t.Logf("  - %s: %s", output.Category, output.FlakeRef)
 	}
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func TestEnumerateLegacyPackages(t *testing.T) {
