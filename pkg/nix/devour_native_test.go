@@ -104,3 +104,43 @@ func TestBuildAllOutputsOptions_WithOverrideInputs(t *testing.T) {
 	assert.True(t, opts.Parallel)
 	assert.Equal(t, 4, opts.MaxConcurrency)
 }
+
+// TestEnumerateFlakeOutputs_Integration tests the actual enumeration of flake outputs
+// This is an integration test that requires Nix to be available
+func TestEnumerateFlakeOutputs_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	ctx := context.Background()
+	flakeURL := NewFlakeURL(".")
+
+	// Get current system
+	info, err := GetInfo(ctx)
+	if err != nil {
+		t.Skip("Nix not available: ", err)
+	}
+
+	systems := []string{info.Config.System.Value}
+
+	outputs, err := EnumerateFlakeOutputs(ctx, flakeURL, systems)
+
+	// Should not return error
+	assert.NoError(t, err, "EnumerateFlakeOutputs should not return error")
+
+	// Should return at least some outputs (this repo has packages)
+	assert.NotEmpty(t, outputs, "Should have at least some flake outputs")
+
+	// Log the outputs for debugging
+	t.Logf("Found %d outputs", len(outputs))
+	for _, output := range outputs[:min(5, len(outputs))] {
+		t.Logf("  - %s: %s", output.Category, output.FlakeRef)
+	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
