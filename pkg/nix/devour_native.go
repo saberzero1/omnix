@@ -120,7 +120,11 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 		case OutputCategoryDevShells:
 			attrsBySystem = showOutput.DevShells
 		case OutputCategoryApps:
-			attrsBySystem = showOutput.Apps
+			// Skip apps - they are not buildable derivations, they're metadata
+			// that references programs from other outputs. The original devour-flake
+			// accesses app.program during Nix evaluation to get the store path,
+			// but from Go we can't evaluate Nix expressions.
+			continue
 		case OutputCategoryLegacyPackages:
 			// Handle legacyPackages specially - look for homeConfigurations
 			outputs = append(outputs, enumerateLegacyPackages(flakeURL, showOutput.LegacyPackages, systemSet)...)
@@ -135,12 +139,8 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 
 			for name, val := range attrs {
 				// Only include derivations (things that can be built)
-				if val.Type == "derivation" || category == OutputCategoryApps {
+				if val.Type == "derivation" {
 					flakeRef := fmt.Sprintf("%s#%s.%s.%s", flakeURL.String(), category, sys, name)
-					// Apps are not derivations - they have a .program attribute that points to the executable
-					if category == OutputCategoryApps {
-						flakeRef = fmt.Sprintf("%s#%s.%s.%s.program", flakeURL.String(), category, sys, name)
-					}
 					outputs = append(outputs, FlakeOutput{
 						Category: category,
 						System:   sys,
