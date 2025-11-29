@@ -60,8 +60,8 @@ type FlakeShowOutput struct {
 	DevShells            map[string]map[string]FlakeShowVal `json:"devShells,omitempty"`
 	Apps                 map[string]map[string]FlakeShowVal `json:"apps,omitempty"`
 	LegacyPackages       map[string]map[string]interface{}  `json:"legacyPackages,omitempty"`
-	NixosConfigurations  map[string]FlakeShowVal            `json:"nixosConfigurations,omitempty"`
-	DarwinConfigurations map[string]FlakeShowVal            `json:"darwinConfigurations,omitempty"`
+	NixosConfigurations  map[string]interface{}             `json:"nixosConfigurations,omitempty"`
+	DarwinConfigurations map[string]interface{}             `json:"darwinConfigurations,omitempty"`
 }
 
 // FlakeShowVal represents a terminal value in `nix flake show` output
