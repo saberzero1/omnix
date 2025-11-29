@@ -1,6 +1,9 @@
 package flake
 
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+)
 
 const (
 	// OSLinux represents the Linux operating system
@@ -67,8 +70,13 @@ func (s System) String() string {
 		}
 		return fmt.Sprintf("%s-%s", archStr, s.os)
 	}
-	// Custom OS string
-	return s.os
+	// For unknown OS, format as "arch-os" (e.g., "x86_64-freebsd")
+	archStr := s.arch.String()
+	if archStr == "unknown" {
+		// If arch is unknown, just return the OS name
+		return s.os
+	}
+	return fmt.Sprintf("%s-%s", archStr, s.os)
 }
 
 // HumanReadable returns a human-readable description of the system.
@@ -119,5 +127,35 @@ func (a Arch) String() string {
 		return "x86_64"
 	default:
 		return "unknown"
+	}
+}
+
+// GetCurrentSystem returns the current system based on runtime.GOOS and runtime.GOARCH
+func GetCurrentSystem() System {
+	return getCurrentSystemImpl()
+}
+
+// getCurrentSystemImpl determines the current Nix system from Go runtime values
+func getCurrentSystemImpl() System {
+	// Map Go architecture to Nix architecture
+	var arch Arch
+	switch runtime.GOARCH {
+	case "arm64":
+		arch = ArchAarch64
+	case "amd64":
+		arch = ArchX86_64
+	default:
+		arch = ArchUnknown
+	}
+
+	// Map Go OS to Nix OS
+	switch runtime.GOOS {
+	case "linux":
+		return System{os: OSLinux, arch: arch}
+	case "darwin":
+		return System{os: OSDarwin, arch: arch}
+	default:
+		// For unknown OS, store the raw OS name and let String() format it properly
+		return System{os: runtime.GOOS, arch: arch}
 	}
 }
