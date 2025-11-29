@@ -136,11 +136,16 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 			for name, val := range attrs {
 				// Only include derivations (things that can be built)
 				if val.Type == "derivation" || category == OutputCategoryApps {
+					flakeRef := fmt.Sprintf("%s#%s.%s.%s", flakeURL.String(), category, sys, name)
+					// Apps are not derivations - they have a .program attribute that points to the executable
+					if category == OutputCategoryApps {
+						flakeRef = fmt.Sprintf("%s#%s.%s.%s.program", flakeURL.String(), category, sys, name)
+					}
 					outputs = append(outputs, FlakeOutput{
 						Category: category,
 						System:   sys,
 						Name:     name,
-						FlakeRef: fmt.Sprintf("%s#%s.%s.%s", flakeURL.String(), category, sys, name),
+						FlakeRef: flakeRef,
 					})
 				}
 			}
