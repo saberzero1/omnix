@@ -70,8 +70,13 @@ func (s System) String() string {
 		}
 		return fmt.Sprintf("%s-%s", archStr, s.os)
 	}
-	// Custom OS string
-	return s.os
+	// For unknown OS, format as "arch-os" (e.g., "x86_64-freebsd")
+	archStr := s.arch.String()
+	if archStr == "unknown" {
+		// If arch is unknown, just return the OS name
+		return s.os
+	}
+	return fmt.Sprintf("%s-%s", archStr, s.os)
 }
 
 // HumanReadable returns a human-readable description of the system.
@@ -144,18 +149,13 @@ func getCurrentSystemImpl() System {
 	}
 
 	// Map Go OS to Nix OS
-	// For unknown systems, construct a Nix-style system string
 	switch runtime.GOOS {
 	case "linux":
 		return System{os: OSLinux, arch: arch}
 	case "darwin":
 		return System{os: OSDarwin, arch: arch}
 	default:
-		// For unknown OS, construct a full system string in Nix format (e.g., "x86_64-freebsd")
-		archStr := arch.String()
-		if archStr == "unknown" {
-			archStr = runtime.GOARCH
-		}
-		return System{os: fmt.Sprintf("%s-%s", archStr, runtime.GOOS), arch: arch}
+		// For unknown OS, store the raw OS name and let String() format it properly
+		return System{os: runtime.GOOS, arch: arch}
 	}
 }

@@ -133,11 +133,7 @@ func TestEnumerateFlakeOutputs_Integration(t *testing.T) {
 
 	// Log the outputs for debugging
 	t.Logf("Found %d outputs", len(outputs))
-	displayCount := 5
-	if len(outputs) < displayCount {
-		displayCount = len(outputs)
-	}
-	for _, output := range outputs[:displayCount] {
+	for _, output := range outputs[:min(5, len(outputs))] {
 		t.Logf("  - %s: %s", output.Category, output.FlakeRef)
 	}
 }
