@@ -425,7 +425,7 @@ func DevourFlakeNative(ctx context.Context, flakeURL FlakeURL, systems []string,
 	var outPaths []store.Path
 	byName := make(map[string]store.Path)
 	logger := common.Logger()
-	failedCount := 0
+	var failedCount int
 
 	for _, result := range buildResults {
 		if result.Error != nil {
@@ -447,7 +447,7 @@ func DevourFlakeNative(ctx context.Context, flakeURL FlakeURL, systems []string,
 	}
 
 	// Return error if all builds failed
-	if failedCount == len(buildResults) && len(buildResults) > 0 {
+	if failedCount > 0 && failedCount == len(buildResults) {
 		return nil, fmt.Errorf("all %d builds failed", failedCount)
 	}
 
