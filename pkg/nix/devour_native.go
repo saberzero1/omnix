@@ -122,7 +122,8 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 		case OutputCategoryApps:
 			attrsBySystem = showOutput.Apps
 		case OutputCategoryLegacyPackages:
-			// Skip legacyPackages for now - they may have complex nested structure
+			// Handle legacyPackages specially - look for homeConfigurations
+			outputs = append(outputs, enumerateLegacyPackages(flakeURL, showOutput.LegacyPackages, systemSet)...)
 			continue
 		}
 
@@ -201,6 +202,45 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 	})
 
 	return outputs, nil
+}
+
+// enumerateLegacyPackages handles legacyPackages which may contain homeConfigurations
+// devour-flake uses legacyPackages.${system}.homeConfigurations.<name>.activationPackage
+// for Home Manager configurations since outputs.homeConfigurations doesn't specify which architecture to build for
+func enumerateLegacyPackages(flakeURL FlakeURL, legacyPackages map[string]map[string]interface{}, systemSet map[string]bool) []FlakeOutput {
+	var outputs []FlakeOutput
+
+	for sys, attrs := range legacyPackages {
+		// Filter by system if specified
+		if len(systemSet) > 0 && !systemSet[sys] {
+			continue
+		}
+
+		// Look for homeConfigurations within legacyPackages.${system}
+		homeConfigs, ok := attrs["homeConfigurations"]
+		if !ok {
+			continue
+		}
+
+		// homeConfigurations is a map of config names to config objects
+		configsMap, ok := homeConfigs.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		for configName := range configsMap {
+			// Build the activationPackage for each Home Manager configuration
+			// The flake ref is: legacyPackages.${system}.homeConfigurations.${name}.activationPackage
+			outputs = append(outputs, FlakeOutput{
+				Category: OutputCategoryLegacyPackages,
+				System:   sys,
+				Name:     configName,
+				FlakeRef: fmt.Sprintf("%s#legacyPackages.%s.homeConfigurations.%s.activationPackage", flakeURL.String(), sys, configName),
+			})
+		}
+	}
+
+	return outputs
 }
 
 // BuildResult represents the result of building a flake output

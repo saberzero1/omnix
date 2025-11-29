@@ -144,3 +144,94 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+func TestEnumerateLegacyPackages(t *testing.T) {
+	flakeURL := NewFlakeURL(".")
+
+	tests := []struct {
+		name           string
+		legacyPackages map[string]map[string]interface{}
+		systemSet      map[string]bool
+		expectedCount  int
+	}{
+		{
+			name:           "empty legacyPackages",
+			legacyPackages: map[string]map[string]interface{}{},
+			systemSet:      map[string]bool{},
+			expectedCount:  0,
+		},
+		{
+			name: "legacyPackages without homeConfigurations",
+			legacyPackages: map[string]map[string]interface{}{
+				"x86_64-linux": {
+					"somePackage": map[string]interface{}{},
+				},
+			},
+			systemSet:     map[string]bool{},
+			expectedCount: 0,
+		},
+		{
+			name: "legacyPackages with homeConfigurations",
+			legacyPackages: map[string]map[string]interface{}{
+				"x86_64-linux": {
+					"homeConfigurations": map[string]interface{}{
+						"user@host": map[string]interface{}{
+							"activationPackage": "/nix/store/...",
+						},
+					},
+				},
+			},
+			systemSet:     map[string]bool{},
+			expectedCount: 1,
+		},
+		{
+			name: "legacyPackages with multiple homeConfigurations",
+			legacyPackages: map[string]map[string]interface{}{
+				"x86_64-linux": {
+					"homeConfigurations": map[string]interface{}{
+						"user1": map[string]interface{}{},
+						"user2": map[string]interface{}{},
+					},
+				},
+				"aarch64-darwin": {
+					"homeConfigurations": map[string]interface{}{
+						"user3": map[string]interface{}{},
+					},
+				},
+			},
+			systemSet:     map[string]bool{},
+			expectedCount: 3,
+		},
+		{
+			name: "legacyPackages filtered by system",
+			legacyPackages: map[string]map[string]interface{}{
+				"x86_64-linux": {
+					"homeConfigurations": map[string]interface{}{
+						"user1": map[string]interface{}{},
+					},
+				},
+				"aarch64-darwin": {
+					"homeConfigurations": map[string]interface{}{
+						"user2": map[string]interface{}{},
+					},
+				},
+			},
+			systemSet:     map[string]bool{"x86_64-linux": true},
+			expectedCount: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			outputs := enumerateLegacyPackages(flakeURL, tt.legacyPackages, tt.systemSet)
+			assert.Len(t, outputs, tt.expectedCount)
+
+			// Check that all outputs have correct category
+			for _, output := range outputs {
+				assert.Equal(t, OutputCategoryLegacyPackages, output.Category)
+				assert.Contains(t, output.FlakeRef, "homeConfigurations")
+				assert.Contains(t, output.FlakeRef, "activationPackage")
+			}
+		})
+	}
+}
