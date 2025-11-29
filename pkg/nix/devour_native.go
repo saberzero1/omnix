@@ -371,23 +371,37 @@ func buildOutputsParallel(ctx context.Context, outputs []FlakeOutput, opts Build
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for j := range jobs {
-				path, err := BuildOutput(ctx, j.output, opts.Impure, opts.OverrideInputs)
-				result := BuildResult{
-					Output:    j.output,
-					StorePath: path,
-					Error:     err,
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case j, ok := <-jobs:
+					if !ok {
+						return
+					}
+					path, err := BuildOutput(ctx, j.output, opts.Impure, opts.OverrideInputs)
+					result := BuildResult{
+						Output:    j.output,
+						StorePath: path,
+						Error:     err,
+					}
+					mu.Lock()
+					results[j.index] = result
+					mu.Unlock()
 				}
-				mu.Lock()
-				results[j.index] = result
-				mu.Unlock()
 			}
 		}()
 	}
 
-	// Queue jobs
+	// Queue jobs with context cancellation support
 	for i, output := range outputs {
-		jobs <- job{index: i, output: output}
+		select {
+		case <-ctx.Done():
+			close(jobs)
+			wg.Wait()
+			return results
+		case jobs <- job{index: i, output: output}:
+		}
 	}
 	close(jobs)
 
