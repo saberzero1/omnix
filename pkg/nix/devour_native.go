@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -13,13 +12,6 @@ import (
 	"github.com/saberzero1/omnix/pkg/nix/flake"
 	"github.com/saberzero1/omnix/pkg/nix/store"
 	"go.uber.org/zap"
-)
-
-const (
-	// DefaultMaxConcurrency is the default maximum number of parallel Nix builds.
-	// This prevents overwhelming the system and GitHub API rate limits when building
-	// flakes with many outputs or GitHub-based inputs.
-	DefaultMaxConcurrency = 4
 )
 
 // OutputCategory represents a category of flake outputs
@@ -365,23 +357,8 @@ func buildOutputsParallel(ctx context.Context, outputs []FlakeOutput, opts Build
 	processed := make([]bool, len(outputs)) // Track which jobs were processed
 	var mu sync.Mutex                       // Protects writes to results and processed slices
 
-	// Determine concurrency limit
-	// When maxConcurrency is 0 or negative, use a sensible default based on CPU count
-	// but capped to prevent overwhelming GitHub API rate limits when building flakes
-	// with GitHub-based inputs.
-	maxConcurrency := opts.MaxConcurrency
-	if maxConcurrency <= 0 {
-		// Use the greater of DefaultMaxConcurrency or NumCPU, but never more than
-		// the number of outputs to avoid creating idle workers
-		cpuBased := runtime.NumCPU()
-		if cpuBased < DefaultMaxConcurrency {
-			cpuBased = DefaultMaxConcurrency
-		}
-		maxConcurrency = cpuBased
-		if maxConcurrency > len(outputs) {
-			maxConcurrency = len(outputs)
-		}
-	}
+	// Determine concurrency limit using the shared utility function
+	maxConcurrency := common.CalculateMaxConcurrency(opts.MaxConcurrency, len(outputs))
 
 	// Create work channel
 	type job struct {
