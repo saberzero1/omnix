@@ -89,6 +89,26 @@ func TestBuildAllOutputs_Empty(t *testing.T) {
 	assert.Nil(t, results)
 }
 
+// TestBuildOutput_AppWithStorePath tests that apps with store paths are returned directly
+func TestBuildOutput_AppWithStorePath(t *testing.T) {
+	ctx := context.Background()
+
+	// Create an app output with a store path (simulating what enumerateApps produces)
+	output := FlakeOutput{
+		Category: OutputCategoryApps,
+		System:   "x86_64-linux",
+		Name:     "test-app",
+		FlakeRef: "/nix/store/abc123-test-app/bin/test-app",
+	}
+
+	// BuildOutput should return the store path directly for apps
+	path, err := BuildOutput(ctx, output, false, nil)
+
+	// Should succeed without actually calling nix build
+	assert.NoError(t, err)
+	assert.Equal(t, "/nix/store/abc123-test-app/bin/test-app", path.String())
+}
+
 func TestBuildAllOutputsOptions_WithOverrideInputs(t *testing.T) {
 	opts := BuildAllOutputsOptions{
 		Impure: true,

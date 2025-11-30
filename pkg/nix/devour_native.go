@@ -120,10 +120,8 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 		case OutputCategoryDevShells:
 			attrsBySystem = showOutput.DevShells
 		case OutputCategoryApps:
-			// Skip apps - they are not buildable derivations, they're metadata
-			// that references programs from other outputs. The original devour-flake
-			// accesses app.program during Nix evaluation to get the store path,
-			// but from Go we can't evaluate Nix expressions.
+			// Apps need special handling - enumerate them using nix eval to get the .program store path
+			outputs = append(outputs, enumerateApps(ctx, flakeURL, showOutput.Apps, systemSet)...)
 			continue
 		case OutputCategoryLegacyPackages:
 			// Handle legacyPackages specially - look for homeConfigurations
@@ -252,6 +250,59 @@ func enumerateLegacyPackages(flakeURL FlakeURL, legacyPackages map[string]map[st
 	return outputs
 }
 
+// enumerateApps handles apps by evaluating app.program to get the store path
+// Apps are metadata that reference programs from other outputs. Unlike derivations,
+// they can't be built directly. Instead, we use nix eval to get the .program store path
+// which is a direct reference to the executable in the Nix store.
+func enumerateApps(ctx context.Context, flakeURL FlakeURL, apps map[string]map[string]FlakeShowVal, systemSet map[string]bool) []FlakeOutput {
+	var outputs []FlakeOutput
+	logger := common.Logger()
+	cmd := NewCmd()
+
+	for sys, attrs := range apps {
+		// Filter by system if specified
+		if len(systemSet) > 0 && !systemSet[sys] {
+			continue
+		}
+
+		for name, val := range attrs {
+			// Only include apps (type: "app")
+			if val.Type != "app" {
+				continue
+			}
+
+			// Use nix eval to get the .program store path
+			// The app.program attribute contains the direct path to the executable
+			appRef := fmt.Sprintf("%s#apps.%s.%s.program", flakeURL.String(), sys, name)
+			evalOutput, err := cmd.Run(ctx, "eval", "--raw", appRef)
+			if err != nil {
+				logger.Warn("failed to evaluate app.program",
+					zap.String("app", appRef),
+					zap.Error(err))
+				continue
+			}
+
+			storePath := strings.TrimSpace(evalOutput)
+			if storePath == "" {
+				logger.Warn("app.program evaluated to empty string",
+					zap.String("app", appRef))
+				continue
+			}
+
+			// The store path from app.program is a direct store path, not a flake ref
+			// We create a special FlakeOutput that uses the store path directly
+			outputs = append(outputs, FlakeOutput{
+				Category: OutputCategoryApps,
+				System:   sys,
+				Name:     name,
+				FlakeRef: storePath, // This is the store path, not a flake ref
+			})
+		}
+	}
+
+	return outputs
+}
+
 // BuildResult represents the result of building a flake output
 type BuildResult struct {
 	// Output is the flake output that was built
@@ -267,7 +318,14 @@ type BuildResult struct {
 // overrideInputs maps input names to flake URLs that override the flake's inputs.
 // When a build produces multiple outputs (e.g., out, dev, doc), only the first path is returned.
 // Returns an error if the build fails or produces no output.
+// For apps, the FlakeRef is a pre-evaluated store path, so we return it directly.
 func BuildOutput(ctx context.Context, output FlakeOutput, impure bool, overrideInputs map[string]string) (store.Path, error) {
+	// For apps, the FlakeRef is already a store path (evaluated via nix eval)
+	// We don't need to build it, just return the path directly
+	if output.Category == OutputCategoryApps && strings.HasPrefix(output.FlakeRef, "/nix/store/") {
+		return store.NewPath(output.FlakeRef), nil
+	}
+
 	cmd := NewCmd()
 
 	args := []string{
