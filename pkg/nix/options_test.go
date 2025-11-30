@@ -123,7 +123,11 @@ func TestGlobalOptions_Concurrency(t *testing.T) {
 	// Reset global options after test
 	defer SetGlobalOptions(&GlobalOptions{})
 
-	// Simulate concurrent reads and writes
+	// This test verifies thread-safety of SetGlobalOptions and GetGlobalOptions.
+	// It should be run with -race flag to detect race conditions.
+	// Deep copy behavior is tested separately in TestGetGlobalOptions_DeepCopy
+	// and TestSetGlobalOptions_DoesNotRetainReference.
+
 	done := make(chan bool)
 	for i := 0; i < 10; i++ {
 		go func(val int) {
@@ -135,18 +139,12 @@ func TestGlobalOptions_Concurrency(t *testing.T) {
 			got := GetGlobalOptions()
 			args := got.ToArgs()
 
-			// Verify returned args are valid
+			// Verify returned values are valid (not nil)
 			assert.NotNil(t, args, "ToArgs should not return nil")
+			// Verify struct is readable without panic
+			_ = got.AcceptFlakeConfig
+			_ = got.ExtraArgs
 
-			// Verify deep copy by modifying returned value
-			if len(got.ExtraArgs) > 0 {
-				got.ExtraArgs[0] = testModifiedValue
-				// Modification should not affect global state
-				newGot := GetGlobalOptions()
-				if len(newGot.ExtraArgs) > 0 {
-					assert.NotEqual(t, testModifiedValue, newGot.ExtraArgs[0], "deep copy should prevent modifications")
-				}
-			}
 			done <- true
 		}(i)
 	}
