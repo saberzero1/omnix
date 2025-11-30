@@ -354,7 +354,8 @@ func buildOutputsSequential(ctx context.Context, outputs []FlakeOutput, opts Bui
 // buildOutputsParallel builds outputs concurrently
 func buildOutputsParallel(ctx context.Context, outputs []FlakeOutput, opts BuildAllOutputsOptions) []BuildResult {
 	results := make([]BuildResult, len(outputs))
-	var mu sync.Mutex // Protects writes to results slice
+	processed := make([]bool, len(outputs)) // Track which jobs were processed
+	var mu sync.Mutex                       // Protects writes to results and processed slices
 
 	// Determine concurrency limit
 	maxConcurrency := opts.MaxConcurrency
@@ -376,42 +377,53 @@ func buildOutputsParallel(ctx context.Context, outputs []FlakeOutput, opts Build
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case j, ok := <-jobs:
-					if !ok {
-						return
-					}
-					path, err := BuildOutput(ctx, j.output, opts.Impure, opts.OverrideInputs)
-					result := BuildResult{
-						Output:    j.output,
-						StorePath: path,
-						Error:     err,
-					}
+			for j := range jobs {
+				// Check if context is cancelled before building
+				if ctx.Err() != nil {
 					mu.Lock()
-					results[j.index] = result
+					results[j.index] = BuildResult{
+						Output: j.output,
+						Error:  fmt.Errorf("build cancelled: %w", ctx.Err()),
+					}
+					processed[j.index] = true
 					mu.Unlock()
+					continue
 				}
+
+				path, err := BuildOutput(ctx, j.output, opts.Impure, opts.OverrideInputs)
+				result := BuildResult{
+					Output:    j.output,
+					StorePath: path,
+					Error:     err,
+				}
+				mu.Lock()
+				results[j.index] = result
+				processed[j.index] = true
+				mu.Unlock()
 			}
 		}()
 	}
 
-	// Queue jobs with context cancellation support
+	// Queue all jobs - do not exit early on context cancellation
+	// This ensures all job slots are properly handled by workers
 	for i, output := range outputs {
-		select {
-		case <-ctx.Done():
-			close(jobs)
-			wg.Wait()
-			return results
-		case jobs <- job{index: i, output: output}:
-		}
+		jobs <- job{index: i, output: output}
 	}
 	close(jobs)
 
-	// Wait for completion
+	// Wait for all workers to complete
 	wg.Wait()
+
+	// Mark any unprocessed jobs as cancelled (this should not happen with the new design,
+	// but is a safety measure)
+	for i, output := range outputs {
+		if !processed[i] {
+			results[i] = BuildResult{
+				Output: output,
+				Error:  fmt.Errorf("internal error: job was queued but never processed by worker"),
+			}
+		}
+	}
 
 	return results
 }
@@ -447,6 +459,14 @@ func DevourFlakeNative(ctx context.Context, flakeURL FlakeURL, systems []string,
 	var failedCount int
 
 	for _, result := range buildResults {
+		// Check for zero-valued results (should not happen with fixed buildOutputsParallel,
+		// but this is a safety check for any unprocessed jobs)
+		if result.Output.FlakeRef == "" {
+			failedCount++
+			logger.Warn("skipping build result with empty FlakeRef (indicates unprocessed job)")
+			continue
+		}
+
 		if result.Error != nil {
 			failedCount++
 			// Log error but continue - some outputs may fail

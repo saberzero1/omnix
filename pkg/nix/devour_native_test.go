@@ -228,3 +228,78 @@ func TestEnumerateLegacyPackages(t *testing.T) {
 		})
 	}
 }
+
+// TestBuildAllOutputs_ContextCancellation tests that context cancellation is handled properly
+func TestBuildAllOutputs_ContextCancellation(t *testing.T) {
+	// Create a cancelled context
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	outputs := []FlakeOutput{
+		{Category: OutputCategoryPackages, System: "x86_64-linux", Name: "test1", FlakeRef: ".#packages.x86_64-linux.test1"},
+		{Category: OutputCategoryPackages, System: "x86_64-linux", Name: "test2", FlakeRef: ".#packages.x86_64-linux.test2"},
+		{Category: OutputCategoryPackages, System: "x86_64-linux", Name: "test3", FlakeRef: ".#packages.x86_64-linux.test3"},
+	}
+
+	// Run parallel builds with cancelled context
+	results := BuildAllOutputs(ctx, outputs, BuildAllOutputsOptions{
+		Parallel:       true,
+		MaxConcurrency: 2,
+	})
+
+	// Should return results for all outputs
+	assert.Len(t, results, len(outputs))
+
+	// All results should have errors (context cancelled)
+	for i, result := range results {
+		assert.NotEmpty(t, result.Output.FlakeRef, "Result %d should have FlakeRef set", i)
+		assert.Error(t, result.Error, "Result %d should have an error due to context cancellation", i)
+	}
+}
+
+// TestBuildAllOutputs_AllResultsHaveFlakeRef tests that all results have FlakeRef set
+func TestBuildAllOutputs_AllResultsHaveFlakeRef(t *testing.T) {
+	ctx := context.Background()
+
+	outputs := []FlakeOutput{
+		{Category: OutputCategoryPackages, System: "x86_64-linux", Name: "test1", FlakeRef: ".#packages.x86_64-linux.test1"},
+		{Category: OutputCategoryPackages, System: "x86_64-linux", Name: "test2", FlakeRef: ".#packages.x86_64-linux.test2"},
+	}
+
+	// Run sequential builds (will fail because flake doesn't exist, but that's OK)
+	results := BuildAllOutputs(ctx, outputs, BuildAllOutputsOptions{
+		Parallel: false,
+	})
+
+	// Should return results for all outputs
+	assert.Len(t, results, len(outputs))
+
+	// All results should have FlakeRef set (even if they failed)
+	for i, result := range results {
+		assert.Equal(t, outputs[i].FlakeRef, result.Output.FlakeRef, "Result %d should have correct FlakeRef", i)
+	}
+}
+
+// TestBuildAllOutputs_ParallelAllResultsHaveFlakeRef tests parallel mode results
+func TestBuildAllOutputs_ParallelAllResultsHaveFlakeRef(t *testing.T) {
+	ctx := context.Background()
+
+	outputs := []FlakeOutput{
+		{Category: OutputCategoryPackages, System: "x86_64-linux", Name: "test1", FlakeRef: ".#packages.x86_64-linux.test1"},
+		{Category: OutputCategoryPackages, System: "x86_64-linux", Name: "test2", FlakeRef: ".#packages.x86_64-linux.test2"},
+	}
+
+	// Run parallel builds (will fail because flake doesn't exist, but that's OK)
+	results := BuildAllOutputs(ctx, outputs, BuildAllOutputsOptions{
+		Parallel:       true,
+		MaxConcurrency: 2,
+	})
+
+	// Should return results for all outputs
+	assert.Len(t, results, len(outputs))
+
+	// All results should have FlakeRef set (even if they failed)
+	for i, result := range results {
+		assert.NotEmpty(t, result.Output.FlakeRef, "Result %d should have FlakeRef set", i)
+	}
+}

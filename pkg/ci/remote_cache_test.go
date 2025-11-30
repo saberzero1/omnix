@@ -95,7 +95,7 @@ func TestRemoteRunOptions(t *testing.T) {
 
 func TestBuildRemoteCICommand(t *testing.T) {
 	omnixSource := "/nix/store/abc123-omnix"
-	
+
 	t.Run("basic command", func(t *testing.T) {
 		flake, err := nix.ParseFlakeURL("/nix/store/xyz-flake")
 		require.NoError(t, err)
@@ -105,7 +105,7 @@ func TestBuildRemoteCICommand(t *testing.T) {
 		}
 
 		args := buildRemoteCICommand(omnixSource, flake, opts, "")
-		
+
 		assert.Contains(t, args, "nix")
 		assert.Contains(t, args, "run")
 		assert.Contains(t, args, "/nix/store/abc123-omnix#default")
@@ -125,7 +125,7 @@ func TestBuildRemoteCICommand(t *testing.T) {
 		outLink := "/tmp/results.json"
 
 		args := buildRemoteCICommand(omnixSource, flake, opts, outLink)
-		
+
 		assert.Contains(t, args, "--out-link")
 		assert.Contains(t, args, outLink)
 		assert.NotContains(t, args, "--no-link")
@@ -141,7 +141,7 @@ func TestBuildRemoteCICommand(t *testing.T) {
 		}
 
 		args := buildRemoteCICommand(omnixSource, flake, opts, "")
-		
+
 		assert.Contains(t, args, "--parallel")
 		assert.Contains(t, args, "--max-concurrency")
 		assert.Contains(t, args, "4")
@@ -156,7 +156,7 @@ func TestBuildRemoteCICommand(t *testing.T) {
 		}
 
 		args := buildRemoteCICommand(omnixSource, flake, opts, "")
-		
+
 		assert.Contains(t, args, "--include-all-dependencies")
 	})
 }
