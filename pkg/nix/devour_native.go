@@ -58,6 +58,8 @@ const (
 	OutputCategoryNixosConfigurations OutputCategory = "nixosConfigurations"
 	// OutputCategoryDarwinConfigurations represents darwinConfigurations output
 	OutputCategoryDarwinConfigurations OutputCategory = "darwinConfigurations"
+	// OutputCategoryHomeConfigurations represents homeConfigurations output
+	OutputCategoryHomeConfigurations OutputCategory = "homeConfigurations"
 )
 
 // AllPerSystemCategories returns all per-system output categories
@@ -76,6 +78,7 @@ func AllFlakeLevelCategories() []OutputCategory {
 	return []OutputCategory{
 		OutputCategoryNixosConfigurations,
 		OutputCategoryDarwinConfigurations,
+		OutputCategoryHomeConfigurations,
 	}
 }
 
@@ -88,6 +91,7 @@ type FlakeShowOutput struct {
 	LegacyPackages       map[string]map[string]interface{}  `json:"legacyPackages,omitempty"`
 	NixosConfigurations  map[string]interface{}             `json:"nixosConfigurations,omitempty"`
 	DarwinConfigurations map[string]interface{}             `json:"darwinConfigurations,omitempty"`
+	HomeConfigurations   map[string]interface{}             `json:"homeConfigurations,omitempty"`
 }
 
 // FlakeShowVal represents a terminal value in `nix flake show` output
@@ -216,6 +220,16 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 			Category: OutputCategoryDarwinConfigurations,
 			Name:     cfgName,
 			FlakeRef: fmt.Sprintf("%s#darwinConfigurations.%s.config.system.build.toplevel", flakeURL.String(), cfgName),
+		})
+	}
+
+	// Enumerate flake-level homeConfigurations
+	// Home Manager configurations expose .activationPackage for the activation script
+	for cfgName := range showOutput.HomeConfigurations {
+		outputs = append(outputs, FlakeOutput{
+			Category: OutputCategoryHomeConfigurations,
+			Name:     cfgName,
+			FlakeRef: fmt.Sprintf("%s#homeConfigurations.%s.activationPackage", flakeURL.String(), cfgName),
 		})
 	}
 

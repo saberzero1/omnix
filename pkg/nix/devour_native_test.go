@@ -129,7 +129,8 @@ func TestAllFlakeLevelCategories(t *testing.T) {
 
 	assert.Contains(t, categories, OutputCategoryNixosConfigurations)
 	assert.Contains(t, categories, OutputCategoryDarwinConfigurations)
-	assert.Len(t, categories, 2)
+	assert.Contains(t, categories, OutputCategoryHomeConfigurations)
+	assert.Len(t, categories, 3)
 }
 
 func TestOutputCategory_Constants(t *testing.T) {
@@ -140,6 +141,7 @@ func TestOutputCategory_Constants(t *testing.T) {
 	assert.Equal(t, OutputCategory("legacyPackages"), OutputCategoryLegacyPackages)
 	assert.Equal(t, OutputCategory("nixosConfigurations"), OutputCategoryNixosConfigurations)
 	assert.Equal(t, OutputCategory("darwinConfigurations"), OutputCategoryDarwinConfigurations)
+	assert.Equal(t, OutputCategory("homeConfigurations"), OutputCategoryHomeConfigurations)
 }
 
 func TestFlakeOutput_FlakeRef(t *testing.T) {
