@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -13,6 +14,31 @@ import (
 	"github.com/saberzero1/omnix/pkg/nix/store"
 	"go.uber.org/zap"
 )
+
+// storePathRegex validates Nix store paths
+// Format: /nix/store/<32-char-hash>-<name>[/optional/path]
+// The pattern ensures:
+// - No trailing slashes
+// - No multiple consecutive slashes
+// - No empty path segments
+var storePathRegex = regexp.MustCompile(`^/nix/store/[a-z0-9]{32}-[a-zA-Z0-9._+-]+(/[a-zA-Z0-9._+-]+)*$`)
+
+// dirTraversalRegex detects directory traversal patterns
+var dirTraversalRegex = regexp.MustCompile(`(^|/)\.\.?(/|$)`)
+
+// isValidStorePath checks if a string is a valid Nix store path
+// and rejects directory traversal attempts
+func isValidStorePath(path string) bool {
+	// First check basic format
+	if !storePathRegex.MatchString(path) {
+		return false
+	}
+	// Reject directory traversal patterns (. or .. as path segments)
+	if dirTraversalRegex.MatchString(path) {
+		return false
+	}
+	return true
+}
 
 // OutputCategory represents a category of flake outputs
 type OutputCategory string
@@ -32,6 +58,8 @@ const (
 	OutputCategoryNixosConfigurations OutputCategory = "nixosConfigurations"
 	// OutputCategoryDarwinConfigurations represents darwinConfigurations output
 	OutputCategoryDarwinConfigurations OutputCategory = "darwinConfigurations"
+	// OutputCategoryHomeConfigurations represents homeConfigurations output
+	OutputCategoryHomeConfigurations OutputCategory = "homeConfigurations"
 )
 
 // AllPerSystemCategories returns all per-system output categories
@@ -50,6 +78,7 @@ func AllFlakeLevelCategories() []OutputCategory {
 	return []OutputCategory{
 		OutputCategoryNixosConfigurations,
 		OutputCategoryDarwinConfigurations,
+		OutputCategoryHomeConfigurations,
 	}
 }
 
@@ -62,6 +91,7 @@ type FlakeShowOutput struct {
 	LegacyPackages       map[string]map[string]interface{}  `json:"legacyPackages,omitempty"`
 	NixosConfigurations  map[string]interface{}             `json:"nixosConfigurations,omitempty"`
 	DarwinConfigurations map[string]interface{}             `json:"darwinConfigurations,omitempty"`
+	HomeConfigurations   map[string]interface{}             `json:"homeConfigurations,omitempty"`
 }
 
 // FlakeShowVal represents a terminal value in `nix flake show` output
@@ -120,10 +150,8 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 		case OutputCategoryDevShells:
 			attrsBySystem = showOutput.DevShells
 		case OutputCategoryApps:
-			// Skip apps - they are not buildable derivations, they're metadata
-			// that references programs from other outputs. The original devour-flake
-			// accesses app.program during Nix evaluation to get the store path,
-			// but from Go we can't evaluate Nix expressions.
+			// Apps need special handling - enumerate them using nix eval to get the .program store path
+			outputs = append(outputs, enumerateApps(ctx, flakeURL, showOutput.Apps, systemSet)...)
 			continue
 		case OutputCategoryLegacyPackages:
 			// Handle legacyPackages specially - look for homeConfigurations
@@ -195,6 +223,16 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 		})
 	}
 
+	// Enumerate flake-level homeConfigurations
+	// Home Manager configurations expose .activationPackage for the activation script
+	for cfgName := range showOutput.HomeConfigurations {
+		outputs = append(outputs, FlakeOutput{
+			Category: OutputCategoryHomeConfigurations,
+			Name:     cfgName,
+			FlakeRef: fmt.Sprintf("%s#homeConfigurations.%s.activationPackage", flakeURL.String(), cfgName),
+		})
+	}
+
 	// Sort outputs for deterministic ordering
 	sort.Slice(outputs, func(i, j int) bool {
 		if outputs[i].Category != outputs[j].Category {
@@ -252,6 +290,67 @@ func enumerateLegacyPackages(flakeURL FlakeURL, legacyPackages map[string]map[st
 	return outputs
 }
 
+// enumerateApps handles apps by evaluating app.program to get the store path
+// Apps are metadata that reference programs from other outputs. Unlike derivations,
+// they can't be built directly. Instead, we use nix eval to get the .program store path
+// which is a direct reference to the executable in the Nix store.
+func enumerateApps(ctx context.Context, flakeURL FlakeURL, apps map[string]map[string]FlakeShowVal, systemSet map[string]bool) []FlakeOutput {
+	var outputs []FlakeOutput
+	logger := common.Logger()
+	cmd := NewCmd()
+
+	for sys, attrs := range apps {
+		// Filter by system if specified
+		if len(systemSet) > 0 && !systemSet[sys] {
+			continue
+		}
+
+		for name, val := range attrs {
+			// Only include apps (type: "app")
+			if val.Type != "app" {
+				continue
+			}
+
+			// Use nix eval to get the .program store path
+			// The app.program attribute contains the direct path to the executable
+			appRef := fmt.Sprintf("%s#apps.%s.%s.program", flakeURL.String(), sys, name)
+			evalOutput, err := cmd.Run(ctx, "eval", "--raw", appRef)
+			if err != nil {
+				logger.Warn("failed to evaluate app.program",
+					zap.String("app", appRef),
+					zap.Error(err))
+				continue
+			}
+
+			storePath := strings.TrimSpace(evalOutput)
+			if storePath == "" {
+				logger.Warn("app.program evaluated to empty string",
+					zap.String("app", appRef))
+				continue
+			}
+
+			// Validate the store path to prevent security issues
+			if !isValidStorePath(storePath) {
+				logger.Warn("app.program is not a valid store path",
+					zap.String("app", appRef),
+					zap.String("storePath", storePath))
+				continue
+			}
+
+			// The store path from app.program is a direct store path, not a flake ref
+			// We create a special FlakeOutput that uses the store path directly
+			outputs = append(outputs, FlakeOutput{
+				Category: OutputCategoryApps,
+				System:   sys,
+				Name:     name,
+				FlakeRef: storePath, // This is the store path, not a flake ref
+			})
+		}
+	}
+
+	return outputs
+}
+
 // BuildResult represents the result of building a flake output
 type BuildResult struct {
 	// Output is the flake output that was built
@@ -267,7 +366,14 @@ type BuildResult struct {
 // overrideInputs maps input names to flake URLs that override the flake's inputs.
 // When a build produces multiple outputs (e.g., out, dev, doc), only the first path is returned.
 // Returns an error if the build fails or produces no output.
+// For apps, the FlakeRef is a pre-evaluated store path, so we return it directly.
 func BuildOutput(ctx context.Context, output FlakeOutput, impure bool, overrideInputs map[string]string) (store.Path, error) {
+	// For apps, the FlakeRef is already a store path (evaluated via nix eval)
+	// We don't need to build it, just return the path directly
+	if output.Category == OutputCategoryApps && isValidStorePath(output.FlakeRef) {
+		return store.NewPath(output.FlakeRef), nil
+	}
+
 	cmd := NewCmd()
 
 	args := []string{

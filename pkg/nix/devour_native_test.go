@@ -7,6 +7,112 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestIsValidStorePath(t *testing.T) {
+	tests := []struct {
+		name     string
+		path     string
+		expected bool
+	}{
+		{
+			name:     "valid store path with simple name",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello",
+			expected: true,
+		},
+		{
+			name:     "valid store path with version",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello-1.0.0",
+			expected: true,
+		},
+		{
+			name:     "valid store path with nested path",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/bin/hello",
+			expected: true,
+		},
+		{
+			name:     "valid store path with dots and underscores",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-my_app.v1.0",
+			expected: true,
+		},
+		{
+			name:     "invalid - not starting with /nix/store/",
+			path:     "/tmp/nix/store/abc123def456ghi789jkl012mno345pq-hello",
+			expected: false,
+		},
+		{
+			name:     "invalid - hash too short",
+			path:     "/nix/store/abc123-hello",
+			expected: false,
+		},
+		{
+			name:     "invalid - hash with uppercase",
+			path:     "/nix/store/ABC123def456ghi789jkl012mno345pq-hello",
+			expected: false,
+		},
+		{
+			name:     "invalid - empty string",
+			path:     "",
+			expected: false,
+		},
+		{
+			name:     "invalid - relative path",
+			path:     "nix/store/abc123def456ghi789jkl012mno345pq-hello",
+			expected: false,
+		},
+		{
+			name:     "invalid - missing name after hash",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq",
+			expected: false,
+		},
+		{
+			name:     "invalid - trailing slash",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/",
+			expected: false,
+		},
+		{
+			name:     "invalid - multiple consecutive slashes",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello//bin",
+			expected: false,
+		},
+		{
+			name:     "invalid - empty path segment",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/bin//app",
+			expected: false,
+		},
+		{
+			name:     "invalid - directory traversal with ..",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/../etc/passwd",
+			expected: false,
+		},
+		{
+			name:     "invalid - directory traversal at end",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/bin/..",
+			expected: false,
+		},
+		{
+			name:     "invalid - single dot traversal",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/./bin",
+			expected: false,
+		},
+		{
+			name:     "valid - dot in segment name",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/.envrc",
+			expected: true,
+		},
+		{
+			name:     "valid - dots in segment name",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/file..txt",
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isValidStorePath(tt.path)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestAllPerSystemCategories(t *testing.T) {
 	categories := AllPerSystemCategories()
 
@@ -23,7 +129,8 @@ func TestAllFlakeLevelCategories(t *testing.T) {
 
 	assert.Contains(t, categories, OutputCategoryNixosConfigurations)
 	assert.Contains(t, categories, OutputCategoryDarwinConfigurations)
-	assert.Len(t, categories, 2)
+	assert.Contains(t, categories, OutputCategoryHomeConfigurations)
+	assert.Len(t, categories, 3)
 }
 
 func TestOutputCategory_Constants(t *testing.T) {
@@ -34,6 +141,7 @@ func TestOutputCategory_Constants(t *testing.T) {
 	assert.Equal(t, OutputCategory("legacyPackages"), OutputCategoryLegacyPackages)
 	assert.Equal(t, OutputCategory("nixosConfigurations"), OutputCategoryNixosConfigurations)
 	assert.Equal(t, OutputCategory("darwinConfigurations"), OutputCategoryDarwinConfigurations)
+	assert.Equal(t, OutputCategory("homeConfigurations"), OutputCategoryHomeConfigurations)
 }
 
 func TestFlakeOutput_FlakeRef(t *testing.T) {
@@ -87,6 +195,47 @@ func TestGetCurrentSystem(t *testing.T) {
 func TestBuildAllOutputs_Empty(t *testing.T) {
 	results := BuildAllOutputs(context.Background(), nil, BuildAllOutputsOptions{})
 	assert.Nil(t, results)
+}
+
+// TestBuildOutput_AppWithStorePath tests that apps with store paths are returned directly
+func TestBuildOutput_AppWithStorePath(t *testing.T) {
+	ctx := context.Background()
+
+	// Create an app output with a valid store path (simulating what enumerateApps produces)
+	// The hash must be exactly 32 lowercase alphanumeric characters
+	output := FlakeOutput{
+		Category: OutputCategoryApps,
+		System:   "x86_64-linux",
+		Name:     "test-app",
+		FlakeRef: "/nix/store/abc123def456ghi789jkl012mno345pq-test-app/bin/test-app",
+	}
+
+	// BuildOutput should return the store path directly for apps
+	path, err := BuildOutput(ctx, output, false, nil)
+
+	// Should succeed without actually calling nix build
+	assert.NoError(t, err)
+	assert.Equal(t, "/nix/store/abc123def456ghi789jkl012mno345pq-test-app/bin/test-app", path.String())
+}
+
+// TestBuildOutput_AppWithFlakeRef tests that apps with invalid FlakeRef (not a store path)
+// fall through to the normal build path
+func TestBuildOutput_AppWithFlakeRef(t *testing.T) {
+	ctx := context.Background()
+
+	// Create an app output with a flake ref instead of a store path
+	output := FlakeOutput{
+		Category: OutputCategoryApps,
+		System:   "x86_64-linux",
+		Name:     "test-app",
+		FlakeRef: ".#apps.x86_64-linux.test-app", // Not a store path
+	}
+
+	// This should attempt to build (and fail since we're not in a real flake)
+	_, err := BuildOutput(ctx, output, false, nil)
+
+	// Expected to fail since we're not in a real flake environment
+	assert.Error(t, err)
 }
 
 func TestBuildAllOutputsOptions_WithOverrideInputs(t *testing.T) {
