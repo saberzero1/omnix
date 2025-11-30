@@ -28,16 +28,7 @@ func CalculateMaxConcurrency(maxConcurrency, itemCount int) int {
 		return maxConcurrency
 	}
 
-	// Use the greater of DefaultMaxConcurrency or NumCPU
-	cpuBased := runtime.NumCPU()
-	if cpuBased < DefaultMaxConcurrency {
-		cpuBased = DefaultMaxConcurrency
-	}
-
-	// Never more than the number of items to avoid idle workers
-	if cpuBased > itemCount {
-		cpuBased = itemCount
-	}
-
-	return cpuBased
+	// Use the greater of DefaultMaxConcurrency or NumCPU, but never more than itemCount
+	cpuBased := max(runtime.NumCPU(), DefaultMaxConcurrency)
+	return min(cpuBased, itemCount)
 }
