@@ -43,18 +43,13 @@ func (o *GlobalOptions) ToArgs() []string {
 		return []string{}
 	}
 
-	var args []string
+	args := []string{}
 
 	if o.AcceptFlakeConfig {
 		args = append(args, "--accept-flake-config")
 	}
 
 	args = append(args, o.ExtraArgs...)
-
-	// Always return a non-nil slice
-	if args == nil {
-		return []string{}
-	}
 
 	return args
 }
