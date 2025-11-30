@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -18,6 +19,10 @@ import (
 const (
 	// defaultFlakeAttr is the default flake attribute name for apps and devshells
 	defaultFlakeAttr = "default"
+
+	// DefaultMaxConcurrency is the default maximum number of parallel subflakes to run.
+	// This prevents overwhelming the system and GitHub API rate limits.
+	DefaultMaxConcurrency = 4
 )
 
 // getFlakeAttrName returns the flake attribute name, defaulting to "default" if empty
@@ -313,9 +318,18 @@ func runSubflakesParallelWithUI(ctx context.Context, flake nix.FlakeURL, subflak
 	config SubflakeConfig
 }, opts RunOptions, p *tea.Program, resultsChan chan<- resultWithIndex) {
 	// Determine concurrency limit
+	// When maxConcurrency is 0 or negative, use a sensible default based on CPU count
+	// but capped to prevent overwhelming GitHub API rate limits
 	maxConcurrency := opts.MaxConcurrency
 	if maxConcurrency <= 0 {
-		maxConcurrency = len(subflakes)
+		cpuBased := runtime.NumCPU()
+		if cpuBased < DefaultMaxConcurrency {
+			cpuBased = DefaultMaxConcurrency
+		}
+		maxConcurrency = cpuBased
+		if maxConcurrency > len(subflakes) {
+			maxConcurrency = len(subflakes)
+		}
 	}
 
 	// Create channels for work distribution
@@ -538,9 +552,18 @@ func runSubflakesParallel(ctx context.Context, flake nix.FlakeURL, subflakes []s
 	config SubflakeConfig
 }, opts RunOptions) ([]Result, error) {
 	// Determine concurrency limit
+	// When maxConcurrency is 0 or negative, use a sensible default based on CPU count
+	// but capped to prevent overwhelming GitHub API rate limits
 	maxConcurrency := opts.MaxConcurrency
 	if maxConcurrency <= 0 {
-		maxConcurrency = len(subflakes)
+		cpuBased := runtime.NumCPU()
+		if cpuBased < DefaultMaxConcurrency {
+			cpuBased = DefaultMaxConcurrency
+		}
+		maxConcurrency = cpuBased
+		if maxConcurrency > len(subflakes) {
+			maxConcurrency = len(subflakes)
+		}
 	}
 
 	// Create channels for work distribution
