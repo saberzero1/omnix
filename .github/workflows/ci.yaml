@@ -38,14 +38,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@v16
         with:
           extra-conf: |
             accept-flake-config = true
             experimental-features = nix-command flakes
 
       - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+        uses: DeterminateSystems/magic-nix-cache-action@v9
 
       # Build omnix first, so we can use it to build the rest of the flake outputs.
       # This also separates the CI log for both these obviously distinct steps.
