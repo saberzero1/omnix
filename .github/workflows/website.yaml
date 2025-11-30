@@ -10,16 +10,14 @@ on:
 
 jobs:
   upload:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    runs-on: x86_64-linux
     steps:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ inputs.static-site-path }}
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: x86_64-linux
     needs: upload
     environment:
       name: github-pages

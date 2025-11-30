@@ -17,7 +17,7 @@ jobs:
     secrets: inherit
 
   main:
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.system }}
     permissions:
       contents: read
     outputs:
@@ -26,26 +26,18 @@ jobs:
       OMWEBSITE: ${{ steps.omci.outputs.OMWEBSITE_x86_64-linux }}
     strategy:
       matrix:
-        include:
-          - system: x86_64-linux
-            runner: ubuntu-latest
-          - system: aarch64-darwin
-            runner: macos-latest
-        # Note: aarch64-linux and x86_64-darwin are excluded as they require
-        # self-hosted runners or emulation which is not available on GitHub-hosted runners
+        system: [x86_64-linux, aarch64-linux, aarch64-darwin, x86_64-darwin]
+        isMain:
+          - ${{ contains(github.ref, 'main') }}
+        # Excluded emulated builds on PRs
+        exclude:
+          - system: aarch64-linux
+            isMain: false
+          - system: x86_64-darwin
+            isMain: false
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v16
-        with:
-          extra-conf: |
-            accept-flake-config = true
-            experimental-features = nix-command flakes
-
-      - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@v9
 
       # Build omnix first, so we can use it to build the rest of the flake outputs.
       # This also separates the CI log for both these obviously distinct steps.
