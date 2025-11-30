@@ -21,20 +21,32 @@ var (
 
 // SetGlobalOptions sets the global nix options.
 // This should be called early in program initialization (e.g., from CLI PersistentPreRunE).
+// If nil is passed, an empty GlobalOptions is set instead.
 func SetGlobalOptions(opts *GlobalOptions) {
 	optionsMu.Lock()
 	defer optionsMu.Unlock()
+	if opts == nil {
+		globalOptions = &GlobalOptions{}
+		return
+	}
 	globalOptions = opts
 }
 
-// GetGlobalOptions returns a copy of the current global nix options.
+// GetGlobalOptions returns a deep copy of the current global nix options.
+// The returned value is safe to use without synchronization.
 func GetGlobalOptions() GlobalOptions {
 	optionsMu.RLock()
 	defer optionsMu.RUnlock()
 	if globalOptions == nil {
 		return GlobalOptions{}
 	}
-	return *globalOptions
+	// Deep copy to avoid race conditions on ExtraArgs slice
+	copied := *globalOptions
+	if len(globalOptions.ExtraArgs) > 0 {
+		copied.ExtraArgs = make([]string, len(globalOptions.ExtraArgs))
+		copy(copied.ExtraArgs, globalOptions.ExtraArgs)
+	}
+	return copied
 }
 
 // ToArgs converts GlobalOptions to command-line arguments for nix.
