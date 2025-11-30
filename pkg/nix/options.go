@@ -22,6 +22,8 @@ var (
 // SetGlobalOptions sets the global nix options.
 // This should be called early in program initialization (e.g., from CLI PersistentPreRunE).
 // If nil is passed, an empty GlobalOptions is set instead.
+// The input is deep copied to prevent external modifications from affecting global state.
+// This function is safe to call multiple times (later calls override earlier ones).
 func SetGlobalOptions(opts *GlobalOptions) {
 	optionsMu.Lock()
 	defer optionsMu.Unlock()
@@ -29,10 +31,19 @@ func SetGlobalOptions(opts *GlobalOptions) {
 		globalOptions = &GlobalOptions{}
 		return
 	}
-	globalOptions = opts
+	// Deep copy to prevent external modifications from affecting global state
+	copied := &GlobalOptions{
+		AcceptFlakeConfig: opts.AcceptFlakeConfig,
+	}
+	if len(opts.ExtraArgs) > 0 {
+		copied.ExtraArgs = make([]string, len(opts.ExtraArgs))
+		copy(copied.ExtraArgs, opts.ExtraArgs)
+	}
+	globalOptions = copied
 }
 
-// GetGlobalOptions returns a deep copy of the current global nix options.
+// GetGlobalOptions returns a copy of the current global nix options.
+// The ExtraArgs slice is copied to prevent external modifications from affecting global state.
 // The returned value is safe to use without synchronization.
 func GetGlobalOptions() GlobalOptions {
 	optionsMu.RLock()
@@ -40,7 +51,7 @@ func GetGlobalOptions() GlobalOptions {
 	if globalOptions == nil {
 		return GlobalOptions{}
 	}
-	// Deep copy to avoid race conditions on ExtraArgs slice
+	// Copy struct and ExtraArgs slice to prevent modifications from affecting global state
 	copied := *globalOptions
 	if len(globalOptions.ExtraArgs) > 0 {
 		copied.ExtraArgs = make([]string, len(globalOptions.ExtraArgs))

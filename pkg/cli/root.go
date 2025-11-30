@@ -19,7 +19,7 @@ var (
 	commit  string
 	// nix flags
 	acceptFlakeConfig bool
-	nixOptions        []string
+	nixExtraArgs      []string
 )
 
 // SetVersion sets the version information for the CLI
@@ -76,7 +76,7 @@ It provides various commands to make working with Nix easier:
 		// Set global nix options
 		nix.SetGlobalOptions(&nix.GlobalOptions{
 			AcceptFlakeConfig: acceptFlakeConfig,
-			ExtraArgs:         nixOptions,
+			ExtraArgs:         nixExtraArgs,
 		})
 
 		return nil
@@ -89,7 +89,7 @@ func init() {
 
 	// Add nix flags
 	rootCmd.PersistentFlags().BoolVar(&acceptFlakeConfig, "accept-flake-config", false, "accept nix configuration from flake.nix")
-	rootCmd.PersistentFlags().StringArrayVar(&nixOptions, "nix-option", nil, "additional options to pass to nix commands (can be specified multiple times)")
+	rootCmd.PersistentFlags().StringArrayVar(&nixExtraArgs, "nix-option", nil, "additional options to pass to nix commands (can be specified multiple times)")
 
 	// Register subcommands
 	rootCmd.AddCommand(cmd.NewHealthCmd())

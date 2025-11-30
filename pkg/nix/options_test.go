@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const testModifiedValue = "modified"
+
 func TestGlobalOptions_ToArgs(t *testing.T) {
 	tests := []struct {
 		name string
@@ -101,7 +103,7 @@ func TestNewCmd_UsesGlobalOptions(t *testing.T) {
 	assert.Contains(t, cmd.ExtraArgs, "--verbose")
 }
 
-func TestGlobalOptions_DefaultEmpty(t *testing.T) {
+func TestGlobalOptions_ResetToEmpty(t *testing.T) {
 	// Reset global options after test
 	defer SetGlobalOptions(&GlobalOptions{})
 
@@ -131,7 +133,20 @@ func TestGlobalOptions_Concurrency(t *testing.T) {
 			}
 			SetGlobalOptions(opts)
 			got := GetGlobalOptions()
-			_ = got.ToArgs() // Use the result
+			args := got.ToArgs()
+
+			// Verify returned args are valid
+			assert.NotNil(t, args, "ToArgs should not return nil")
+
+			// Verify deep copy by modifying returned value
+			if len(got.ExtraArgs) > 0 {
+				got.ExtraArgs[0] = testModifiedValue
+				// Modification should not affect global state
+				newGot := GetGlobalOptions()
+				if len(newGot.ExtraArgs) > 0 {
+					assert.NotEqual(t, testModifiedValue, newGot.ExtraArgs[0], "deep copy should prevent modifications")
+				}
+			}
 			done <- true
 		}(i)
 	}
@@ -175,9 +190,30 @@ func TestGetGlobalOptions_DeepCopy(t *testing.T) {
 	copied := GetGlobalOptions()
 
 	// Modify the copy's ExtraArgs
-	copied.ExtraArgs[0] = "modified"
+	copied.ExtraArgs[0] = testModifiedValue
 
 	// Original should be unchanged (deep copy verification)
 	got := GetGlobalOptions()
 	assert.Equal(t, "--verbose", got.ExtraArgs[0], "original should be unchanged after modifying copy")
+}
+
+func TestSetGlobalOptions_DoesNotRetainReference(t *testing.T) {
+	// Reset global options after test
+	defer SetGlobalOptions(&GlobalOptions{})
+
+	// Create options and set them
+	opts := &GlobalOptions{
+		AcceptFlakeConfig: true,
+		ExtraArgs:         []string{"--verbose"},
+	}
+	SetGlobalOptions(opts)
+
+	// Modify the original after setting (simulating caller mutation)
+	opts.AcceptFlakeConfig = false
+	opts.ExtraArgs[0] = testModifiedValue
+
+	// Global state should be unchanged (deep copy verification)
+	got := GetGlobalOptions()
+	assert.True(t, got.AcceptFlakeConfig, "modifying input after Set should not affect global state")
+	assert.Equal(t, "--verbose", got.ExtraArgs[0], "modifying input slice should not affect global state")
 }
