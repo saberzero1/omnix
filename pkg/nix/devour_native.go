@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -13,6 +14,15 @@ import (
 	"github.com/saberzero1/omnix/pkg/nix/store"
 	"go.uber.org/zap"
 )
+
+// storePathRegex validates Nix store paths
+// Format: /nix/store/<32-char-hash>-<name>[/optional/path]
+var storePathRegex = regexp.MustCompile(`^/nix/store/[a-z0-9]{32}-[a-zA-Z0-9._+-]+(/[a-zA-Z0-9._+-/]*)?$`)
+
+// isValidStorePath checks if a string is a valid Nix store path
+func isValidStorePath(path string) bool {
+	return storePathRegex.MatchString(path)
+}
 
 // OutputCategory represents a category of flake outputs
 type OutputCategory string
@@ -289,6 +299,14 @@ func enumerateApps(ctx context.Context, flakeURL FlakeURL, apps map[string]map[s
 				continue
 			}
 
+			// Validate the store path to prevent security issues
+			if !isValidStorePath(storePath) {
+				logger.Warn("app.program is not a valid store path",
+					zap.String("app", appRef),
+					zap.String("storePath", storePath))
+				continue
+			}
+
 			// The store path from app.program is a direct store path, not a flake ref
 			// We create a special FlakeOutput that uses the store path directly
 			outputs = append(outputs, FlakeOutput{
@@ -322,7 +340,7 @@ type BuildResult struct {
 func BuildOutput(ctx context.Context, output FlakeOutput, impure bool, overrideInputs map[string]string) (store.Path, error) {
 	// For apps, the FlakeRef is already a store path (evaluated via nix eval)
 	// We don't need to build it, just return the path directly
-	if output.Category == OutputCategoryApps && strings.HasPrefix(output.FlakeRef, "/nix/store/") {
+	if output.Category == OutputCategoryApps && isValidStorePath(output.FlakeRef) {
 		return store.NewPath(output.FlakeRef), nil
 	}
 

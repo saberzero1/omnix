@@ -7,6 +7,72 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestIsValidStorePath(t *testing.T) {
+	tests := []struct {
+		name     string
+		path     string
+		expected bool
+	}{
+		{
+			name:     "valid store path with simple name",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello",
+			expected: true,
+		},
+		{
+			name:     "valid store path with version",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello-1.0.0",
+			expected: true,
+		},
+		{
+			name:     "valid store path with nested path",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/bin/hello",
+			expected: true,
+		},
+		{
+			name:     "valid store path with dots and underscores",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-my_app.v1.0",
+			expected: true,
+		},
+		{
+			name:     "invalid - not starting with /nix/store/",
+			path:     "/tmp/nix/store/abc123def456ghi789jkl012mno345pq-hello",
+			expected: false,
+		},
+		{
+			name:     "invalid - hash too short",
+			path:     "/nix/store/abc123-hello",
+			expected: false,
+		},
+		{
+			name:     "invalid - hash with uppercase",
+			path:     "/nix/store/ABC123def456ghi789jkl012mno345pq-hello",
+			expected: false,
+		},
+		{
+			name:     "invalid - empty string",
+			path:     "",
+			expected: false,
+		},
+		{
+			name:     "invalid - relative path",
+			path:     "nix/store/abc123def456ghi789jkl012mno345pq-hello",
+			expected: false,
+		},
+		{
+			name:     "invalid - missing name after hash",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq",
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isValidStorePath(tt.path)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestAllPerSystemCategories(t *testing.T) {
 	categories := AllPerSystemCategories()
 
@@ -93,12 +159,13 @@ func TestBuildAllOutputs_Empty(t *testing.T) {
 func TestBuildOutput_AppWithStorePath(t *testing.T) {
 	ctx := context.Background()
 
-	// Create an app output with a store path (simulating what enumerateApps produces)
+	// Create an app output with a valid store path (simulating what enumerateApps produces)
+	// The hash must be exactly 32 lowercase alphanumeric characters
 	output := FlakeOutput{
 		Category: OutputCategoryApps,
 		System:   "x86_64-linux",
 		Name:     "test-app",
-		FlakeRef: "/nix/store/abc123-test-app/bin/test-app",
+		FlakeRef: "/nix/store/abc123def456ghi789jkl012mno345pq-test-app/bin/test-app",
 	}
 
 	// BuildOutput should return the store path directly for apps
@@ -106,7 +173,7 @@ func TestBuildOutput_AppWithStorePath(t *testing.T) {
 
 	// Should succeed without actually calling nix build
 	assert.NoError(t, err)
-	assert.Equal(t, "/nix/store/abc123-test-app/bin/test-app", path.String())
+	assert.Equal(t, "/nix/store/abc123def456ghi789jkl012mno345pq-test-app/bin/test-app", path.String())
 }
 
 func TestBuildAllOutputsOptions_WithOverrideInputs(t *testing.T) {
