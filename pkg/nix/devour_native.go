@@ -420,7 +420,7 @@ func buildOutputsParallel(ctx context.Context, outputs []FlakeOutput, opts Build
 		if !processed[i] {
 			results[i] = BuildResult{
 				Output: output,
-				Error:  fmt.Errorf("build not processed: job was never executed"),
+				Error:  fmt.Errorf("internal error: job was queued but never processed by worker"),
 			}
 		}
 	}
@@ -463,8 +463,7 @@ func DevourFlakeNative(ctx context.Context, flakeURL FlakeURL, systems []string,
 		// but this is a safety check for any unprocessed jobs)
 		if result.Output.FlakeRef == "" {
 			failedCount++
-			logger.Warn("skipping unprocessed build result (zero-valued)",
-				zap.String("flakeRef", "(empty)"))
+			logger.Warn("skipping build result with empty FlakeRef (indicates unprocessed job)")
 			continue
 		}
 
