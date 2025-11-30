@@ -17,7 +17,11 @@ import (
 
 // storePathRegex validates Nix store paths
 // Format: /nix/store/<32-char-hash>-<name>[/optional/path]
-var storePathRegex = regexp.MustCompile(`^/nix/store/[a-z0-9]{32}-[a-zA-Z0-9._+-]+(/[a-zA-Z0-9._+-/]*)?$`)
+// The pattern ensures:
+// - No trailing slashes
+// - No multiple consecutive slashes
+// - No empty path segments
+var storePathRegex = regexp.MustCompile(`^/nix/store/[a-z0-9]{32}-[a-zA-Z0-9._+-]+(/[a-zA-Z0-9._+-]+)*$`)
 
 // isValidStorePath checks if a string is a valid Nix store path
 func isValidStorePath(path string) bool {

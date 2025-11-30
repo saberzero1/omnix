@@ -63,6 +63,21 @@ func TestIsValidStorePath(t *testing.T) {
 			path:     "/nix/store/abc123def456ghi789jkl012mno345pq",
 			expected: false,
 		},
+		{
+			name:     "invalid - trailing slash",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/",
+			expected: false,
+		},
+		{
+			name:     "invalid - multiple consecutive slashes",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello//bin",
+			expected: false,
+		},
+		{
+			name:     "invalid - empty path segment",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/bin//app",
+			expected: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -174,6 +189,26 @@ func TestBuildOutput_AppWithStorePath(t *testing.T) {
 	// Should succeed without actually calling nix build
 	assert.NoError(t, err)
 	assert.Equal(t, "/nix/store/abc123def456ghi789jkl012mno345pq-test-app/bin/test-app", path.String())
+}
+
+// TestBuildOutput_AppWithFlakeRef tests that apps with invalid FlakeRef (not a store path)
+// fall through to the normal build path
+func TestBuildOutput_AppWithFlakeRef(t *testing.T) {
+	ctx := context.Background()
+
+	// Create an app output with a flake ref instead of a store path
+	output := FlakeOutput{
+		Category: OutputCategoryApps,
+		System:   "x86_64-linux",
+		Name:     "test-app",
+		FlakeRef: ".#apps.x86_64-linux.test-app", // Not a store path
+	}
+
+	// This should attempt to build (and fail since we're not in a real flake)
+	_, err := BuildOutput(ctx, output, false, nil)
+
+	// Expected to fail since we're not in a real flake environment
+	assert.Error(t, err)
 }
 
 func TestBuildAllOutputsOptions_WithOverrideInputs(t *testing.T) {
