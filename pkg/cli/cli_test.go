@@ -131,3 +131,16 @@ func TestVerbosityLevels(t *testing.T) {
 		})
 	}
 }
+
+func TestAcceptFlakeConfigFlag(t *testing.T) {
+	// Test that accept-flake-config flag is registered
+	flag := rootCmd.PersistentFlags().Lookup("accept-flake-config")
+	assert.NotNil(t, flag, "accept-flake-config flag should be registered")
+	assert.Equal(t, "false", flag.DefValue, "default should be false")
+}
+
+func TestNixOptionFlag(t *testing.T) {
+	// Test that nix-option flag is registered
+	flag := rootCmd.PersistentFlags().Lookup("nix-option")
+	assert.NotNil(t, flag, "nix-option flag should be registered")
+}

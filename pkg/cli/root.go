@@ -8,6 +8,7 @@ import (
 
 	"github.com/saberzero1/omnix/pkg/cli/cmd"
 	"github.com/saberzero1/omnix/pkg/common"
+	"github.com/saberzero1/omnix/pkg/nix"
 )
 
 var (
@@ -16,6 +17,9 @@ var (
 	// version information
 	version string
 	commit  string
+	// nix flags
+	acceptFlakeConfig bool
+	nixExtraArgs      []string
 )
 
 // SetVersion sets the version information for the CLI
@@ -65,13 +69,27 @@ It provides various commands to make working with Nix easier:
 			level = common.TraceLevel
 		}
 
-		return common.SetupLogging(level, false)
+		if err := common.SetupLogging(level, false); err != nil {
+			return err
+		}
+
+		// Set global nix options
+		nix.SetGlobalOptions(&nix.GlobalOptions{
+			AcceptFlakeConfig: acceptFlakeConfig,
+			ExtraArgs:         nixExtraArgs,
+		})
+
+		return nil
 	},
 }
 
 func init() {
 	// Add global flags
 	rootCmd.PersistentFlags().IntVarP(&verbose, "verbose", "v", 2, "verbosity level (0=error, 1=warn, 2=info, 3=debug, 4=trace)")
+
+	// Add nix flags
+	rootCmd.PersistentFlags().BoolVar(&acceptFlakeConfig, "accept-flake-config", false, "accept nix configuration from flake.nix")
+	rootCmd.PersistentFlags().StringArrayVar(&nixExtraArgs, "nix-option", nil, "additional options to pass to nix commands (can be specified multiple times)")
 
 	// Register subcommands
 	rootCmd.AddCommand(cmd.NewHealthCmd())
