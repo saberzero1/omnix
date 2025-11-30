@@ -23,9 +23,21 @@ import (
 // - No empty path segments
 var storePathRegex = regexp.MustCompile(`^/nix/store/[a-z0-9]{32}-[a-zA-Z0-9._+-]+(/[a-zA-Z0-9._+-]+)*$`)
 
+// dirTraversalRegex detects directory traversal patterns
+var dirTraversalRegex = regexp.MustCompile(`(^|/)\.\.?(/|$)`)
+
 // isValidStorePath checks if a string is a valid Nix store path
+// and rejects directory traversal attempts
 func isValidStorePath(path string) bool {
-	return storePathRegex.MatchString(path)
+	// First check basic format
+	if !storePathRegex.MatchString(path) {
+		return false
+	}
+	// Reject directory traversal patterns (. or .. as path segments)
+	if dirTraversalRegex.MatchString(path) {
+		return false
+	}
+	return true
 }
 
 // OutputCategory represents a category of flake outputs

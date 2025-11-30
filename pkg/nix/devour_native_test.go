@@ -78,6 +78,31 @@ func TestIsValidStorePath(t *testing.T) {
 			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/bin//app",
 			expected: false,
 		},
+		{
+			name:     "invalid - directory traversal with ..",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/../etc/passwd",
+			expected: false,
+		},
+		{
+			name:     "invalid - directory traversal at end",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/bin/..",
+			expected: false,
+		},
+		{
+			name:     "invalid - single dot traversal",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/./bin",
+			expected: false,
+		},
+		{
+			name:     "valid - dot in segment name",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/.envrc",
+			expected: true,
+		},
+		{
+			name:     "valid - dots in segment name",
+			path:     "/nix/store/abc123def456ghi789jkl012mno345pq-hello/file..txt",
+			expected: true,
+		},
 	}
 
 	for _, tt := range tests {
