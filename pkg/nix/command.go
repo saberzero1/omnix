@@ -36,11 +36,10 @@ type Cmd struct {
 	ExtraArgs []string
 }
 
-// NewCmd creates a new Nix command executor.
+// NewCmd creates a new Nix command executor with global options applied.
+// Global options can be set via SetGlobalOptions() before calling this function.
 func NewCmd() *Cmd {
-	return &Cmd{
-		ExtraArgs: []string{},
-	}
+	return NewCmdWithOptions()
 }
 
 // RunVersion executes `nix --version` and returns the parsed version.
