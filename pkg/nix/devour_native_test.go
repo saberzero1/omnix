@@ -2,6 +2,8 @@ package nix
 
 import (
 	"context"
+	"encoding/json"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -451,4 +453,292 @@ func TestBuildAllOutputs_ParallelAllResultsHaveFlakeRef(t *testing.T) {
 	for i, result := range results {
 		assert.NotEmpty(t, result.Output.FlakeRef, "Result %d should have FlakeRef set", i)
 	}
+}
+
+// TestHasSystemMatching tests the hasSystemMatching function
+func TestHasSystemMatching(t *testing.T) {
+	tests := []struct {
+		name      string
+		systemSet map[string]bool
+		substring string
+		expected  bool
+	}{
+		{name: "empty systemSet matches any", systemSet: map[string]bool{}, substring: "linux", expected: true},
+		{name: "linux system matches linux", systemSet: map[string]bool{"x86_64-linux": true}, substring: "linux", expected: true},
+		{name: "darwin system does not match linux", systemSet: map[string]bool{"aarch64-darwin": true}, substring: "linux", expected: false},
+		{name: "multiple systems with match", systemSet: map[string]bool{"x86_64-linux": true, "aarch64-darwin": true}, substring: "darwin", expected: true},
+		{name: "no matching system", systemSet: map[string]bool{"x86_64-linux": true}, substring: "darwin", expected: false},
+		{name: "nil systemSet matches any", systemSet: nil, substring: "linux", expected: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := hasSystemMatching(tt.systemSet, tt.substring)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestIsFlakeShowMetadataKey tests the isFlakeShowMetadataKey function
+func TestIsFlakeShowMetadataKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		expected bool
+	}{
+		{name: "type key", key: "type", expected: true},
+		{name: "name key", key: "name", expected: true},
+		{name: "description key", key: "description", expected: true},
+		{name: "machine name", key: "myMachine", expected: false},
+		{name: "empty key", key: "", expected: false},
+		{name: "similar but different key", key: "types", expected: false},
+		{name: "uppercase TYPE", key: "TYPE", expected: false},
+		{name: "darwin system name", key: "aarch64-darwin", expected: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isFlakeShowMetadataKey(tt.key)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestFlakeShowMetadataKeysFiltering tests that metadata keys are filtered from configurations
+func TestFlakeShowMetadataKeysFiltering(t *testing.T) {
+	// This tests the logic of filtering metadata keys from darwinConfigurations, nixosConfigurations,
+	// and homeConfigurations by parsing the same JSON structure that nix flake show would produce
+
+	t.Run("darwinConfigurations", func(t *testing.T) {
+		testCases := []struct {
+			name          string
+			jsonData      string
+			expectedNames []string
+		}{
+			{
+				name: "darwin configs with metadata keys",
+				jsonData: `{
+					"darwinConfigurations": {
+						"type": "unknown",
+						"description": "unknown",
+						"myMachine": {}
+					}
+				}`,
+				expectedNames: []string{"myMachine"},
+			},
+			{
+				name: "darwin configs without metadata keys",
+				jsonData: `{
+					"darwinConfigurations": {
+						"myMachine": {},
+						"anotherMachine": {}
+					}
+				}`,
+				expectedNames: []string{"anotherMachine", "myMachine"},
+			},
+			{
+				name: "darwin configs with only metadata keys",
+				jsonData: `{
+					"darwinConfigurations": {
+						"type": "unknown",
+						"description": "unknown"
+					}
+				}`,
+				expectedNames: nil,
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				var showOutput FlakeShowOutput
+				err := json.Unmarshal([]byte(tc.jsonData), &showOutput)
+				assert.NoError(t, err)
+
+				var names []string
+				for cfgName := range showOutput.DarwinConfigurations {
+					if !isFlakeShowMetadataKey(cfgName) {
+						names = append(names, cfgName)
+					}
+				}
+
+				// Sort for deterministic comparison
+				sort.Strings(names)
+				sort.Strings(tc.expectedNames)
+
+				assert.Equal(t, tc.expectedNames, names)
+			})
+		}
+	})
+
+	t.Run("nixosConfigurations", func(t *testing.T) {
+		testCases := []struct {
+			name          string
+			jsonData      string
+			expectedNames []string
+		}{
+			{
+				name: "nixos configs with metadata keys",
+				jsonData: `{
+					"nixosConfigurations": {
+						"type": "unknown",
+						"description": "unknown",
+						"myServer": {}
+					}
+				}`,
+				expectedNames: []string{"myServer"},
+			},
+			{
+				name: "nixos configs without metadata keys",
+				jsonData: `{
+					"nixosConfigurations": {
+						"server1": {},
+						"server2": {}
+					}
+				}`,
+				expectedNames: []string{"server1", "server2"},
+			},
+			{
+				name: "nixos configs with only metadata keys",
+				jsonData: `{
+					"nixosConfigurations": {
+						"type": "unknown",
+						"description": "unknown"
+					}
+				}`,
+				expectedNames: nil,
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				var showOutput FlakeShowOutput
+				err := json.Unmarshal([]byte(tc.jsonData), &showOutput)
+				assert.NoError(t, err)
+
+				var names []string
+				for cfgName := range showOutput.NixosConfigurations {
+					if !isFlakeShowMetadataKey(cfgName) {
+						names = append(names, cfgName)
+					}
+				}
+
+				// Sort for deterministic comparison
+				sort.Strings(names)
+				sort.Strings(tc.expectedNames)
+
+				assert.Equal(t, tc.expectedNames, names)
+			})
+		}
+	})
+
+	t.Run("homeConfigurations", func(t *testing.T) {
+		testCases := []struct {
+			name          string
+			jsonData      string
+			expectedNames []string
+		}{
+			{
+				name: "home configs with metadata keys",
+				jsonData: `{
+					"homeConfigurations": {
+						"type": "unknown",
+						"name": "unknown",
+						"user@host": {}
+					}
+				}`,
+				expectedNames: []string{"user@host"},
+			},
+			{
+				name: "home configs without metadata keys",
+				jsonData: `{
+					"homeConfigurations": {
+						"alice@laptop": {},
+						"bob@desktop": {}
+					}
+				}`,
+				expectedNames: []string{"alice@laptop", "bob@desktop"},
+			},
+			{
+				name: "home configs with only metadata keys",
+				jsonData: `{
+					"homeConfigurations": {
+						"type": "unknown",
+						"name": "unknown",
+						"description": "unknown"
+					}
+				}`,
+				expectedNames: nil,
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				var showOutput FlakeShowOutput
+				err := json.Unmarshal([]byte(tc.jsonData), &showOutput)
+				assert.NoError(t, err)
+
+				var names []string
+				for cfgName := range showOutput.HomeConfigurations {
+					if !isFlakeShowMetadataKey(cfgName) {
+						names = append(names, cfgName)
+					}
+				}
+
+				// Sort for deterministic comparison
+				sort.Strings(names)
+				sort.Strings(tc.expectedNames)
+
+				assert.Equal(t, tc.expectedNames, names)
+			})
+		}
+	})
+}
+
+// TestGetConfigurationNames_WithMetadataOnly tests that getConfigurationNames falls back
+// to nix eval when nix flake show only returns metadata keys
+func TestGetConfigurationNames_WithMetadataOnly(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	// Test with the omnix repo's nixosConfigurations (should be empty or have actual configs)
+	ctx := context.Background()
+	flakeURL := NewFlakeURL(".")
+
+	// Create a map that only has metadata keys
+	metadataOnlyConfigs := map[string]interface{}{
+		"type":        "unknown",
+		"description": "unknown",
+	}
+
+	// When the map only has metadata, getConfigurationNames should use nix eval
+	// For the omnix repo, nixosConfigurations should be empty
+	names := getConfigurationNames(ctx, metadataOnlyConfigs, flakeURL, "nixosConfigurations")
+
+	// The result should be empty for the omnix repo (no nixosConfigurations defined)
+	// This test mainly verifies that the nix eval fallback doesn't crash
+	t.Logf("Got %d configuration names from nix eval fallback", len(names))
+}
+
+// TestGetConfigurationNames_WithActualConfigs tests that getConfigurationNames returns names
+// when the map contains actual config names (not just metadata)
+func TestGetConfigurationNames_WithActualConfigs(t *testing.T) {
+	ctx := context.Background()
+	flakeURL := NewFlakeURL(".")
+
+	// Create a map with actual config names and metadata
+	configsWithNames := map[string]interface{}{
+		"type":        "unknown",
+		"description": "unknown",
+		"myMachine":   map[string]interface{}{},
+		"testServer":  map[string]interface{}{},
+	}
+
+	// Should return only the actual config names
+	names := getConfigurationNames(ctx, configsWithNames, flakeURL, "darwinConfigurations")
+
+	// Sort for deterministic comparison
+	sort.Strings(names)
+
+	assert.Equal(t, []string{"myMachine", "testServer"}, names)
 }
