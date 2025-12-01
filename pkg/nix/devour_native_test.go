@@ -455,6 +455,30 @@ func TestBuildAllOutputs_ParallelAllResultsHaveFlakeRef(t *testing.T) {
 	}
 }
 
+// TestHasSystemMatching tests the hasSystemMatching function
+func TestHasSystemMatching(t *testing.T) {
+	tests := []struct {
+		name      string
+		systemSet map[string]bool
+		substring string
+		expected  bool
+	}{
+		{name: "empty systemSet matches any", systemSet: map[string]bool{}, substring: "linux", expected: true},
+		{name: "linux system matches linux", systemSet: map[string]bool{"x86_64-linux": true}, substring: "linux", expected: true},
+		{name: "darwin system does not match linux", systemSet: map[string]bool{"aarch64-darwin": true}, substring: "linux", expected: false},
+		{name: "multiple systems with match", systemSet: map[string]bool{"x86_64-linux": true, "aarch64-darwin": true}, substring: "darwin", expected: true},
+		{name: "no matching system", systemSet: map[string]bool{"x86_64-linux": true}, substring: "darwin", expected: false},
+		{name: "nil systemSet matches any", systemSet: nil, substring: "linux", expected: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := hasSystemMatching(tt.systemSet, tt.substring)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 // TestIsFlakeShowMetadataKey tests the isFlakeShowMetadataKey function
 func TestIsFlakeShowMetadataKey(t *testing.T) {
 	tests := []struct {
@@ -482,67 +506,190 @@ func TestIsFlakeShowMetadataKey(t *testing.T) {
 
 // TestFlakeShowMetadataKeysFiltering tests that metadata keys are filtered from configurations
 func TestFlakeShowMetadataKeysFiltering(t *testing.T) {
-	// This tests the logic of filtering metadata keys from darwinConfigurations and nixosConfigurations
-	// by parsing the same JSON structure that nix flake show would produce
+	// This tests the logic of filtering metadata keys from darwinConfigurations, nixosConfigurations,
+	// and homeConfigurations by parsing the same JSON structure that nix flake show would produce
 
-	testCases := []struct {
-		name          string
-		jsonData      string
-		expectedNames []string
-	}{
-		{
-			name: "darwin configs with metadata keys",
-			jsonData: `{
-				"darwinConfigurations": {
-					"type": "unknown",
-					"description": "unknown",
-					"myMachine": {}
+	t.Run("darwinConfigurations", func(t *testing.T) {
+		testCases := []struct {
+			name          string
+			jsonData      string
+			expectedNames []string
+		}{
+			{
+				name: "darwin configs with metadata keys",
+				jsonData: `{
+					"darwinConfigurations": {
+						"type": "unknown",
+						"description": "unknown",
+						"myMachine": {}
+					}
+				}`,
+				expectedNames: []string{"myMachine"},
+			},
+			{
+				name: "darwin configs without metadata keys",
+				jsonData: `{
+					"darwinConfigurations": {
+						"myMachine": {},
+						"anotherMachine": {}
+					}
+				}`,
+				expectedNames: []string{"anotherMachine", "myMachine"},
+			},
+			{
+				name: "darwin configs with only metadata keys",
+				jsonData: `{
+					"darwinConfigurations": {
+						"type": "unknown",
+						"description": "unknown"
+					}
+				}`,
+				expectedNames: nil,
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				var showOutput FlakeShowOutput
+				err := json.Unmarshal([]byte(tc.jsonData), &showOutput)
+				assert.NoError(t, err)
+
+				var names []string
+				for cfgName := range showOutput.DarwinConfigurations {
+					if !isFlakeShowMetadataKey(cfgName) {
+						names = append(names, cfgName)
+					}
 				}
-			}`,
-			expectedNames: []string{"myMachine"},
-		},
-		{
-			name: "darwin configs without metadata keys",
-			jsonData: `{
-				"darwinConfigurations": {
-					"myMachine": {},
-					"anotherMachine": {}
+
+				// Sort for deterministic comparison
+				sort.Strings(names)
+				sort.Strings(tc.expectedNames)
+
+				assert.Equal(t, tc.expectedNames, names)
+			})
+		}
+	})
+
+	t.Run("nixosConfigurations", func(t *testing.T) {
+		testCases := []struct {
+			name          string
+			jsonData      string
+			expectedNames []string
+		}{
+			{
+				name: "nixos configs with metadata keys",
+				jsonData: `{
+					"nixosConfigurations": {
+						"type": "unknown",
+						"description": "unknown",
+						"myServer": {}
+					}
+				}`,
+				expectedNames: []string{"myServer"},
+			},
+			{
+				name: "nixos configs without metadata keys",
+				jsonData: `{
+					"nixosConfigurations": {
+						"server1": {},
+						"server2": {}
+					}
+				}`,
+				expectedNames: []string{"server1", "server2"},
+			},
+			{
+				name: "nixos configs with only metadata keys",
+				jsonData: `{
+					"nixosConfigurations": {
+						"type": "unknown",
+						"description": "unknown"
+					}
+				}`,
+				expectedNames: nil,
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				var showOutput FlakeShowOutput
+				err := json.Unmarshal([]byte(tc.jsonData), &showOutput)
+				assert.NoError(t, err)
+
+				var names []string
+				for cfgName := range showOutput.NixosConfigurations {
+					if !isFlakeShowMetadataKey(cfgName) {
+						names = append(names, cfgName)
+					}
 				}
-			}`,
-			expectedNames: []string{"anotherMachine", "myMachine"},
-		},
-		{
-			name: "darwin configs with only metadata keys",
-			jsonData: `{
-				"darwinConfigurations": {
-					"type": "unknown",
-					"description": "unknown"
+
+				// Sort for deterministic comparison
+				sort.Strings(names)
+				sort.Strings(tc.expectedNames)
+
+				assert.Equal(t, tc.expectedNames, names)
+			})
+		}
+	})
+
+	t.Run("homeConfigurations", func(t *testing.T) {
+		testCases := []struct {
+			name          string
+			jsonData      string
+			expectedNames []string
+		}{
+			{
+				name: "home configs with metadata keys",
+				jsonData: `{
+					"homeConfigurations": {
+						"type": "unknown",
+						"name": "unknown",
+						"user@host": {}
+					}
+				}`,
+				expectedNames: []string{"user@host"},
+			},
+			{
+				name: "home configs without metadata keys",
+				jsonData: `{
+					"homeConfigurations": {
+						"alice@laptop": {},
+						"bob@desktop": {}
+					}
+				}`,
+				expectedNames: []string{"alice@laptop", "bob@desktop"},
+			},
+			{
+				name: "home configs with only metadata keys",
+				jsonData: `{
+					"homeConfigurations": {
+						"type": "unknown",
+						"name": "unknown",
+						"description": "unknown"
+					}
+				}`,
+				expectedNames: nil,
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				var showOutput FlakeShowOutput
+				err := json.Unmarshal([]byte(tc.jsonData), &showOutput)
+				assert.NoError(t, err)
+
+				var names []string
+				for cfgName := range showOutput.HomeConfigurations {
+					if !isFlakeShowMetadataKey(cfgName) {
+						names = append(names, cfgName)
+					}
 				}
-			}`,
-			expectedNames: []string{},
-		},
-	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Parse the JSON to extract darwinConfigurations keys and filter metadata
-			var showOutput FlakeShowOutput
-			err := json.Unmarshal([]byte(tc.jsonData), &showOutput)
-			assert.NoError(t, err)
+				// Sort for deterministic comparison
+				sort.Strings(names)
+				sort.Strings(tc.expectedNames)
 
-			var names []string
-			for cfgName := range showOutput.DarwinConfigurations {
-				if !isFlakeShowMetadataKey(cfgName) {
-					names = append(names, cfgName)
-				}
-			}
-
-			// Sort for deterministic comparison
-			sort.Strings(names)
-			sort.Strings(tc.expectedNames)
-
-			// Use ElementsMatch to handle nil vs empty slice comparison
-			assert.ElementsMatch(t, tc.expectedNames, names)
-		})
-	}
+				assert.Equal(t, tc.expectedNames, names)
+			})
+		}
+	})
 }
