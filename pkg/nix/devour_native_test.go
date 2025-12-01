@@ -693,3 +693,52 @@ func TestFlakeShowMetadataKeysFiltering(t *testing.T) {
 		}
 	})
 }
+
+// TestGetConfigurationNames_WithMetadataOnly tests that getConfigurationNames falls back
+// to nix eval when nix flake show only returns metadata keys
+func TestGetConfigurationNames_WithMetadataOnly(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	// Test with the omnix repo's nixosConfigurations (should be empty or have actual configs)
+	ctx := context.Background()
+	flakeURL := NewFlakeURL(".")
+
+	// Create a map that only has metadata keys
+	metadataOnlyConfigs := map[string]interface{}{
+		"type":        "unknown",
+		"description": "unknown",
+	}
+
+	// When the map only has metadata, getConfigurationNames should use nix eval
+	// For the omnix repo, nixosConfigurations should be empty
+	names := getConfigurationNames(ctx, metadataOnlyConfigs, flakeURL, "nixosConfigurations")
+
+	// The result should be empty for the omnix repo (no nixosConfigurations defined)
+	// This test mainly verifies that the nix eval fallback doesn't crash
+	t.Logf("Got %d configuration names from nix eval fallback", len(names))
+}
+
+// TestGetConfigurationNames_WithActualConfigs tests that getConfigurationNames returns names
+// when the map contains actual config names (not just metadata)
+func TestGetConfigurationNames_WithActualConfigs(t *testing.T) {
+	ctx := context.Background()
+	flakeURL := NewFlakeURL(".")
+
+	// Create a map with actual config names and metadata
+	configsWithNames := map[string]interface{}{
+		"type":        "unknown",
+		"description": "unknown",
+		"myMachine":   map[string]interface{}{},
+		"testServer":  map[string]interface{}{},
+	}
+
+	// Should return only the actual config names
+	names := getConfigurationNames(ctx, configsWithNames, flakeURL, "darwinConfigurations")
+
+	// Sort for deterministic comparison
+	sort.Strings(names)
+
+	assert.Equal(t, []string{"myMachine", "testServer"}, names)
+}

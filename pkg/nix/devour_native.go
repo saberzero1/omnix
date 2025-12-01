@@ -140,6 +140,50 @@ type FlakeOutput struct {
 	FlakeRef string
 }
 
+// getConfigurationNames extracts actual configuration names from a map, filtering out metadata keys.
+// If only metadata keys are present (meaning nix flake show couldn't evaluate the configs),
+// it falls back to using nix eval to get the actual attribute names.
+func getConfigurationNames(ctx context.Context, configs map[string]interface{}, flakeURL FlakeURL, attrPath string) []string {
+	// First, try to extract names from the map, filtering metadata keys
+	var names []string
+	for cfgName := range configs {
+		if !isFlakeShowMetadataKey(cfgName) {
+			names = append(names, cfgName)
+		}
+	}
+
+	// If we found actual config names, return them
+	if len(names) > 0 {
+		return names
+	}
+
+	// If we only got metadata keys (or empty), fall back to nix eval
+	// This happens when nix flake show can't fully evaluate the configurations
+	logger := common.Logger()
+	cmd := NewCmd()
+
+	// Use nix eval to get attribute names: nix eval .#darwinConfigurations --apply 'builtins.attrNames'
+	evalRef := fmt.Sprintf("%s#%s", flakeURL.String(), attrPath)
+	evalOutput, err := cmd.Run(ctx, "eval", "--json", evalRef, "--apply", "builtins.attrNames")
+	if err != nil {
+		logger.Debug("failed to eval configuration names, skipping",
+			zap.String("attrPath", attrPath),
+			zap.Error(err))
+		return nil
+	}
+
+	// Parse the JSON array of names
+	var evalNames []string
+	if err := json.Unmarshal([]byte(evalOutput), &evalNames); err != nil {
+		logger.Debug("failed to parse eval output for configuration names",
+			zap.String("attrPath", attrPath),
+			zap.Error(err))
+		return nil
+	}
+
+	return evalNames
+}
+
 // EnumerateFlakeOutputs enumerates all buildable outputs of a flake
 func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []string) ([]FlakeOutput, error) {
 	cmd := NewCmd()
@@ -208,11 +252,9 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 	}
 
 	// Enumerate flake-level outputs (nixosConfigurations, darwinConfigurations)
-	for cfgName := range showOutput.NixosConfigurations {
-		// Skip metadata keys that nix flake show adds at the top level when configs can't be evaluated
-		if isFlakeShowMetadataKey(cfgName) {
-			continue
-		}
+	// Use getConfigurationNames which falls back to nix eval if nix flake show only returned metadata
+	nixosConfigNames := getConfigurationNames(ctx, showOutput.NixosConfigurations, flakeURL, "nixosConfigurations")
+	for _, cfgName := range nixosConfigNames {
 		// NixOS configurations are for Linux systems
 		if !hasSystemMatching(systemSet, "linux") {
 			continue
@@ -224,11 +266,8 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 		})
 	}
 
-	for cfgName := range showOutput.DarwinConfigurations {
-		// Skip metadata keys that nix flake show adds at the top level when configs can't be evaluated
-		if isFlakeShowMetadataKey(cfgName) {
-			continue
-		}
+	darwinConfigNames := getConfigurationNames(ctx, showOutput.DarwinConfigurations, flakeURL, "darwinConfigurations")
+	for _, cfgName := range darwinConfigNames {
 		// Darwin configurations are for Darwin systems
 		if !hasSystemMatching(systemSet, "darwin") {
 			continue
@@ -242,11 +281,8 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 
 	// Enumerate flake-level homeConfigurations
 	// Home Manager configurations expose .activationPackage for the activation script
-	for cfgName := range showOutput.HomeConfigurations {
-		// Skip metadata keys that nix flake show adds at the top level when configs can't be evaluated
-		if isFlakeShowMetadataKey(cfgName) {
-			continue
-		}
+	homeConfigNames := getConfigurationNames(ctx, showOutput.HomeConfigurations, flakeURL, "homeConfigurations")
+	for _, cfgName := range homeConfigNames {
 		outputs = append(outputs, FlakeOutput{
 			Category: OutputCategoryHomeConfigurations,
 			Name:     cfgName,
