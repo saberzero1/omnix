@@ -2,6 +2,8 @@ package nix
 
 import (
 	"context"
+	"encoding/json"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -450,5 +452,97 @@ func TestBuildAllOutputs_ParallelAllResultsHaveFlakeRef(t *testing.T) {
 	// All results should have FlakeRef set (even if they failed)
 	for i, result := range results {
 		assert.NotEmpty(t, result.Output.FlakeRef, "Result %d should have FlakeRef set", i)
+	}
+}
+
+// TestIsFlakeShowMetadataKey tests the isFlakeShowMetadataKey function
+func TestIsFlakeShowMetadataKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		expected bool
+	}{
+		{name: "type key", key: "type", expected: true},
+		{name: "name key", key: "name", expected: true},
+		{name: "description key", key: "description", expected: true},
+		{name: "machine name", key: "myMachine", expected: false},
+		{name: "empty key", key: "", expected: false},
+		{name: "similar but different key", key: "types", expected: false},
+		{name: "uppercase TYPE", key: "TYPE", expected: false},
+		{name: "darwin system name", key: "aarch64-darwin", expected: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isFlakeShowMetadataKey(tt.key)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestFlakeShowMetadataKeysFiltering tests that metadata keys are filtered from configurations
+func TestFlakeShowMetadataKeysFiltering(t *testing.T) {
+	// This tests the logic of filtering metadata keys from darwinConfigurations and nixosConfigurations
+	// by parsing the same JSON structure that nix flake show would produce
+
+	testCases := []struct {
+		name          string
+		jsonData      string
+		expectedNames []string
+	}{
+		{
+			name: "darwin configs with metadata keys",
+			jsonData: `{
+				"darwinConfigurations": {
+					"type": "unknown",
+					"description": "unknown",
+					"myMachine": {}
+				}
+			}`,
+			expectedNames: []string{"myMachine"},
+		},
+		{
+			name: "darwin configs without metadata keys",
+			jsonData: `{
+				"darwinConfigurations": {
+					"myMachine": {},
+					"anotherMachine": {}
+				}
+			}`,
+			expectedNames: []string{"anotherMachine", "myMachine"},
+		},
+		{
+			name: "darwin configs with only metadata keys",
+			jsonData: `{
+				"darwinConfigurations": {
+					"type": "unknown",
+					"description": "unknown"
+				}
+			}`,
+			expectedNames: []string{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Parse the JSON to extract darwinConfigurations keys and filter metadata
+			var showOutput FlakeShowOutput
+			err := json.Unmarshal([]byte(tc.jsonData), &showOutput)
+			assert.NoError(t, err)
+
+			var names []string
+			for cfgName := range showOutput.DarwinConfigurations {
+				if !isFlakeShowMetadataKey(cfgName) {
+					names = append(names, cfgName)
+				}
+			}
+
+			// Sort for deterministic comparison
+			sort.Strings(names)
+			sort.Strings(tc.expectedNames)
+
+			// Use ElementsMatch to handle nil vs empty slice comparison
+			assert.ElementsMatch(t, tc.expectedNames, names)
+		})
 	}
 }

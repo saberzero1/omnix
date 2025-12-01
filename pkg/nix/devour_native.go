@@ -101,6 +101,33 @@ type FlakeShowVal struct {
 	Description string `json:"description,omitempty"`
 }
 
+// flakeShowMetadataKeys contains keys that nix flake show adds at the top level
+// of configuration objects (nixosConfigurations, darwinConfigurations, homeConfigurations)
+// when they cannot be fully evaluated. These should be skipped when enumerating configurations.
+var flakeShowMetadataKeys = map[string]bool{
+	"type":        true,
+	"name":        true,
+	"description": true,
+}
+
+// isFlakeShowMetadataKey returns true if the key is a metadata key from nix flake show output
+func isFlakeShowMetadataKey(key string) bool {
+	return flakeShowMetadataKeys[key]
+}
+
+// hasSystemMatching checks if systemSet contains any system matching the substring
+func hasSystemMatching(systemSet map[string]bool, substring string) bool {
+	if len(systemSet) == 0 {
+		return true
+	}
+	for sys := range systemSet {
+		if strings.Contains(sys, substring) {
+			return true
+		}
+	}
+	return false
+}
+
 // FlakeOutput represents a single buildable flake output
 type FlakeOutput struct {
 	// Category is the output category (packages, checks, devShells, etc.)
@@ -182,18 +209,13 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 
 	// Enumerate flake-level outputs (nixosConfigurations, darwinConfigurations)
 	for cfgName := range showOutput.NixosConfigurations {
+		// Skip metadata keys that nix flake show adds at the top level when configs can't be evaluated
+		if isFlakeShowMetadataKey(cfgName) {
+			continue
+		}
 		// NixOS configurations are for Linux systems
-		if len(systemSet) > 0 {
-			hasLinux := false
-			for sys := range systemSet {
-				if strings.Contains(sys, "linux") {
-					hasLinux = true
-					break
-				}
-			}
-			if !hasLinux {
-				continue
-			}
+		if !hasSystemMatching(systemSet, "linux") {
+			continue
 		}
 		outputs = append(outputs, FlakeOutput{
 			Category: OutputCategoryNixosConfigurations,
@@ -203,18 +225,13 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 	}
 
 	for cfgName := range showOutput.DarwinConfigurations {
+		// Skip metadata keys that nix flake show adds at the top level when configs can't be evaluated
+		if isFlakeShowMetadataKey(cfgName) {
+			continue
+		}
 		// Darwin configurations are for Darwin systems
-		if len(systemSet) > 0 {
-			hasDarwin := false
-			for sys := range systemSet {
-				if strings.Contains(sys, "darwin") {
-					hasDarwin = true
-					break
-				}
-			}
-			if !hasDarwin {
-				continue
-			}
+		if !hasSystemMatching(systemSet, "darwin") {
+			continue
 		}
 		outputs = append(outputs, FlakeOutput{
 			Category: OutputCategoryDarwinConfigurations,
@@ -226,6 +243,10 @@ func EnumerateFlakeOutputs(ctx context.Context, flakeURL FlakeURL, systems []str
 	// Enumerate flake-level homeConfigurations
 	// Home Manager configurations expose .activationPackage for the activation script
 	for cfgName := range showOutput.HomeConfigurations {
+		// Skip metadata keys that nix flake show adds at the top level when configs can't be evaluated
+		if isFlakeShowMetadataKey(cfgName) {
+			continue
+		}
 		outputs = append(outputs, FlakeOutput{
 			Category: OutputCategoryHomeConfigurations,
 			Name:     cfgName,
