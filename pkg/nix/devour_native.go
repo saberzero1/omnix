@@ -463,11 +463,8 @@ func buildOutputsParallel(ctx context.Context, outputs []FlakeOutput, opts Build
 	processed := make([]bool, len(outputs)) // Track which jobs were processed
 	var mu sync.Mutex                       // Protects writes to results and processed slices
 
-	// Determine concurrency limit
-	maxConcurrency := opts.MaxConcurrency
-	if maxConcurrency <= 0 {
-		maxConcurrency = len(outputs)
-	}
+	// Determine concurrency limit using the shared utility function
+	maxConcurrency := common.CalculateMaxConcurrency(opts.MaxConcurrency, len(outputs))
 
 	// Create work channel
 	type job struct {

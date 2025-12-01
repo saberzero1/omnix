@@ -9,6 +9,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/saberzero1/omnix/pkg/common"
 	"github.com/saberzero1/omnix/pkg/nix"
 	"github.com/saberzero1/omnix/pkg/nix/store"
 	"github.com/saberzero1/omnix/pkg/ui"
@@ -312,11 +313,8 @@ func runSubflakesParallelWithUI(ctx context.Context, flake nix.FlakeURL, subflak
 	name   string
 	config SubflakeConfig
 }, opts RunOptions, p *tea.Program, resultsChan chan<- resultWithIndex) {
-	// Determine concurrency limit
-	maxConcurrency := opts.MaxConcurrency
-	if maxConcurrency <= 0 {
-		maxConcurrency = len(subflakes)
-	}
+	// Determine concurrency limit using the shared utility function
+	maxConcurrency := common.CalculateMaxConcurrency(opts.MaxConcurrency, len(subflakes))
 
 	// Create channels for work distribution
 	type job struct {
@@ -537,11 +535,8 @@ func runSubflakesParallel(ctx context.Context, flake nix.FlakeURL, subflakes []s
 	name   string
 	config SubflakeConfig
 }, opts RunOptions) ([]Result, error) {
-	// Determine concurrency limit
-	maxConcurrency := opts.MaxConcurrency
-	if maxConcurrency <= 0 {
-		maxConcurrency = len(subflakes)
-	}
+	// Determine concurrency limit using the shared utility function
+	maxConcurrency := common.CalculateMaxConcurrency(opts.MaxConcurrency, len(subflakes))
 
 	// Create channels for work distribution
 	type job struct {
